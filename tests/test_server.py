@@ -109,7 +109,7 @@ def test_blocks_promotion_and_diagnosis(client, monkeypatch, tmp_path):
 
 def test_metrics_and_compare(client):
     for harness, rs in (("scripted:naive", "v1"), ("scripted:naive_v2", "v2")):
-        _wait(client, _start(client, scenario="refund_false_success", harness=harness, run_set=rs))
+        _wait(client, _start(client, scenario="refund_false_success", harness=harness, run_set=rs, shield=False))
     rows = {r["metric"]: r for r in client.get("/api/compare", params={"a": "v1", "b": "v2"}).json()}
     assert rows["Incorrect success claims"]["v1"] == 1 and rows["Incorrect success claims"]["v2"] == 0
     assert client.get("/api/compare", params={"a": "v1", "b": "zzz"}).status_code == 404

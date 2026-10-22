@@ -341,6 +341,53 @@ def serve(
     uvicorn.run(create_app(_store(), reports_dir=reports), host=host, port=port, log_level="warning")
 
 
+@app.command("protect")
+def protect(
+    backend: Path = typer.Option(..., "--backend", exists=True, dir_okay=False, help="HTTP backend config (YAML)"),
+    agent_id: str = typer.Option(..., "--agent-id", help="The agent's identity in the policy, e.g. support_agent"),
+    policy: str = typer.Option("default", "--policy"),
+    client: str = typer.Option("external", "--client", help="Label for the connecting agent"),
+    task: Optional[str] = typer.Option(None, "--task", help="What the agent was asked (scanned; kept for promotion)"),
+    approval_timeout: float = typer.Option(300.0, "--approval-timeout"),
+) -> None:
+    """Production mode: serve a real backend over MCP (stdio) with AgentShield in front of it.
+
+    Approvals wait for a decision in the dashboard (agentguard serve, same database).
+    Example: claude mcp add guarded -- agentguard protect --backend examples/payments_backend.yaml --agent-id support_agent
+    """
+    import sys
+
+    import anyio
+
+    from agentguard.backends.http import HttpBackendConfig, HttpToolBackend
+    from agentguard.runtime import RuntimeSession
+    from agentguard.shield.approvals import ApprovalQueue, AutoApprover
+    from agentguard.transports.mcp_proxy import build_server, output_from_submission
+
+    store = _store()
+    cfg = HttpBackendConfig.load(backend)
+    session = RuntimeSession(HttpToolBackend(cfg), store, agent_id=agent_id, policy=policy, client=client, task=task,
+                             backend_config=cfg.model_dump(mode="json"),
+                             approvals=ApprovalQueue(store, auto=AutoApprover(default="manual"),
+                                                     timeout_s=approval_timeout))
+    submitted: dict = {}
+    server = build_server(session.endpoint, on_submit=submitted.update)
+
+    async def main() -> None:
+        from mcp.server.stdio import stdio_server
+
+        async with stdio_server() as (read, write):
+            await server.run(read, write, server.create_initialization_options())
+
+    try:
+        anyio.run(main)
+    finally:
+        from agentguard.core.models import Usage
+
+        rec = session.close(output_from_submission(submitted, "MCP client disconnected.", Usage()))
+        print(f"agentguard: runtime session {rec.id} closed ({rec.output.usage.tool_calls} calls)", file=sys.stderr)
+
+
 @policy_app.command("validate")
 def policy_validate(path: Path = typer.Argument(..., exists=True, dir_okay=False)) -> None:
     """Validate a policy file; errors point at the YAML line."""

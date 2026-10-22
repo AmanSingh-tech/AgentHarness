@@ -145,16 +145,47 @@ class Pattern(_Strict):
         return self
 
 
+class Verification(_Strict):
+    """A post-action check: after `tool` succeeds, `check` (same language as rules) must hold
+    against the backend's read-only queries. `fail` replaces the result the agent sees with
+    an error (so a false success never reaches it); `flag` only records the mismatch."""
+
+    id: str
+    description: str = ""
+    tool: str
+    check: str
+    on_fail: Literal["fail", "flag"] = "fail"
+    risk: RiskLevel = RiskLevel.HIGH
+    message: str | None = None
+
+    _expr: Expr = PrivateAttr()
+
+    @field_validator("check")
+    @classmethod
+    def _check_expr(cls, v: str) -> str:
+        Expr(v)
+        return v
+
+    def model_post_init(self, __context) -> None:
+        self._expr = Expr(self.check)
+
+    @property
+    def expr(self) -> Expr:
+        return self._expr
+
+
 class Policy(_Strict):
     version: int = 1
     agents: dict[str, AgentPolicy] = Field(default_factory=dict)
     rules: list[Rule] = Field(default_factory=list)
     sequences: list[Sequence] = Field(default_factory=list)
     patterns: list[Pattern] = Field(default_factory=list)
+    verify: list[Verification] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _unique_ids(self) -> "Policy":
-        ids = [r.id for r in self.rules] + [s.id for s in self.sequences] + [p.id for p in self.patterns]
+        ids = [r.id for r in self.rules] + [s.id for s in self.sequences] + [p.id for p in self.patterns] \
+            + [v.id for v in self.verify]
         dupes = sorted({i for i in ids if ids.count(i) > 1})
         if dupes:
             raise ValueError(f"duplicate rule/sequence ids: {dupes}")

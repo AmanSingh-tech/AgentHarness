@@ -1,0 +1,28 @@
+# Production-mode backend: AgentShield in front of the example payments service.
+#   uvicorn examples.payments_service:app --port 9100
+#   agentguard protect --backend examples/payments_backend.yaml --agent-id support_agent
+name: payments-example
+base_url: http://127.0.0.1:9100
+tools_from: support
+headers:
+  Authorization: "Bearer ${PAYMENTS_TOKEN}"
+timeout_s: 10
+
+routes:
+  get_customer:  {method: GET,   path: "/customers/{customer_id}"}
+  get_order:     {method: GET,   path: "/orders/{order_id}"}
+  issue_refund:  {method: POST,  path: "/refunds"}
+  update_ticket: {method: PATCH, path: "/tickets/{ticket_id}"}
+  send_email:    {method: POST,  path: "/emails"}
+
+# Read-only lookups used by the policy's rules and verify checks (same names as the gym world's).
+queries:
+  ledger.refund_key_exists:   {path: "/refunds/by-key/{0}", result: exists, missing: false}
+  ledger.successful_refunds:  {path: "/orders/{0}/refunds", params: {amount_inr: "{1}"}, result: count, missing: 0}
+  crm.order_customer:         {path: "/orders/{0}", result: customer_id, missing: null}
+  crm.customer_verified:      {path: "/customers/{0}", result: verified, missing: false}
+
+# The AgentGym world that stands in for this system when a production incident is turned into a test.
+twin:
+  world: support
+  initial_state: fixtures/support_basic.yaml

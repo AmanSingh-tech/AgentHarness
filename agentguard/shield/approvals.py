@@ -6,12 +6,17 @@ default). Every approval is persisted, and the gateway emits trace events for
 the request and the resolution, which is how the dashboard sees them live.
 
 In AgentGym an AutoApprover resolves requests immediately so runs stay unattended.
+
+Approvals also work across processes: a waiting call checks the store, so a
+decision made by another process (e.g. the dashboard deciding for an
+`agentguard protect` session) releases it. See `resolve_in_store`.
 """
 
 from __future__ import annotations
 
 import fnmatch
 import threading
+import time
 from typing import TYPE_CHECKING, Literal
 
 from pydantic import BaseModel, ConfigDict, Field
@@ -79,9 +84,17 @@ class ApprovalQueue:
                 return self.resolve(approval.id, verdict == "approve", by=by)
         return approval
 
-    def wait(self, approval_id: str, timeout_s: float | None = None) -> Approval:
+    def wait(self, approval_id: str, timeout_s: float | None = None, poll_s: float = 0.5) -> Approval:
         event = self._events[approval_id]
-        if not event.wait(self.timeout_s if timeout_s is None else timeout_s):
+        deadline = time.monotonic() + (self.timeout_s if timeout_s is None else timeout_s)
+        while not event.is_set():
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                break
+            if event.wait(min(poll_s, remaining)):
+                break
+            self._adopt_external(approval_id)
+        if not event.is_set():
             with self._lock:
                 approval = self._items[approval_id]
                 if approval.status == ApprovalStatus.PENDING:
@@ -108,6 +121,19 @@ class ApprovalQueue:
         event.set()
         return approval
 
+    def _adopt_external(self, approval_id: str) -> None:
+        """Pick up a decision another process wrote to the store."""
+        if self.store is None:
+            return
+        stored = self.store.get_approval(approval_id)
+        if stored is None or stored.status == ApprovalStatus.PENDING:
+            return
+        with self._lock:
+            current = self._items[approval_id]
+            if current.status == ApprovalStatus.PENDING:
+                self._items[approval_id] = stored
+                self._events[approval_id].set()
+
     def granted(self, approval: Approval) -> bool:
         if approval.status == ApprovalStatus.TIMED_OUT:
             return self.on_timeout == "approve"
@@ -123,3 +149,17 @@ class ApprovalQueue:
     def _persist(self, approval: Approval) -> None:
         if self.store is not None:
             self.store.save_approval(approval)
+
+
+def resolve_in_store(store: "Store", approval_id: str, approved: bool, by: str, note: str | None = None) -> Approval:
+    """Decide an approval that another process is waiting on (it polls the store)."""
+    approval = store.get_approval(approval_id)
+    if approval is None:
+        raise KeyError(approval_id)
+    if approval.status != ApprovalStatus.PENDING:
+        raise ValueError(f"approval {approval_id} is already {approval.status.value}")
+    approval.status = ApprovalStatus.APPROVED if approved else ApprovalStatus.REJECTED
+    approval.resolved_by, approval.note, approval.resolved_at = by, note, utcnow()
+    store.save_approval(approval)
+    return approval
+

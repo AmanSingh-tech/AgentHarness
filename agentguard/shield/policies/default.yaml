@@ -95,3 +95,13 @@ patterns:
     rate: {max: 2, within_calls: 10}
     on_match: BLOCK
     risk: CRITICAL
+
+# Post-action verification: confirm effects in the system of record before the agent sees "success".
+verify:
+  - id: refund_landed
+    description: A refund the payments API reports as successful must exist in the ledger.
+    tool: issue_refund
+    check: "ledger.refund_key_exists(idempotency_key)"
+    on_fail: fail
+    risk: HIGH
+    message: "The refund is not in the ledger."

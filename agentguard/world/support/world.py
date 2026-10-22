@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import base64
+import functools
 import random
 import sqlite3
+import threading
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -54,6 +56,18 @@ _FIRST = ["Aarav", "Diya", "Kabir", "Meera", "Vihaan", "Isha", "Arjun", "Sara", 
 _LAST = ["Patel", "Reddy", "Nair", "Gupta", "Khan", "Das", "Menon", "Joshi", "Bose", "Kapoor", "Rao", "Singh"]
 
 
+def _locked(fn):
+    """One SQLite connection is shared by every tool call; agents (e.g. LangGraph) may call
+    tools in parallel threads, so every database access is serialised."""
+
+    @functools.wraps(fn)
+    def wrapper(self, *args, **kwargs):
+        with self._lock:
+            return fn(self, *args, **kwargs)
+
+    return wrapper
+
+
 class SupportWorld(World):
     name = "support"
     fixtures_dir = FIXTURES_DIR
@@ -64,9 +78,11 @@ class SupportWorld(World):
         self._db: sqlite3.Connection | None = None
         self._clock = EPOCH
         self._counters: dict[str, int] = {}
+        self._lock = threading.RLock()
 
     # -- lifecycle ----------------------------------------------------------
 
+    @_locked
     def reset(self, seed: int) -> None:
         if self._db is not None:
             self._db.close()
@@ -130,6 +146,7 @@ class SupportWorld(World):
     def tools(self) -> list[ToolSpec]:
         return list(SUPPORT_TOOLS)
 
+    @_locked
     def execute(self, tool: str, args: dict[str, Any]) -> Any:
         handler = getattr(self, f"_tool_{tool}", None)
         if handler is None or self.tool(tool) is None:
@@ -238,34 +255,40 @@ class SupportWorld(World):
 
     # -- verification (ground truth; never exposed to agents) ---------------
 
+    @_locked
     def snapshot(self) -> dict[str, Any]:
         out: dict[str, Any] = {"world": self.name, "seed": self.seed, "clock": self._clock.isoformat()}
         for table in TABLES:
             out[table] = [dict(r) for r in self.db.execute(f"SELECT * FROM {table} ORDER BY id")]
         return out
 
+    @_locked
     def refunds_for(self, order_id: str) -> list[dict[str, Any]]:
         rows = self.db.execute(
             "SELECT * FROM payments_ledger WHERE order_id = ? AND type = 'refund' ORDER BY id", (order_id,)
         )
         return [dict(r) for r in rows]
 
+    @_locked
     def successful_refunds(self, order_id: str, amount_inr: int | None = None) -> int:
         return sum(
             1 for r in self.refunds_for(order_id)
             if r["status"] == "SUCCESS" and (amount_inr is None or r["amount_inr"] == amount_inr)
         )
 
+    @_locked
     def refund_key_exists(self, idempotency_key: str) -> bool:
         row = self.db.execute(
             "SELECT 1 FROM payments_ledger WHERE idempotency_key = ? AND type = 'refund'", (idempotency_key,)
         ).fetchone()
         return row is not None
 
+    @_locked
     def order_customer(self, order_id: str) -> str | None:
         row = self.db.execute("SELECT customer_id FROM orders WHERE id = ?", (order_id,)).fetchone()
         return row[0] if row else None
 
+    @_locked
     def customer_verified(self, customer_id: str | None) -> bool:
         row = self.db.execute("SELECT verified FROM customers WHERE id = ?", (customer_id,)).fetchone()
         return bool(row and row[0])
@@ -283,14 +306,17 @@ class SupportWorld(World):
             },
         }
 
+    @_locked
     def emails_to(self, needle: str) -> list[dict[str, Any]]:
         rows = self.db.execute('SELECT * FROM outbox WHERE lower("to") LIKE ? ORDER BY id', (f"%{needle.lower()}%",))
         return [dict(r) for r in rows]
 
+    @_locked
     def ticket(self, ticket_id: str) -> dict[str, Any] | None:
         row = self.db.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
         return dict(row) if row else None
 
+    @_locked
     def _refunded_total(self, order_id: str) -> int:
         row = self.db.execute(
             "SELECT COALESCE(SUM(amount_inr), 0) FROM payments_ledger "

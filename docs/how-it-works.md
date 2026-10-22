@@ -78,8 +78,9 @@ The policy is YAML ([shield/policies/default.yaml](../agentguard/shield/policies
 2. **Deny by default.** An unknown agent, or a tool that agent's policy doesn't list, is blocked. A stage that throws an error, or a rule that cannot be evaluated, also blocks: it fails closed.
 3. **Per-tool limits.** These are amount limits, approval thresholds, allowed recipient domains, denied argument patterns (e.g. `SELECT *`) and row limits (redaction).
 4. **Business rules against the real system.** `rules:` hold small expressions over the call's arguments and read-only queries the backend exposes. For example, `ledger.successful_refunds(order_id, amount_inr) == 0` and `crm.customer_verified(crm.order_customer(order_id))`. The expression language allows no attribute access, subscripts or builtins, so a policy file cannot run code.
-5. **Approvals.** A REQUIRE_APPROVAL call blocks until a human approves or rejects it, through the dashboard or the API. A timeout rejects it by default. Every approval is persisted.
-6. **Injection is one layer, not the last.** Flagged tool output is labelled UNTRUSTED and raises the risk of later writes. When a block happens after an injection, its reason says that the policy blocks the action whether or not the injection was detected.
+5. **Post-action verification.** `verify:` checks run after a tool reports success and confirm the effect in the system of record. For example, `refund_landed` checks `ledger.refund_key_exists(idempotency_key)`. If the check fails, the agent gets `VERIFICATION_FAILED` instead of the false success (`on_fail: fail`), or the mismatch is only recorded (`flag`).
+6. **Approvals.** A REQUIRE_APPROVAL call blocks until a human approves or rejects it, through the dashboard or the API. A timeout rejects it by default. Every approval is persisted.
+7. **Injection is one layer, not the last.** Flagged tool output is labelled UNTRUSTED and raises the risk of later writes. When a block happens after an injection, its reason says that the policy blocks the action whether or not the injection was detected.
 
 Tested in [tests/test_policy.py](../tests/test_policy.py), [tests/test_shield_misc.py](../tests/test_shield_misc.py) and [tests/test_acceptance_m4.py](../tests/test_acceptance_m4.py).
 
@@ -120,11 +121,11 @@ Tested in [tests/test_regression.py](../tests/test_regression.py).
 
 | Outcome | v1, shield off | v1, shield on | v2, shield off | v2, shield on |
 |---|---|---|---|---|
-| Task success rate | 55% | 60% | 90% | 95% |
-| pass^3 | 55% | 60% | 90% | 95% |
-| Recovery from injected faults | 67% | 78% | 100% | 100% |
+| Task success rate | 55% | 65% | 90% | 95% |
+| pass^3 | 55% | 65% | 90% | 95% |
+| Recovery from injected faults | 67% | 89% | 100% | 100% |
 | Runs with a duplicate refund | 3 | **0** | 0 | 0 |
-| Incorrect success claims | 3 | 3 | **0** | 0 |
+| Incorrect success claims | 3 | **0** | **0** | 0 |
 | Runs with an unsafe side effect | 24 | 18 | 6 | 3 |
 | Injected actions blocked | 0 | 3 | 0 | 0 |
 | Policy violations attempted | 3 | 3 | 0 | 0 |
@@ -132,8 +133,8 @@ Tested in [tests/test_regression.py](../tests/test_regression.py).
 | Audit completeness | 100% | 100% | 100% | 100% |
 
 **What the numbers say:**
-- The shield prevents harm without changing the agent: duplicate refunds go to 0 and the injected export is blocked.
-- The agent fix (v2) is what removes false success claims.
+- The shield prevents harm without changing the agent. Duplicate refunds go to 0, the injected export is blocked, and post-action verification (`refund_landed`) stops a false "refund succeeded" from ever reaching the agent, so false success claims also go to 0.
+- The agent fix (v2) is what raises the task success rate from 55–65% to 90–95%.
 - The two together are best.
 - v2's remaining failures are on identity checks. The shield catches the unverified customer case, but not "refund the wrong customer's order", because `issue_refund` does not say who is asking.
 

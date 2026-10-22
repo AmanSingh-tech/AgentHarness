@@ -33,6 +33,7 @@ from agentguard.core.models import (
 from agentguard.shield import injection, risk
 from agentguard.shield.approvals import AutoApprover
 from agentguard.shield.policy import Pattern, Policy, ToolPermission
+from agentguard.core.models import ToolError
 from agentguard.shield.policy.expr import ExprError
 from agentguard.shield.taint import TaintMatch, TaintTracker
 from agentguard.world.base import ToolBackend
@@ -96,6 +97,7 @@ class Shield:
             RiskStage(self.session),
             TaintStage(policy, self.session),
             PatternStage(policy, self.session),
+            VerifyStage(policy, backend),
         ]
 
     def scan_task(self, text: str) -> list[injection.Finding]:
@@ -410,4 +412,45 @@ def _describe(req: Any, call: ToolCall) -> str:
     bound = {k: (call.args.get(v[1:]) if isinstance(v, str) and v.startswith("$") else v) for k, v in req.args.items()}
     args = ", ".join(f"{k}={v}" for k, v in bound.items())
     return f"a successful {req.tool}({args})" if req.ok else f"calling {req.tool}({args})"
+
+
+class VerifyStage:
+    """Post-action verification (`verify:` in the policy): after a tool reports success, confirm
+    the effect in the system of record before the agent sees the result."""
+
+    name = "verify"
+
+    def __init__(self, policy: Policy, backend: ToolBackend) -> None:
+        self.checks = policy.verify
+        self.queries = backend.rule_queries()
+
+    def evaluate(self, call: ToolCall, spec: ToolSpec) -> Decision | None:
+        return None
+
+    def observe(self, call: ToolCall, spec: ToolSpec, result: ToolResult) -> Events:
+        events: Events = []
+        if not result.ok:
+            return events
+        for v in self.checks:
+            if v.tool != call.tool:
+                continue
+            variables = {**call.args, "args": call.args, "result": result.output}
+            try:
+                ok, problem = bool(v.expr.evaluate(variables, self.queries)), None
+            except (ExprError, TypeError, ValueError, KeyError) as e:
+                ok, problem = False, f"could not be evaluated: {e}"
+            payload = {"verification_id": v.id, "tool": call.tool, "call_seq": call.seq, "passed": ok,
+                       "check": v.check, "action": None if ok else v.on_fail, "risk": v.risk.value}
+            if not ok:
+                reason = v.message or v.description or f"Verification '{v.id}' failed."
+                payload["reason"] = reason + (f" ({problem})" if problem else "")
+                if v.on_fail == "fail":
+                    payload["reported_output"] = result.output
+                    result.ok = False
+                    result.error = ToolError(code="VERIFICATION_FAILED",
+                                             message=f"{reason} The tool reported success, but the system of record "
+                                                     "does not confirm it.", retryable=False)
+                    result.output = None
+            events.append((TraceKind.VERIFICATION, payload))
+        return events
 

@@ -75,6 +75,7 @@ class TraceKind(str, Enum):
     FAULT_INJECTED = "fault_injected"  # AgentGym only; never emitted in production mode
     TOOL_RESULT = "tool_result"
     TAINT_LABELLED = "taint_labelled"
+    VERIFICATION = "verification"  # post-action check against the real system
     AGENT_OUTPUT = "agent_output"
     RUN_FINISHED = "run_finished"
 

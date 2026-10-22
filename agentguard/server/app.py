@@ -27,7 +27,7 @@ from agentguard.core.events import EventBus
 from agentguard.core.models import ApprovalStatus, RunRecord, TraceKind
 from agentguard.core.store import Store
 from agentguard.harnesses.base import make_harness
-from agentguard.shield.approvals import ApprovalQueue, AutoApprover
+from agentguard.shield.approvals import ApprovalQueue, AutoApprover, resolve_in_store
 
 DASHBOARD_DIST = Path(os.environ.get("AGENTGUARD_DASHBOARD_DIST")
                       or Path(__file__).resolve().parents[2] / "dashboard" / "dist")
@@ -236,7 +236,10 @@ def create_app(store: Store | None = None, reports_dir: Path = Path("reports"),
     @app.get("/api/approvals")
     def list_approvals(status: str | None = "pending") -> list[dict[str, Any]]:
         if status == "pending":
-            return [a.model_dump(mode="json") for a in approvals.pending()]
+            # this server's runs, plus runs in other processes (e.g. `agentguard protect`) sharing the store
+            mine = {a.id: a for a in approvals.pending()}
+            others = {a.id: a for a in store.list_approvals(status=ApprovalStatus.PENDING) if a.id not in mine}
+            return [a.model_dump(mode="json") for a in [*mine.values(), *others.values()]]
         st = ApprovalStatus(status) if status else None
         return [a.model_dump(mode="json") for a in store.list_approvals(status=st)][-100:]
 
@@ -246,7 +249,10 @@ def create_app(store: Store | None = None, reports_dir: Path = Path("reports"),
             raise HTTPException(404, "action must be approve or reject")
         body = body or Resolution()
         try:
-            a = approvals.resolve(approval_id, action == "approve", by=body.by, note=body.note)
+            if approvals.get(approval_id) is not None:
+                a = approvals.resolve(approval_id, action == "approve", by=body.by, note=body.note)
+            else:  # waited on by another process; it picks the decision up from the store
+                a = resolve_in_store(store, approval_id, action == "approve", by=body.by, note=body.note)
         except KeyError:
             raise HTTPException(404, f"no pending approval {approval_id}") from None
         except ValueError as e:

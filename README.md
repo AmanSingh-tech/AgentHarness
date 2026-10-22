@@ -107,6 +107,9 @@ fails closed.
   lookup of the same order has happened; `after_label` holds a write or external
   action that comes right after UNTRUSTED content; `rate` blocks a burst of
   irreversible calls. Each vote records the matched call sequence as evidence.
+- **Post-action verification** (`verify:`): after a tool reports success, a check
+  against the system of record (e.g. the refund is in the ledger) must hold, or
+  the agent gets `VERIFICATION_FAILED` instead of the false success.
 - **Injection heuristics** run on the task text, the arguments and every tool
   output. Flagged output is labelled `UNTRUSTED` and raises the risk of later
   writes. A block that happens after an injection says that the policy would
@@ -226,6 +229,22 @@ duplicate refund, incorrect success claims, runs with an unsafe side effect,
 injected actions blocked, policy violations attempted, blocks with an
 explanation, and audit completeness. Each combination is stored as a run set,
 so `agentguard compare` can diff any two.
+
+## Production mode
+
+The same gateway, policy, approvals and audit log run in front of a real system
+(`agentguard/runtime.py`), without fault injection or world snapshots.
+
+```bash
+uvicorn examples.payments_service:app --port 9100          # an example "existing system"
+agentguard protect --backend examples/payments_backend.yaml --agent-id support_agent   # MCP over stdio
+agentguard serve                                             # approve held calls in the dashboard
+```
+
+- **Backend.** `backends/http.py` maps the ToolSpecs onto an existing REST service (routes, auth headers from the environment, error mapping). Its `queries:` give policy rules and `verify:` checks read-only access to the system of record.
+- **Post-action verification.** After `issue_refund` reports success, `refund_landed` checks that the refund exists in the ledger. A false success never reaches the agent: try `PAYMENTS_FAULT=false_success_once`.
+- **Approvals.** These work across processes: a protected session waits on the store, and the dashboard decides.
+- **Regression from production.** `agentguard promote <run_id>` on a production run writes a draft scenario to `gym/scenario_drafts/`. It runs on the backend's `twin` world: blocked calls become `forbidden` entries, and failed verifications become `false_success` faults on the same call. Production has no ground truth, so a human completes the expected end state, moves the draft into `scenarios/regression/`, and `validate-scenarios` applies the usual gate.
 
 ## Audit log
 

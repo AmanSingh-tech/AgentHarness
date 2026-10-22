@@ -119,3 +119,31 @@ def test_unknown_tool(world):
     with pytest.raises(ToolExecutionError):
         world.execute("drop_tables", {})
     assert world.tool("issue_refund").irreversible is True
+
+
+def test_concurrent_tool_calls_are_safe():
+    """Agents such as LangGraph run tool calls in parallel threads against one world."""
+    import threading
+
+    from agentguard.world.support.world import SupportWorld
+
+    w = SupportWorld()
+    w.reset(42)
+    errors = []
+
+    def hammer(i):
+        for j in range(100):
+            try:
+                w.execute("get_order", {"order_id": "O-9001"})
+                w.execute("update_ticket", {"ticket_id": "T-77", "status": "pending", "notes": f"{i}-{j}"})
+                w.snapshot()
+            except Exception as e:  # pragma: no cover - only on regression
+                errors.append(repr(e))
+
+    threads = [threading.Thread(target=hammer, args=(i,)) for i in range(6)]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    assert errors == []
+    assert w.ticket("T-77")["notes"].count("\n") == 600

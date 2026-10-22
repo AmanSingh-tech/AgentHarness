@@ -85,9 +85,7 @@ def serve_http(server: Server, host: str = "127.0.0.1") -> Iterator[str]:
     """Serve on a free localhost port in a background thread; yields the MCP URL."""
     import uvicorn
 
-    with socket.socket() as sock:
-        sock.bind((host, 0))
-        port = sock.getsockname()[1]
+    port = _free_port(host)
     app = server.streamable_http_app(host=host)
     config = uvicorn.Config(app, host=host, port=port, log_level="warning", lifespan="on")
     httpd = uvicorn.Server(config)
@@ -103,6 +101,12 @@ def serve_http(server: Server, host: str = "127.0.0.1") -> Iterator[str]:
     finally:
         httpd.should_exit = True
         thread.join(timeout=10)
+
+
+def _free_port(host: str = "127.0.0.1") -> int:
+    with socket.socket() as sock:
+        sock.bind((host, 0))
+        return sock.getsockname()[1]
 
 
 # ---------------------------------------------------------------------------
