@@ -302,6 +302,23 @@ def mcp_serve(
     serve_scenario_stdio(find_scenario(scenario), _store(), shield=shield, client=client, run_set=run_set)
 
 
+@app.command("serve")
+def serve(
+    host: str = typer.Option("127.0.0.1", "--host"),
+    port: int = typer.Option(8000, "--port"),
+    reports: Path = typer.Option(Path("reports"), "--reports", help="Where benchmark reports are read and written"),
+) -> None:
+    """Start the API server and the dashboard."""
+    import uvicorn
+
+    from agentguard.server.app import DASHBOARD_DIST, create_app
+
+    if not DASHBOARD_DIST.is_dir():
+        typer.echo("Dashboard not built (cd dashboard && npm install && npm run build); serving the API only.")
+    typer.echo(f"AgentGuard on http://{host}:{port}")
+    uvicorn.run(create_app(_store(), reports_dir=reports), host=host, port=port, log_level="warning")
+
+
 @policy_app.command("validate")
 def policy_validate(path: Path = typer.Argument(..., exists=True, dir_okay=False)) -> None:
     """Validate a policy file; errors point at the YAML line."""

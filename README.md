@@ -15,7 +15,8 @@ A harness-agnostic trust and reliability layer for AI agents:
 | 4. AgentShield: policy DSL, risk, injection, taint, approvals | done |
 | 5. LLM harnesses (native Anthropic/OpenAI, LangGraph) + metrics | done (offline; live run needs API keys) |
 | MVP: regression loop, sequence patterns, agent v2 + benchmark + demo, MCP / Claude Code harness | done |
-| MVP: API server + dashboard, novelty comparison | next |
+| MVP: API server + dashboard | done |
+| MVP: novelty comparison and how-it-works docs | next |
 | Post-MVP: Docker CLI sandbox, remote HTTP harness, second domain, audit hash chain | later |
 
 ## Quickstart
@@ -139,6 +140,25 @@ Set keys in `.env` (see `.env.example`). Real-model tests are opt-in because
 they cost money: `AGENTGUARD_LIVE=1 pytest tests/test_live_models.py -s`.
 Without that flag, the harnesses are tested with fake clients that replay a
 fixed conversation through the real loop, gateway, shield and verifier.
+
+## Dashboard
+
+```bash
+cd dashboard && npm install && npm run build && cd ..   # once (Node 18+)
+.venv/bin/agentguard serve                              # http://127.0.0.1:8000
+```
+
+| Page | What it shows |
+|---|---|
+| Live run | Pick a scenario, an agent and the shield setting, and watch the trace stream in (call → decision → approval → fault → result), with blocks and faults highlighted. When the run ends: the agent's claim next to the ledger evidence (with "❌ Agent incorrectly reported success" when it lied), Diagnose, and Promote to regression |
+| Approvals | Calls held by AgentShield, waiting for you to approve or reject them (tick "Hold risky calls for my approval" when starting a run) |
+| Blocked actions | Every block and hold, with its rule, risk, reason, and the chain that triggered it (source → transform → sink, or the ordered call sequence) |
+| Benchmark | Runs the MVP benchmark and charts v1 vs v2 with the shield off and on; compares any two run sets |
+| Demo script | Runs demo steps 1–6 and shows each step's runs, blocks and the v1-vs-v2 table |
+| Policy | The default policy, validated as you type, with errors pointing at YAML lines |
+
+`npm run dev` serves the dashboard with hot reload on :5173, proxying `/api` to `agentguard serve`.
+The API (`agentguard/server/app.py`) is documented at `/docs` while the server runs.
 
 ## Claude Code (or any MCP client) as the agent under test
 

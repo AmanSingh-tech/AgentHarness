@@ -182,12 +182,17 @@ def run_once(
                       world=world, seed=seed, store=store, bus=bus, budget=budget, model=model,
                       agent_version=agent_version, scenario_id=scenario_id, extra_config=extra_config, faults=faults,
                       shield=shield, approvals=approvals)
+    return execute(run, agent)
+
+
+def execute(run: PreparedRun, agent: Any) -> RunResult:
+    """Drive a prepared run with a harness and finish it."""
     status = RunStatus.FINISHED
     try:
         run.start()
         agent.setup(run.ctx)
         try:
-            output = agent.run(task, run.endpoint, run.budget)
+            output = agent.run(run.task, run.endpoint, run.budget)
         finally:
             agent.teardown()
     except Exception as e:  # a crashing agent is a result, not a runner failure
