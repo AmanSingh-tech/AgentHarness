@@ -17,6 +17,8 @@ from agentguard.world import make_world
 app = typer.Typer(no_args_is_help=True, help="AgentGuard: test and protect AI agents.")
 world_app = typer.Typer(no_args_is_help=True, help="Inspect simulated worlds.")
 app.add_typer(world_app, name="world")
+policy_app = typer.Typer(no_args_is_help=True, help="Validate and inspect AgentShield policies.")
+app.add_typer(policy_app, name="policy")
 
 
 @world_app.command("reset")
@@ -85,6 +87,7 @@ def run(
     parallel: int = typer.Option(4, "--parallel", min=1),
     agent_version: Optional[str] = typer.Option(None, "--agent-version"),
     show_trace: bool = typer.Option(False, "--trace", help="Print the trace of each run"),
+    shield: bool = typer.Option(True, "--shield/--no-shield", help="Run with or without AgentShield"),
 ) -> None:
     """Run scenarios x harnesses x models x attempts and print verified results."""
     from agentguard.gym.faults import fault_log
@@ -94,7 +97,7 @@ def run(
     scenarios = _load(scenario, suite)
     result = run_matrix(
         scenarios, harness, store=store, models=model or [None], attempts=attempts,
-        parallel=parallel, agent_version=agent_version,
+        parallel=parallel, agent_version=agent_version, shield=shield,
     )
     failed = 0
     for cell in result.cells:
@@ -105,7 +108,12 @@ def run(
         for r in cell.runs:
             v = r.verdict
             typer.echo(f"         {r.run_id}  {v.outcome.value}")
-            faults = fault_log(store.get_trace(r.run_id))
+            trace = store.get_trace(r.run_id)
+            for ev in trace:
+                if ev.kind.value == "decision" and ev.payload["type"] != "ALLOW":
+                    p = ev.payload
+                    typer.echo(f"         shield: {p['type']} {p['tool']} [{p['rule_id']}, {p['risk']}] {p['reason']}")
+            faults = fault_log(trace)
             if faults:
                 typer.echo("         faults: " + ", ".join(f"{f['fault']}@{f['tool']}#{f['tool_call']}" for f in faults))
             if not v.passed:
@@ -122,12 +130,13 @@ def run(
 def validate(
     root: Optional[Path] = typer.Argument(None, help="Scenario file or directory (default: built-in suite)"),
     parallel: int = typer.Option(4, "--parallel", min=1),
+    shield: bool = typer.Option(True, "--shield/--no-shield", help="Validate with or without AgentShield"),
 ) -> None:
-    """Check every scenario fails for the null agent and passes for the oracle."""
+    """Check every scenario fails for the null agent and passes for its oracle."""
     from agentguard.gym.runner import validate_scenarios
     from agentguard.gym.scenario import SCENARIOS_DIR, load_scenarios
 
-    rows = validate_scenarios(load_scenarios(root or SCENARIOS_DIR), store=_store(), parallel=parallel)
+    rows = validate_scenarios(load_scenarios(root or SCENARIOS_DIR), store=_store(), parallel=parallel, shield=shield)
     for row in rows:
         mark = "ok  " if row.valid else "BAD "
         typer.echo(f"{mark} {row.scenario_id:32} null={row.null.outcome.value:26} oracle={row.oracle.outcome.value}")
@@ -139,6 +148,37 @@ def validate(
     bad = sum(not r.valid for r in rows)
     typer.echo(f"\n{len(rows) - bad}/{len(rows)} scenarios valid")
     raise typer.Exit(1 if bad else 0)
+
+
+@policy_app.command("validate")
+def policy_validate(path: Path = typer.Argument(..., exists=True, dir_okay=False)) -> None:
+    """Validate a policy file; errors point at the YAML line."""
+    from agentguard.shield.policy import PolicyError, load_policy
+
+    try:
+        p = load_policy(path)
+    except PolicyError as e:
+        typer.echo(str(e), err=True)
+        raise typer.Exit(1)
+    typer.echo(f"ok  {path}: {len(p.agents)} agents, {len(p.rules)} rules, {len(p.sequences)} sequences")
+
+
+@policy_app.command("show")
+def policy_show(ref: str = typer.Argument("default", help="Built-in policy name or path")) -> None:
+    """Summarise what each agent may do under a policy."""
+    from agentguard.shield.policy import load_policy
+
+    p = load_policy(ref)
+    for agent_id, agent in p.agents.items():
+        typer.echo(f"{agent_id}: {agent.description}")
+        for tool, perm in agent.tools.items():
+            extras = perm.model_dump(exclude_defaults=True, exclude={"allow"})
+            typer.echo(f"  {'allow' if perm.allow else 'DENY ':5} {tool:16} {extras or ''}")
+    for r in p.rules:
+        typer.echo(f"rule {r.id} on {r.when.tool}: {r.check} -> {r.on_fail.value} ({r.risk.value})")
+    for q in p.sequences:
+        typer.echo(f"sequence {q.id}: {[l.value for l in q.sources]} -> {q.sinks} via {q.through_transforms} "
+                   f"-> {q.on_match.value} ({q.risk.value})")
 
 
 if __name__ == "__main__":

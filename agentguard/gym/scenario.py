@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator, model_valida
 
 from agentguard.core.models import Budget, TaskSpec
 from agentguard.gym.faults import FaultSpec, FaultType  # noqa: F401  (re-exported)
+from agentguard.shield.pipeline import ShieldConfig
 from agentguard.world import WORLDS, World, make_world
 
 SCENARIOS_DIR = Path(__file__).parent / "scenarios"
@@ -83,6 +84,9 @@ class Scenario(BaseModel):
     params: dict[str, Any] = Field(default_factory=dict)  # structured slots for scripted agents
     initial_state: str | None = None
     faults: list[FaultSpec] = Field(default_factory=list)
+    shield: ShieldConfig = Field(default_factory=ShieldConfig)
+    # The reference agent that must pass this scenario in validate-scenarios.
+    oracle: str = "scripted:oracle"
     expected: Expected
     claims: ClaimRules = Field(default_factory=ClaimRules)
     budget: Budget = Field(default_factory=Budget)

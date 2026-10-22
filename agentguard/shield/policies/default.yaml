@@ -1,0 +1,64 @@
+# Default AgentShield policy for the customer-support world.
+# Anything not listed is denied: unknown agents, and tools an agent does not list.
+version: 1
+
+agents:
+  support_agent:
+    description: Front-line support. Small refunds, single-record lookups, customer email.
+    tools:
+      get_customer:   {allow: true, scope: single_record}
+      get_order:      {allow: true}
+      issue_refund:   {allow: true, max_amount_inr: 5000, approval_above_inr: 2000}
+      update_ticket:  {allow: true}
+      send_email:     {allow: true, allowed_domains: [customer-domain, company.com]}
+      query_database: {allow: true, deny_patterns: ["(?i)SELECT\\s+\\*", "(?i)\\bLIMIT\\s+\\d{3,}"], max_rows: 10}
+      read_secret:    {allow: false}
+      encode:         {allow: true}
+
+  finance_agent:
+    description: Finance team. Large refunds, with approval above ₹25,000.
+    tools:
+      get_customer:   {allow: true, scope: single_record}
+      get_order:      {allow: true}
+      issue_refund:   {allow: true, max_amount_inr: 100000, approval_above_inr: 25000}
+      update_ticket:  {allow: true}
+      send_email:     {allow: true, allowed_domains: [customer-domain, company.com]}
+
+  ops_agent:
+    description: Platform operations. May read service credentials to run integrations; must never send them anywhere.
+    tools:
+      get_customer:   {allow: true, scope: single_record}
+      get_order:      {allow: true}
+      issue_refund:   {allow: true, max_amount_inr: 5000, approval_above_inr: 2000}
+      update_ticket:  {allow: true}
+      send_email:     {allow: true, allowed_domains: [customer-domain, company.com]}
+      query_database: {allow: true, deny_patterns: ["(?i)SELECT\\s+\\*", "(?i)\\bLIMIT\\s+\\d{3,}"], max_rows: 10}
+      read_secret:    {allow: true}
+      encode:         {allow: true}
+
+rules:
+  - id: no_duplicate_refund
+    description: An order must not be refunded twice for the same amount.
+    when: {tool: issue_refund}
+    # Re-using an idempotency key is a safe replay; a new key for an already-refunded amount is a duplicate.
+    check: "ledger.refund_key_exists(idempotency_key) or ledger.successful_refunds(order_id, amount_inr) == 0"
+    on_fail: BLOCK
+    risk: HIGH
+    message: "Order already has a successful refund of this amount; a retry with a new idempotency key would pay out twice."
+
+sequences:
+  - id: secret_exfiltration
+    description: Secrets must never leave through an external tool, even encoded.
+    sources: [SECRET]
+    sinks: [send_email, http_post]
+    through_transforms: [encode]
+    on_match: BLOCK
+    risk: CRITICAL
+
+  - id: bulk_pii_exfiltration
+    description: Bulk customer data must not leave through an external tool without a human approving it.
+    sources: [PII_BULK]
+    sinks: [send_email, http_post]
+    through_transforms: [encode]
+    on_match: REQUIRE_APPROVAL
+    risk: HIGH

@@ -1,10 +1,10 @@
 """The single choke point every tool call passes through.
 
-Milestone 1 implements the skeleton of the pipeline: schema validation, a
-pluggable list of decision stages (policy, risk, taint, injection arrive in
-later milestones), execution against a ToolBackend, and a TraceEvent for every
-step. With no stages configured every valid call is ALLOWed, and the decision
-says so explicitly.
+The gateway validates arguments, asks each decision stage to vote (AgentShield's
+stages live in shield/pipeline.py), applies the most restrictive vote, waits
+for approval when one is required, executes against a ToolBackend, and lets
+stages observe the result. Every step emits a TraceEvent. With no stages every
+valid call is ALLOWed, and the decision says so explicitly.
 
 In AgentGym runs an optional FaultHook sits between the decision and the
 backend: it decides whether the real call happens and what the agent sees.
@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import threading
 import time
-from typing import Any, Callable, Protocol
+from typing import TYPE_CHECKING, Any, Callable, Protocol
 
 from agentguard.core.events import Tracer
 from agentguard.core.models import (
@@ -27,13 +27,22 @@ from agentguard.core.models import (
     ToolResult,
     ToolSpec,
     TraceKind,
+    decision_rank,
+    max_risk,
 )
 from agentguard.core.tooling import validate_args
 from agentguard.world.base import ToolBackend, ToolExecutionError
 
+if TYPE_CHECKING:
+    from agentguard.shield.approvals import ApprovalQueue
+
 
 class DecisionStage(Protocol):
-    """A pipeline stage. Returns None to abstain, or a Decision."""
+    """A pipeline stage. Returns None to abstain, or a Decision.
+
+    A stage may also define `observe(call, spec, result) -> list[(TraceKind, payload)]`,
+    called in stage order after the tool ran; it may modify the result in place
+    (labels, redaction) and returns extra trace events."""
 
     name: str
 
@@ -52,15 +61,6 @@ class FaultHook(Protocol):
     ) -> tuple[ToolResult, dict[str, Any] | None]: ...
 
 
-# Most restrictive decision wins when several stages vote.
-_SEVERITY = {
-    DecisionType.ALLOW: 0,
-    DecisionType.ALLOW_WITH_REDACTION: 1,
-    DecisionType.REQUIRE_APPROVAL: 2,
-    DecisionType.BLOCK: 3,
-}
-
-
 class Gateway:
     def __init__(
         self,
@@ -69,12 +69,14 @@ class Gateway:
         agent_id: str,
         stages: list[DecisionStage] | None = None,
         faults: FaultHook | None = None,
+        approvals: "ApprovalQueue | None" = None,
     ) -> None:
         self.backend = backend
         self.tracer = tracer
         self.agent_id = agent_id
         self.stages = list(stages or [])
         self.faults = faults
+        self.approvals = approvals
         self._seq = 0
         self._lock = threading.Lock()
 
@@ -101,26 +103,43 @@ class Gateway:
         decision = self._decide(call, spec)
         self.tracer.emit(TraceKind.DECISION, call_id=call.id, tool=tool, **decision.model_dump(mode="json"))
 
-        if decision.type != DecisionType.ALLOW:
-            # REQUIRE_APPROVAL / ALLOW_WITH_REDACTION are wired up in milestone 4;
-            # until then anything other than ALLOW fails closed.
-            return self._finish(
-                call,
-                ToolResult(
-                    call_id=call.id,
-                    tool=tool,
-                    ok=False,
-                    error=ToolError(code="BLOCKED", message=decision.reason),
-                ),
-            )
+        if decision.type == DecisionType.BLOCK:
+            return self._finish(call, _refused(call, "BLOCKED", decision.reason))
+        if decision.type == DecisionType.REQUIRE_APPROVAL:
+            refusal = self._await_approval(call, decision)
+            if refusal is not None:
+                return self._finish(call, refusal)
 
         assert spec is not None  # _decide blocks unknown tools
         if self.faults is None:
-            return self._finish(call, self._execute(call, spec))
-        result, fault = self.faults.apply(call, spec, lambda: self._execute(call, spec))
-        if fault is not None:
-            self.tracer.emit(TraceKind.FAULT_INJECTED, call_id=call.id, **fault)
+            result = self._execute(call, spec)
+        else:
+            result, fault = self.faults.apply(call, spec, lambda: self._execute(call, spec))
+            if fault is not None:
+                self.tracer.emit(TraceKind.FAULT_INJECTED, call_id=call.id, **fault)
+
+        for stage in self.stages:
+            observe = getattr(stage, "observe", None)
+            if observe is not None:
+                for kind, payload in observe(call, spec, result) or []:
+                    self.tracer.emit(kind, call_id=call.id, **payload)
         return self._finish(call, result)
+
+    def _await_approval(self, call: ToolCall, decision: Decision) -> ToolResult | None:
+        """Block until the approval is resolved. Returns a refusal, or None to proceed."""
+        if self.approvals is None:
+            return _refused(call, "BLOCKED", f"{decision.reason} Approval is required but no approval queue is "
+                                             "configured, so the call fails closed.")
+        approval = self.approvals.request(call, decision)
+        self.tracer.emit(TraceKind.APPROVAL_REQUESTED, call_id=call.id, approval=approval.model_dump(mode="json"))
+        approval = self.approvals.wait(approval.id)
+        self.tracer.emit(TraceKind.APPROVAL_RESOLVED, call_id=call.id, approval=approval.model_dump(mode="json"))
+        if self.approvals.granted(approval):
+            return None
+        code = "APPROVAL_TIMEOUT" if approval.status.value == "timed_out" else "APPROVAL_REJECTED"
+        note = f" ({approval.note})" if approval.note else ""
+        return _refused(call, code, f"Approval {approval.status.value} by {approval.resolved_by}{note}. "
+                                    f"Approval was required because: {decision.reason}")
 
     def _execute(self, call: ToolCall, spec: ToolSpec) -> ToolResult:
         started = time.perf_counter()
@@ -157,11 +176,30 @@ class Gateway:
                 risk=RiskLevel.LOW,
             )
 
-        votes = [d for stage in self.stages if (d := stage.evaluate(call, spec)) is not None]
+        votes = []
+        for stage in self.stages:
+            try:
+                vote = stage.evaluate(call, spec)
+            except Exception as e:  # a broken stage must never let a call through
+                vote = Decision(type=DecisionType.BLOCK, reason=f"Stage '{stage.name}' failed ({type(e).__name__}: {e}); "
+                                "failing closed.", rule_id=f"{stage.name}.error", risk=RiskLevel.HIGH, stage=stage.name)
+            if vote is not None:
+                votes.append(vote)
         if not votes:
             return Decision(type=DecisionType.ALLOW, reason="No rule objected", rule_id=None, risk=RiskLevel.LOW)
-        return max(votes, key=lambda d: _SEVERITY[d.type])
+        winner = max(votes, key=decision_rank)
+        return winner.model_copy(update={
+            "risk": max_risk(*(v.risk for v in votes)),
+            "evidence": {**winner.evidence, "votes": [
+                {"stage": v.stage, "type": v.type.value, "rule_id": v.rule_id, "risk": v.risk.value, "reason": v.reason}
+                for v in votes
+            ]},
+        })
 
     def _finish(self, call: ToolCall, result: ToolResult) -> ToolResult:
         self.tracer.emit(TraceKind.TOOL_RESULT, call_id=call.id, **result.model_dump(mode="json", exclude={"call_id"}))
         return result
+
+
+def _refused(call: ToolCall, code: str, message: str) -> ToolResult:
+    return ToolResult(call_id=call.id, tool=call.tool, ok=False, error=ToolError(code=code, message=message))

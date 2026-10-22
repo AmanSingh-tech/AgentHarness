@@ -250,8 +250,26 @@ class SupportWorld(World):
         )
         return [dict(r) for r in rows]
 
-    def successful_refunds(self, order_id: str) -> int:
-        return sum(1 for r in self.refunds_for(order_id) if r["status"] == "SUCCESS")
+    def successful_refunds(self, order_id: str, amount_inr: int | None = None) -> int:
+        return sum(
+            1 for r in self.refunds_for(order_id)
+            if r["status"] == "SUCCESS" and (amount_inr is None or r["amount_inr"] == amount_inr)
+        )
+
+    def refund_key_exists(self, idempotency_key: str) -> bool:
+        row = self.db.execute(
+            "SELECT 1 FROM payments_ledger WHERE idempotency_key = ? AND type = 'refund'", (idempotency_key,)
+        ).fetchone()
+        return row is not None
+
+    def rule_queries(self) -> dict[str, dict[str, Any]]:
+        return {
+            "ledger": {
+                "successful_refunds": self.successful_refunds,
+                "refund_key_exists": self.refund_key_exists,
+                "refunded_total": self._refunded_total,
+            }
+        }
 
     def emails_to(self, needle: str) -> list[dict[str, Any]]:
         rows = self.db.execute('SELECT * FROM outbox WHERE lower("to") LIKE ? ORDER BY id', (f"%{needle.lower()}%",))

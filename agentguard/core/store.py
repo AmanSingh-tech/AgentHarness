@@ -1,4 +1,4 @@
-"""Persistence for runs and traces (approvals and scenarios arrive in later milestones).
+"""Persistence for runs, traces and approvals (scenarios arrive in a later milestone).
 
 SQLite by default; only portable column types (JSON, text, ints, timestamps)
 are used so the same models work on Postgres.
@@ -16,6 +16,8 @@ from sqlmodel import Field, Session, SQLModel, create_engine, select
 
 from agentguard.core.models import (
     AgentOutput,
+    Approval,
+    ApprovalStatus,
     RunRecord,
     RunStatus,
     TraceEvent,
@@ -54,6 +56,20 @@ class TraceEventRow(SQLModel, table=True):
     ts: datetime
     call_id: str | None = None
     payload: dict = Field(default_factory=dict, sa_column=Column(JSON, nullable=False))
+
+
+class ApprovalRow(SQLModel, table=True):
+    __tablename__ = "approvals"
+
+    id: str = Field(primary_key=True)
+    run_id: str = Field(index=True)
+    call_id: str
+    agent_id: str
+    tool: str
+    status: str = Field(index=True)
+    data: dict = Field(default_factory=dict, sa_column=Column(JSON, nullable=False))  # the full Approval
+    created_at: datetime
+    resolved_at: datetime | None = None
 
 
 class Store:
@@ -144,6 +160,35 @@ class Store:
                 )
                 for r in rows
             ]
+
+
+    # -- approvals ----------------------------------------------------------
+
+    def save_approval(self, approval: Approval) -> None:
+        with self._lock, Session(self.engine) as s:
+            row = s.get(ApprovalRow, approval.id) or ApprovalRow(
+                id=approval.id, run_id=approval.run_id, call_id=approval.call_id, agent_id=approval.agent_id,
+                tool=approval.tool, status=approval.status.value, created_at=approval.created_at,
+            )
+            row.status = approval.status.value
+            row.data = approval.model_dump(mode="json")
+            row.resolved_at = approval.resolved_at
+            s.add(row)
+            s.commit()
+
+    def get_approval(self, approval_id: str) -> Approval | None:
+        with self._lock, Session(self.engine) as s:
+            row = s.get(ApprovalRow, approval_id)
+            return Approval.model_validate(row.data) if row else None
+
+    def list_approvals(self, status: ApprovalStatus | None = None, run_id: str | None = None) -> list[Approval]:
+        with self._lock, Session(self.engine) as s:
+            q = select(ApprovalRow).order_by(ApprovalRow.created_at)
+            if status is not None:
+                q = q.where(ApprovalRow.status == status.value)
+            if run_id is not None:
+                q = q.where(ApprovalRow.run_id == run_id)
+            return [Approval.model_validate(r.data) for r in s.exec(q).all()]
 
 
 def _run_to_row(record: RunRecord) -> dict[str, Any]:

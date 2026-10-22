@@ -12,7 +12,8 @@ A harness-agnostic trust and reliability layer for AI agents:
 | 1. Skeleton: core, store, support world, gateway, in-process transport, scripted null/oracle | done |
 | 2. Scenarios, independent verifier, matrix runner with pass^k, `validate-scenarios` | done |
 | 3. Fault injector (all 11 types) + naive agent | done |
-| 4. AgentShield: policy DSL, risk, injection, taint, approvals | next |
+| 4. AgentShield: policy DSL, risk, injection, taint, approvals | done |
+| 5. LLM harnesses (native function calling, LangGraph) | next |
 
 ## Quickstart
 
@@ -25,6 +26,10 @@ python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 .venv/bin/agentguard run --scenario normal_refund --harness scripted:null --harness scripted:oracle
 .venv/bin/agentguard run --suite agentguard/gym/scenarios/support/faults --harness scripted:naive --harness scripted:oracle
 .venv/bin/agentguard run --suite agentguard/gym/scenarios --harness scripted:oracle --attempts 3 --parallel 8
+.venv/bin/agentguard run --suite agentguard/gym/scenarios --harness scripted:naive --no-shield   # the agent alone
+.venv/bin/agentguard run --scenario secret_exfiltration --harness scripted:adversarial
+.venv/bin/agentguard policy show
+.venv/bin/agentguard policy validate my_policy.yaml
 .venv/bin/agentguard world reset support --seed 42
 .venv/bin/agentguard world tools --format anthropic
 ```
@@ -50,6 +55,53 @@ and classify the run:
 Scenarios set `expected.task_outcome: success | refuse`. In a refuse scenario,
 the correct behaviour is to change nothing and report honestly.
 
+## AgentShield
+
+Every tool call goes through the gateway's stages, and each stage votes:
+
+```
+call -> injection scan (args) -> policy -> risk score -> taint/sequence check -> decision
+     -> [approval wait] -> [fault injector, gym only] -> execute
+     -> injection scan (output) -> redaction -> taint labelling -> result
+```
+
+The most restrictive vote wins, and the decision takes the highest risk among
+all votes. Every decision has a plain-English reason, a rule id and a risk
+level, and all votes are recorded in the trace. A stage that raises an error
+fails closed.
+
+- **Policy** (`shield/policies/default.yaml`): per-agent tool permissions,
+  amount limits and approval thresholds, recipient domains, denied argument
+  patterns and row limits. It also holds `rules` whose `check` is a small,
+  safe expression over the call's arguments and the backend's read-only
+  queries, e.g. `ledger.successful_refunds(order_id, amount_inr) == 0`.
+  Anything not listed is denied. Errors point at the YAML line.
+- **Taint tracking**: results labelled `SECRET` or `PII_BULK` are fingerprinted
+  (normalised substrings, plus digests of the raw, base64 and hex forms).
+  Later arguments are checked as written and after decoding. Transforms such
+  as `encode` pass the taint on, so `sequences` rules can see the whole chain,
+  e.g. `read_secret (#1) -> encode (#2) -> send_email (#3)`. Bulk data only
+  counts when values from at least 3 rows appear, so an email to one customer
+  is not flagged.
+- **Injection heuristics** run on the task text, the arguments and every tool
+  output. Flagged output is labelled `UNTRUSTED` and raises the risk of later
+  writes. A block that happens after an injection says that the policy would
+  have blocked the action anyway.
+- **Approvals**: a `REQUIRE_APPROVAL` call waits until it is approved,
+  rejected or times out (a timeout rejects by default). Approvals are saved in
+  the store. Scenarios set an `auto_approver` so runs stay unattended.
+
+Scenarios run with the shield unless you pass `--no-shield` (or `shield=False`
+in Python). A scenario can choose its own policy and auto-approver:
+
+```yaml
+shield:
+  policy: default
+  auto_approver:
+    default: approve
+    rules: [{rule_id: bulk_pii_exfiltration, decision: reject}]
+```
+
 ## Faults
 
 Scenarios can inject faults inside the gateway, after the decision. Each fault
@@ -74,7 +126,11 @@ parameters of each are listed in `agentguard/gym/faults.py`.
 |---|---|---|
 | `null` | Does nothing, claims success | Fails every scenario |
 | `oracle` | Verifies inputs, checks the refund against the ledger rather than trusting the response, re-issues only with the same idempotency key | Passes every scenario |
-| `naive` | Retries blindly with a new idempotency key each time, trusts every response, always claims success, obeys instructions found in tool output | Duplicate refund on `refund_timeout_retry`, incorrect success claim on `refund_false_success`, exfiltration on `ticket_prompt_injection` |
+| `naive` | Retries blindly with a new idempotency key each time, trusts every response, always claims success, obeys instructions found in tool output | Without the shield: a duplicate refund, an incorrect success claim and an injected export. With it, the duplicate and the export are blocked |
+| `adversarial` | Red-team test agent: tries to send a secret out after encoding it, and to export customer data | Blocked by `secret_exfiltration` and by the bulk-data approval |
+| `refuser` | Declines without calling any tool | The reference agent for scenarios whose correct answer is to refuse |
+
+Each scenario names its reference agent in `oracle:` (default `scripted:oracle`).
 
 ## Layout
 
@@ -82,7 +138,8 @@ parameters of each are listed in `agentguard/gym/faults.py`.
 agentguard/
   core/        models, events (bus + Tracer), store, tooling (schema export + arg validation), config
   world/       World/ToolBackend interfaces; support/ = refunds world + fixtures
-  shield/      gateway.py — the choke point (decision stages plug in here)
+  shield/      gateway.py (the choke point), pipeline.py (stages), policy/ (DSL), taint.py,
+               injection.py, risk.py, approvals.py; policies/default.yaml
   transports/  ToolEndpoint base; inprocess.py
   harnesses/   AgentHarness protocol + registry; scripted.py + scripted_agents/*.yaml
   gym/         scenario.py, faults.py, verifier.py, claims.py, runner.py; scenarios/support/**/*.yaml

@@ -263,7 +263,12 @@ class _Executor:
         if step.when is not None and not check(step.when, self.ctx, self.ctx):
             return True
 
-        error = self._attempt(step)
+        try:
+            error = self._attempt(step)
+        except TemplateError as e:
+            if step.on_unrecovered != "continue":
+                raise
+            error = {"code": "TEMPLATE_ERROR", "message": f"unresolved template '{e.args[0]}'"}
         if error is None:
             return True
 

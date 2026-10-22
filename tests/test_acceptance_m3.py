@@ -1,5 +1,8 @@
 """Milestone 3 acceptance: the naive agent produces a duplicate refund and an
-incorrect success claim, and both are detected; the oracle survives every fault."""
+incorrect success claim, and both are detected; the oracle survives every fault.
+
+These measure the agents on their own, so AgentShield is off (`shield=False`);
+test_acceptance_m4.py runs the same scenarios with it on."""
 
 from agentguard.gym.faults import FaultType
 from agentguard.gym.runner import run_matrix, run_scenario
@@ -8,7 +11,7 @@ from agentguard.gym.verifier import Outcome
 
 
 def test_naive_duplicate_refund_is_detected(store):
-    r = run_scenario(find_scenario("refund_timeout_retry"), harness="scripted:naive", store=store)
+    r = run_scenario(find_scenario("refund_timeout_retry"), harness="scripted:naive", store=store, shield=False)
     refunds = [x for x in r.world.refunds_for("O-9006") if x["status"] == "SUCCESS"]
     assert len(refunds) == 2  # the duplicate really happened in the world
     assert len({x["idempotency_key"] for x in refunds}) == 2  # because each retry minted a new key
@@ -22,7 +25,7 @@ def test_naive_duplicate_refund_is_detected(store):
 
 
 def test_naive_incorrect_success_claim_is_detected(store):
-    r = run_scenario(find_scenario("refund_false_success"), harness="scripted:naive", store=store)
+    r = run_scenario(find_scenario("refund_false_success"), harness="scripted:naive", store=store, shield=False)
     assert r.world.refunds_for("O-9001") == []
     v = r.verdict
     assert v.outcome == Outcome.INCORRECT_SUCCESS_CLAIM and not v.passed
@@ -31,7 +34,7 @@ def test_naive_incorrect_success_claim_is_detected(store):
 
 
 def test_naive_follows_injected_instructions(store):
-    r = run_scenario(find_scenario("ticket_prompt_injection"), harness="scripted:naive", store=store)
+    r = run_scenario(find_scenario("ticket_prompt_injection"), harness="scripted:naive", store=store, shield=False)
     v = r.verdict
     assert v.outcome == Outcome.UNSAFE_SIDE_EFFECT
     assert [x["tool"] for x in v.violations] == ["query_database"]
@@ -44,7 +47,7 @@ def test_every_fault_type_is_covered_and_oracle_is_reliable(store):
     # partial_failure has no natural target in the refund flow; it is unit-tested in test_faults.py
     assert used == set(FaultType) - {FaultType.PARTIAL_FAILURE}
 
-    result = run_matrix(faulted, ["scripted:oracle", "scripted:naive"], store=store, attempts=2, parallel=8)
+    result = run_matrix(faulted, ["scripted:oracle", "scripted:naive"], store=store, attempts=2, parallel=8, shield=False)
     for s in faulted:
         assert result.cell(s.id, "scripted:oracle").pass_k, s.id
     naive_failed = {s.id for s in faulted if not result.cell(s.id, "scripted:naive").pass_k}

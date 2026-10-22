@@ -29,7 +29,10 @@ from agentguard.gym.faults import FaultInjector
 from agentguard.gym.scenario import Scenario
 from agentguard.gym.verifier import Verdict, verify
 from agentguard.harnesses.base import make_harness
+from agentguard.shield.approvals import ApprovalQueue
 from agentguard.shield.gateway import FaultHook, Gateway
+from agentguard.shield.pipeline import Shield, ShieldConfig
+from agentguard.shield.policy import load_policy, resolve_policy_path
 from agentguard.transports.inprocess import InProcessEndpoint
 from agentguard.world import World, make_world
 
@@ -70,7 +73,9 @@ def run_once(
     scenario_id: str | None = None,
     extra_config: dict[str, Any] | None = None,
     faults: FaultHook | None = None,
+    shield: ShieldConfig | None = None,
 ) -> RunResult:
+    """Run one agent on one task. `shield=None` runs without AgentShield (no policy stages)."""
     bus = bus or EventBus()
     budget = budget or Budget()
     w = make_world(world) if isinstance(world, str) else world
@@ -94,6 +99,8 @@ def run_once(
         "run_context": ctx.model_dump(mode="json"),
         "harness_type": agent.harness_type.value,
         "capabilities": agent.capabilities.model_dump(),
+        "shield": shield.model_dump(mode="json") | {"policy_path": str(resolve_policy_path(shield.policy))}
+        if shield and shield.enabled else None,
         **(extra_config or {}),
     }
     store.create_run(
@@ -112,12 +119,23 @@ def run_once(
 
     unsubscribe = bus.subscribe(store.append_event, run_id=run_id)
     tracer = Tracer(bus, run_id)
-    gateway = Gateway(w, tracer, agent_id=task.agent_role, faults=faults)
+    pipeline: Shield | None = None
+    approvals: ApprovalQueue | None = None
+    if shield is not None and shield.enabled:
+        pipeline = Shield(load_policy(shield.policy), w)
+        approvals = ApprovalQueue(store, auto=shield.auto_approver, timeout_s=shield.approval_timeout_s)
+    gateway = Gateway(w, tracer, agent_id=task.agent_role, stages=pipeline.stages if pipeline else None,
+                      faults=faults, approvals=approvals)
     endpoint = InProcessEndpoint(gateway)
 
     status = RunStatus.FINISHED
     try:
         tracer.emit(TraceKind.RUN_STARTED, **config)
+        if pipeline is not None:
+            findings = pipeline.scan_task(task.text)
+            if findings:
+                tracer.emit(TraceKind.INJECTION_DETECTED, source="task", findings=[f.to_dict() for f in findings],
+                            note="Task text flagged as a possible injection. Policy still governs every action.")
         agent.setup(ctx)
         try:
             output = agent.run(task, endpoint, budget)
@@ -150,7 +168,9 @@ def run_scenario(
     model: str | None = None,
     agent_version: str | None = None,
     bus: EventBus | None = None,
+    shield: bool = True,
 ) -> RunResult:
+    """`shield=False` runs the scenario without AgentShield, to measure the agent on its own."""
     faults = None
     if scenario.faults:
         def baseline() -> World:
@@ -172,6 +192,7 @@ def run_scenario(
         scenario_id=scenario.id,
         extra_config={"scenario": scenario.model_dump(mode="json")},
         faults=faults,
+        shield=scenario.shield if shield else None,
     )
     result.verdict = verify(
         scenario,
@@ -234,6 +255,7 @@ def run_matrix(
     attempts: int = 1,
     parallel: int = 4,
     agent_version: str | None = None,
+    shield: bool = True,
 ) -> MatrixResult:
     cells = [Cell(s.id, h, m) for s in scenarios for h in harnesses for m in models]
     by_id = {s.id: s for s in scenarios}
@@ -253,6 +275,7 @@ def run_matrix(
                     model=cell.model,
                     agent_version=agent_version,
                     bus=bus,
+                    shield=shield,
                 )
             cell.runs.append(result)
 
@@ -275,12 +298,19 @@ class ValidationRow:
 
 def validate_scenarios(
     scenarios: Iterable[Scenario], *, store: Store, parallel: int = 4,
-    null: str = "scripted:null", oracle: str = "scripted:oracle",
+    null: str = "scripted:null", oracle: str | None = None, shield: bool = True,
 ) -> list[ValidationRow]:
+    """Each scenario must fail for `null` and pass for its oracle (`oracle` overrides
+    every scenario's own `oracle:` field)."""
     scenarios = list(scenarios)
-    result = run_matrix(scenarios, [null, oracle], store=store, parallel=parallel)
-    rows = []
+    nulls = run_matrix(scenarios, [null], store=store, parallel=parallel, shield=shield)
+    by_oracle: dict[str, list[Scenario]] = {}
     for s in scenarios:
-        n, o = result.cell(s.id, null).verdicts[0], result.cell(s.id, oracle).verdicts[0]
-        rows.append(ValidationRow(s.id, n, o))
-    return rows
+        by_oracle.setdefault(oracle or s.oracle, []).append(s)
+    oracles = {
+        (s.id, h): run.cell(s.id, h).verdicts[0]
+        for h, group in by_oracle.items()
+        for run in [run_matrix(group, [h], store=store, parallel=parallel, shield=shield)]
+        for s in group
+    }
+    return [ValidationRow(s.id, nulls.cell(s.id, null).verdicts[0], oracles[(s.id, oracle or s.oracle)]) for s in scenarios]

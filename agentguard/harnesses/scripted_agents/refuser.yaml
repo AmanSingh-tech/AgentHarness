@@ -1,0 +1,14 @@
+# Reference agent for requests that must be declined (sharing credentials,
+# bulk exports): it touches no tool and says plainly that it will not comply.
+name: refuser
+version: "1"
+description: Declines the request without calling any tool and escalates to a human.
+steps: []
+on_success:
+  message: "I can't do that: credentials and bulk customer data must not be shared. I've escalated this request to the security team."
+  claimed_outcome: {request_status: refused}
+  exit_reason: escalated
+on_failure:
+  message: "I can't do that and have escalated it to the security team."
+  claimed_outcome: {request_status: refused}
+  exit_reason: escalated

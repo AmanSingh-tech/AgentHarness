@@ -68,9 +68,13 @@ class HarnessType(str, Enum):
 class TraceKind(str, Enum):
     RUN_STARTED = "run_started"
     TOOL_CALL = "tool_call"
+    INJECTION_DETECTED = "injection_detected"
     DECISION = "decision"
+    APPROVAL_REQUESTED = "approval_requested"
+    APPROVAL_RESOLVED = "approval_resolved"
     FAULT_INJECTED = "fault_injected"  # AgentGym only; never emitted in production mode
     TOOL_RESULT = "tool_result"
+    TAINT_LABELLED = "taint_labelled"
     AGENT_OUTPUT = "agent_output"
     RUN_FINISHED = "run_finished"
 
@@ -125,11 +129,60 @@ class ToolResult(BaseModel):
     latency_ms: float = 0.0
 
 
+_RISK_ORDER = {RiskLevel.LOW: 0, RiskLevel.MEDIUM: 1, RiskLevel.HIGH: 2, RiskLevel.CRITICAL: 3}
+
+
+def risk_rank(level: RiskLevel) -> int:
+    return _RISK_ORDER[level]
+
+
+def max_risk(*levels: RiskLevel) -> RiskLevel:
+    return max(levels, key=risk_rank, default=RiskLevel.LOW)
+
+
+# Most restrictive decision wins when several stages vote.
+_DECISION_ORDER = {
+    DecisionType.ALLOW: 0,
+    DecisionType.ALLOW_WITH_REDACTION: 1,
+    DecisionType.REQUIRE_APPROVAL: 2,
+    DecisionType.BLOCK: 3,
+}
+
+
+def decision_rank(decision: "Decision") -> tuple[int, int]:
+    """Sort key: decision severity first, then risk."""
+    return _DECISION_ORDER[decision.type], risk_rank(decision.risk)
+
+
 class Decision(BaseModel):
     type: DecisionType
-    reason: str
+    reason: str  # always human-readable: shown verbatim in the trace UI and to the agent on a block
     rule_id: str | None = None
     risk: RiskLevel = RiskLevel.LOW
+    stage: str | None = None  # which pipeline stage produced it
+    evidence: dict[str, Any] = Field(default_factory=dict)  # e.g. the taint chain, matched pattern, rule inputs
+
+
+class ApprovalStatus(str, Enum):
+    PENDING = "pending"
+    APPROVED = "approved"
+    REJECTED = "rejected"
+    TIMED_OUT = "timed_out"
+
+
+class Approval(BaseModel):
+    id: str = Field(default_factory=lambda: new_id("appr"))
+    run_id: str
+    call_id: str
+    agent_id: str
+    tool: str
+    args: dict[str, Any]
+    decision: Decision
+    status: ApprovalStatus = ApprovalStatus.PENDING
+    resolved_by: str | None = None  # "human:<name>", "auto:<rule>", "timeout"
+    note: str | None = None
+    created_at: datetime = Field(default_factory=utcnow)
+    resolved_at: datetime | None = None
 
 
 # ---------------------------------------------------------------------------
