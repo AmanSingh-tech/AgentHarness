@@ -6,7 +6,8 @@ data ingestion to decision, action and a verified outcome report. Every action g
 through **AgentShield**: least privilege per agent, business rules, injection and
 exfiltration defence, human approval, post-action verification and a hash-chained
 audit log. **AgentGym** tests the same agents with injected faults and grades them on
-what really happened. For the judges: [docs/hackathon.md](docs/hackathon.md).
+what really happened. For the judges: [docs/hackathon.md](docs/hackathon.md) · presenting:
+[docs/demo-guide.md](docs/demo-guide.md) · showcase site: [site/](site/) (served at `/site` by `agentguard serve`).
 
 ```bash
 agentguard ops run                      # RefundOps on the support inbox, with the outcome report

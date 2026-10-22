@@ -161,3 +161,10 @@ def test_ops_with_the_claude_decider(client, monkeypatch, tmp_path):
     assert run["outcome"] == "CORRECT_SUCCESS"  # the rules took over, and the report says why
     log = run["output"]["artifacts"]["report"]["decision_making"]
     assert log["decider"] == "claude:haiku" and "could not be started" in log["fallback"]
+
+
+def test_showcase_site_is_served(client):
+    page = client.get("/site/")
+    assert page.status_code == 200 and "AgentGuard" in page.text and "Run it yourself" in page.text
+    data = client.get("/site/data.js")
+    assert data.status_code == 200 and "CORRECT_SUCCESS" in data.text

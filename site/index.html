@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AgentGuard</title>
+  <meta name="description" content="Multi-agent systems that run real business processes, safe by construction, with the evidence to prove it. AgentOps 2026.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter+Tight:wght@300;400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    // Before first paint: enable the motion styles, and apply the saved theme (else the system's).
+    document.documentElement.classList.add("js");
+    try { const t = localStorage.getItem("ag-theme"); if (t) document.documentElement.dataset.theme = t; } catch (e) {}
+  </script>
+</head>
+<body>
+  <div class="loader" id="loader" aria-hidden="true">
+    <span class="mono loader-label">Trust is loading, please wait</span>
+    <span class="loader-count" id="loader-count">000%</span>
+  </div>
+
+  <header class="nav">
+    <a class="brand" href="#top">AgentGuard<sup class="mono">®</sup></a>
+    <nav class="nav-links mono" aria-label="Sections">
+      <a href="#process"><span>01</span> Process</a>
+      <a href="#demo"><span>02</span> Demo</a>
+      <a href="#controls"><span>03</span> Controls</a>
+      <a href="#run"><span>04</span> Run it</a>
+    </nav>
+    <div class="nav-actions">
+      <button class="icon-btn" id="theme" type="button" aria-label="Switch light or dark theme">
+        <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6.5" fill="none" stroke="currentColor"/><path d="M8 1.5a6.5 6.5 0 0 1 0 13z" fill="currentColor"/></svg>
+      </button>
+      <a class="btn btn-primary" href="#run"><span>Run the demo</span></a>
+    </div>
+  </header>
+
+  <main id="top">
+    <!-- Hero -->
+    <section class="hero">
+      <p class="label mono">AgentOps 2026 · CGI × MIT Bengaluru · Retail &amp; IT Infrastructure</p>
+      <h1 class="display reveal-words">Agents that run real business processes <span class="glyph">↪</span>and can prove it.</h1>
+      <div class="hero-foot">
+        <p class="lede">Four AI agents work a refund inbox and an IT access queue end to end. They ingest the work, decide, act, and report. Every action passes one guarded gateway that enforces the rules, holds risky steps for a human, and checks every outcome against the system of record.</p>
+        <div class="hero-cta">
+          <a class="btn btn-primary" href="#demo"><span>Replay a real run</span></a>
+          <a class="btn btn-ghost" href="https://github.com/AmanSingh-tech/AgentHarness"><span>GitHub ↗</span></a>
+        </div>
+      </div>
+      <dl class="hero-stats mono">
+        <div><dt>Policy check agreed with Claude</dt><dd>18 / 18</dd></div>
+        <div><dt>False success claims, shield on</dt><dd>0</dd></div>
+        <div><dt>Cost of a 10-ticket batch</dt><dd>$0.02</dd></div>
+        <div><dt>Independent verdict</dt><dd>CORRECT_SUCCESS</dd></div>
+      </dl>
+    </section>
+
+    <!-- Three statements -->
+    <section class="statements">
+      <article class="statement reveal">
+        <p class="label mono">Decide</p>
+        <h2 class="h2">Claude reads every case <span class="glyph">↪</span>a policy check has to agree.</h2>
+      </article>
+      <article class="statement reveal">
+        <p class="label mono">Act</p>
+        <h2 class="h2">Least privilege per agent. <span class="glyph">↪</span>Humans approve what matters.</h2>
+      </article>
+      <article class="statement reveal">
+        <p class="label mono">Prove</p>
+        <h2 class="h2">Graded on what happened, <span class="glyph">↪</span>not on what the agent said.</h2>
+      </article>
+    </section>
+
+    <!-- The business process -->
+    <section class="section" id="process">
+      <div class="section-head">
+        <p class="label mono">01 · The business process</p>
+        <h2 class="h1 reveal">From inbox <span class="glyph">↪</span>to verified outcome</h2>
+      </div>
+      <ol class="pipeline">
+        <li class="stage reveal"><span class="mono num">001</span><h3>Data ingestion</h3><p class="mono agent">intake_agent</p><p>Reads every open ticket or access request and extracts the order, amount, role and intent. Read-only.</p></li>
+        <li class="stage reveal"><span class="mono num">002</span><h3>Decision</h3><p class="mono agent">decision_agent · Claude</p><p>Claude decides from the customer's words plus looked-up facts. A rule-based check must agree, or a person decides.</p></li>
+        <li class="stage reveal"><span class="mono num">003</span><h3>Action</h3><p class="mono agent">action_agent</p><p>Refunds within limits, grants exactly what was asked, updates records and notifies people, all through the gateway.</p></li>
+        <li class="stage reveal"><span class="mono num">004</span><h3>Outcome report</h3><p class="mono agent">reporting_agent</p><p>Re-checks every refund in the ledger and every grant in the directory, then writes a report anyone can audit.</p></li>
+      </ol>
+    </section>
+
+    <!-- Live demo replay -->
+    <section class="section" id="demo">
+      <div class="section-head">
+        <p class="label mono">02 · Demo</p>
+        <h2 class="h1 reveal">Some of our <span class="glyph">⟶⟶</span> processes</h2>
+        <p class="lede narrow">Recorded from real runs with Claude Sonnet as the decision agent, through Claude Code. Press replay to watch the batch move through the four agents. Open any row to see Claude's reasoning next to the policy check.</p>
+      </div>
+
+      <div class="tabs mono" role="tablist" aria-label="Process">
+        <button role="tab" class="tab" aria-selected="true" data-process="refunds">PRCSS /01 · RefundOps</button>
+        <button role="tab" class="tab" aria-selected="false" data-process="access">PRCSS /02 · AccessOps</button>
+      </div>
+
+      <div class="demo">
+        <div class="demo-top">
+          <div>
+            <h3 class="h3" id="demo-title">RefundOps</h3>
+            <p class="mono muted" id="demo-meta">Retail and Supply · customer refunds</p>
+          </div>
+          <button class="btn btn-primary" id="replay" type="button"><span>Replay run</span></button>
+        </div>
+
+        <ol class="flow mono" id="flow" aria-label="Pipeline progress">
+          <li data-step="0">Ingest</li><li data-step="1">Decide</li><li data-step="2">Act</li><li data-step="3">Report</li>
+        </ol>
+
+        <div class="rows" id="rows" aria-live="polite"></div>
+
+        <div class="demo-foot" id="demo-foot" hidden>
+          <div class="tiles" id="tiles"></div>
+          <div class="verdict">
+            <span class="mono muted">Independent check of the world state</span>
+            <span class="pill pill-ok mono" id="verdict">CORRECT_SUCCESS</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Numbers -->
+    <section class="section" id="numbers">
+      <div class="section-head">
+        <p class="label mono">Measured, not claimed</p>
+        <h2 class="h1 reveal">Numbers <span class="glyph">↪</span>from commands in the repo</h2>
+      </div>
+      <ul class="grid-numbers">
+        <li class="reveal"><span class="big">0</span><span class="mono">duplicate refunds with the shield on (3 without)</span></li>
+        <li class="reveal"><span class="big">0</span><span class="mono">incorrect success claims with the shield on (3 without)</span></li>
+        <li class="reveal"><span class="big">96%</span><span class="mono">task success, v2 agent + shield, 25 scenarios × 3</span></li>
+        <li class="reveal"><span class="big">100%</span><span class="mono">recovery from injected faults, v2 agent</span></li>
+        <li class="reveal"><span class="big">18/18</span><span class="mono">Claude decisions confirmed by the policy check</span></li>
+        <li class="reveal"><span class="big">230</span><span class="mono">automated tests · 28 validated scenarios</span></li>
+      </ul>
+    </section>
+
+    <!-- Controls -->
+    <section class="section" id="controls">
+      <div class="section-head">
+        <p class="label mono">03 · Responsible AI</p>
+        <h2 class="h1 reveal">Controls that sit <span class="glyph">↪</span>outside the model</h2>
+      </div>
+      <ol class="services">
+        <li class="reveal"><span class="mono num">001</span><span class="name">Least privilege per agent</span><span class="mono desc">intake and reporting are read-only; only the action agent can refund or grant</span></li>
+        <li class="reveal"><span class="mono num">002</span><span class="name">AI decisions are checked</span><span class="mono desc">Claude's call stands only if a rule-based check agrees; otherwise a person decides</span></li>
+        <li class="reveal"><span class="mono num">003</span><span class="name">Business rules in policy</span><span class="mono desc">refund limits, verified customers, no duplicates, segregation of duties, expiry</span></li>
+        <li class="reveal"><span class="mono num">004</span><span class="name">Human approval</span><span class="mono desc">refunds above ₹2,000 and admin on critical systems wait for a click; timeout rejects</span></li>
+        <li class="reveal"><span class="mono num">005</span><span class="name">Prompt-injection defence</span><span class="mono desc">untrusted text is labelled, withheld from the model, and can't trigger actions</span></li>
+        <li class="reveal"><span class="mono num">006</span><span class="name">Data-exfiltration tracking</span><span class="mono desc">secrets followed through base64, hex and split calls to any external sink</span></li>
+        <li class="reveal"><span class="mono num">007</span><span class="name">Post-action verification</span><span class="mono desc">every refund and grant re-checked; a false "success" never reaches the agent</span></li>
+        <li class="reveal"><span class="mono num">008</span><span class="name">Honest reporting</span><span class="mono desc">the batch's claim is graded against the real end state</span></li>
+        <li class="reveal"><span class="mono num">009</span><span class="name">Tamper-evident audit</span><span class="mono desc">every event is hash-chained; edits, deletions and truncation are detected</span></li>
+        <li class="reveal"><span class="mono num">010</span><span class="name">Incidents become tests</span><span class="mono desc">a blocked run is promoted to a regression scenario, kept only if it's valid</span></li>
+      </ol>
+    </section>
+
+    <!-- Run it -->
+    <section class="section" id="run">
+      <div class="section-head">
+        <p class="label mono">04 · Run it yourself</p>
+        <h2 class="h1 reveal">Five minutes <span class="glyph">↪</span>to the same results</h2>
+        <p class="lede narrow">Needs Python 3.11+ and, for the dashboard, Node 18+. Claude as the decision agent uses your Claude Code login, so no API key is needed. Everything else runs fully offline.</p>
+      </div>
+
+      <div class="tabs mono" role="tablist" aria-label="How to run">
+        <button role="tab" class="tab" aria-selected="true" data-run="local">Local</button>
+        <button role="tab" class="tab" aria-selected="false" data-run="claude">With Claude</button>
+        <button role="tab" class="tab" aria-selected="false" data-run="docker">Docker</button>
+        <button role="tab" class="tab" aria-selected="false" data-run="verify">Verify</button>
+      </div>
+
+      <div class="steps" data-panel="local">
+        <div class="step"><span class="mono num">01</span><div><h3>Install</h3>
+          <div class="code"><pre><code>git clone https://github.com/AmanSingh-tech/AgentHarness
+cd AgentHarness
+python3 -m venv .venv
+.venv/bin/pip install -e ".[dev,llm,langgraph,mcp,server]"
+source .venv/bin/activate</code></pre><button class="copy mono" type="button">Copy</button></div></div></div>
+        <div class="step"><span class="mono num">02</span><div><h3>Run both business processes</h3>
+          <div class="code"><pre><code>agentguard ops run                     # RefundOps: the support inbox
+agentguard ops run --process access    # AccessOps: the IT access queue</code></pre><button class="copy mono" type="button">Copy</button></div>
+          <p class="muted">Each prints the outcome report, the controls that fired and the independent verdict, and saves the report under <code>reports/</code>.</p></div></div>
+        <div class="step"><span class="mono num">03</span><div><h3>Open the dashboard</h3>
+          <div class="code"><pre><code>cd dashboard &amp;&amp; npm install &amp;&amp; npm run build &amp;&amp; cd ..
+agentguard serve                       # http://127.0.0.1:8000</code></pre><button class="copy mono" type="button">Copy</button></div>
+          <p class="muted">Open <b>Business processes</b> and press <b>Work today's inbox</b>. The ₹4,500 refund waits for your approval. This page is also served at <code>/site</code>.</p></div></div>
+      </div>
+
+      <div class="steps" data-panel="claude" hidden>
+        <div class="step"><span class="mono num">01</span><div><h3>Log in to Claude Code once</h3>
+          <div class="code"><pre><code>claude                                 # sign in with your Claude account, then /exit</code></pre><button class="copy mono" type="button">Copy</button></div>
+          <p class="muted">If <code>claude</code> isn't on your PATH, set <code>AGENTGUARD_CLAUDE_BIN</code> to the binary.</p></div></div>
+        <div class="step"><span class="mono num">02</span><div><h3>Let Claude decide</h3>
+          <div class="code"><pre><code>agentguard ops run --decider claude --model sonnet
+agentguard ops run --process access --decider claude --model sonnet</code></pre><button class="copy mono" type="button">Copy</button></div>
+          <p class="muted">There's one batched call per process: about 12 seconds and $0.02. The report adds a Decision-making section showing how many decisions agreed, which went to a person, and which cases were withheld from the model.</p></div></div>
+        <div class="step"><span class="mono num">03</span><div><h3>Or in the dashboard</h3>
+          <p class="muted">On Business processes, set <b>Decisions</b> to <b>Claude + policy check</b> and choose Haiku, Sonnet or Opus. Each row shows who decided it.</p></div></div>
+      </div>
+
+      <div class="steps" data-panel="docker" hidden>
+        <div class="step"><span class="mono num">01</span><div><h3>One command</h3>
+          <div class="code"><pre><code>docker compose up --build              # or docker-compose up --build</code></pre><button class="copy mono" type="button">Copy</button></div>
+          <p class="muted">The dashboard and API are at <code>http://localhost:8000</code> and this page is at <code>/site</code>. Data persists in a volume.</p></div></div>
+      </div>
+
+      <div class="steps" data-panel="verify" hidden>
+        <div class="step"><span class="mono num">01</span><div><h3>Check every claim on this page</h3>
+          <div class="code"><pre><code>pytest -q                              # 230 tests
+agentguard validate-scenarios          # every scenario: the null agent fails, the oracle passes
+agentguard demo                        # the six demo steps, in the terminal
+agentguard benchmark --attempts 3      # v1/v2 × shield off/on, 25 scenarios
+agentguard audit verify                # recompute every run's hash chain</code></pre><button class="copy mono" type="button">Copy</button></div></div></div>
+      </div>
+    </section>
+
+    <!-- Demo script -->
+    <section class="section" id="script">
+      <div class="section-head">
+        <p class="label mono">The seven-minute demo</p>
+        <h2 class="h1 reveal">What to show <span class="glyph">↪</span>and in what order</h2>
+      </div>
+      <ol class="timeline">
+        <li class="reveal"><span class="mono t">0:00</span><div><h3>RefundOps, live</h3><p>Business processes → Work today's inbox. Four agents stream in. Approve the ₹4,500 refund. The report shows ₹6,000 confirmed in the ledger and the verdict <code>CORRECT_SUCCESS</code>.</p></div></li>
+        <li class="reveal"><span class="mono t">2:00</span><div><h3>Claude decides</h3><p>Switch Decisions to Claude + policy check and run again. Point at "decided by claude:sonnet, policy check agrees" and at T-108, withheld as an injection.</p></div></li>
+        <li class="reveal"><span class="mono t">3:00</span><div><h3>Reject an approval</h3><p>The batch reports itself unfinished. The verdict becomes <code>CORRECT_FAILURE_REPORTED</code>: honest, not "success".</p></div></li>
+        <li class="reveal"><span class="mono t">3:30</span><div><h3>AccessOps</h3><p>Approve the payments admin grant. Show the segregation-of-duties denial and the terminated employee.</p></div></li>
+        <li class="reveal"><span class="mono t">4:30</span><div><h3>Stop an exfiltration</h3><p>Live run → secret_exfiltration with the adversarial agent. Blocked actions shows read_secret → encode → send_email.</p></div></li>
+        <li class="reveal"><span class="mono t">5:30</span><div><h3>Catch a lie</h3><p>refund_false_success with the naive agent: shield off, the agent lies; shield on, post-action verification stops it.</p></div></li>
+        <li class="reveal"><span class="mono t">6:30</span><div><h3>Benchmark, then a regression test</h3><p>The v1/v2 × shield charts. Promote a blocked run to a regression scenario.</p></div></li>
+      </ol>
+      <p class="muted mono docs-links">Full guide: <a href="https://github.com/AmanSingh-tech/AgentHarness/blob/main/docs/demo-guide.md">docs/demo-guide.md</a> · Brief for judges: <a href="https://github.com/AmanSingh-tech/AgentHarness/blob/main/docs/hackathon.md">docs/hackathon.md</a></p>
+    </section>
+
+    <!-- Closing -->
+    <section class="closing">
+      <p class="label mono">Stay in touch</p>
+      <h2 class="display reveal">Let's build <span class="glyph">↪</span>agents people can trust</h2>
+      <div class="hero-cta">
+        <a class="btn btn-primary" href="#run"><span>Run it yourself</span></a>
+        <a class="btn btn-ghost" href="https://github.com/AmanSingh-tech/AgentHarness"><span>Star on GitHub ↗</span></a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer mono">
+    <span>AgentGuard · AgentGym + AgentShield</span>
+    <span>Built for AgentOps 2026 · Bengaluru</span>
+    <a href="#top">Back to top ↑</a>
+  </footer>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

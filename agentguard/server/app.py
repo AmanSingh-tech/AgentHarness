@@ -31,6 +31,7 @@ from agentguard.shield.approvals import ApprovalQueue, AutoApprover, resolve_in_
 
 DASHBOARD_DIST = Path(os.environ.get("AGENTGUARD_DASHBOARD_DIST")
                       or Path(__file__).resolve().parents[2] / "dashboard" / "dist")
+SITE_DIR = Path(os.environ.get("AGENTGUARD_SITE_DIR") or Path(__file__).resolve().parents[2] / "site")
 SUGGESTED_HARNESSES = [
     "scripted:oracle", "scripted:naive", "scripted:naive_v2", "scripted:adversarial", "scripted:refuser",
     "scripted:null", "mcp_client:claude-code", "native:anthropic", "langgraph:anthropic",
@@ -357,7 +358,10 @@ def create_app(store: Store | None = None, reports_dir: Path = Path("reports"),
             raise HTTPException(404, "no such job")
         return dict(jobs[job_id])
 
-    # -- dashboard ----------------------------------------------------------------------------------
+    # -- showcase site and dashboard -----------------------------------------------------------------
+
+    if SITE_DIR.is_dir():
+        app.mount("/site", StaticFiles(directory=SITE_DIR, html=True), name="site")
 
     if DASHBOARD_DIST.is_dir():
         app.mount("/assets", StaticFiles(directory=DASHBOARD_DIST / "assets"), name="assets")

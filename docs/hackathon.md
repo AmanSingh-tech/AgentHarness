@@ -105,6 +105,8 @@ The same gateway also protects real agents. Claude Code (Sonnet and Opus) ran th
 
 ## Demo script (about 7 minutes)
 
+The full presenter's guide, with setup, talking points and recovery steps, is in [demo-guide.md](demo-guide.md). The showcase site in [`site/`](../site/), served at `/site`, replays a real Claude run and has the run instructions.
+
 ```bash
 agentguard serve                     # http://127.0.0.1:8000
 ```

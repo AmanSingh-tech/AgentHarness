@@ -1,5 +1,5 @@
 # AgentGuard: API + dashboard (+ MCP / HTTP gateway) in one image.
-#   docker compose up        -> http://localhost:8000
+#   docker compose up        -> http://localhost:8000 (dashboard), /site (showcase)
 
 FROM node:20-bookworm-slim AS dashboard
 WORKDIR /dashboard
@@ -11,12 +11,14 @@ RUN npm run build
 FROM python:3.13-slim
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
     AGENTGUARD_DB_URL=sqlite:////data/agentguard.db \
-    AGENTGUARD_DASHBOARD_DIST=/app/dashboard/dist
+    AGENTGUARD_DASHBOARD_DIST=/app/dashboard/dist \
+    AGENTGUARD_SITE_DIR=/app/site
 WORKDIR /app
 COPY pyproject.toml README.md ./
 COPY agentguard/ agentguard/
 RUN pip install --no-cache-dir ".[llm,langgraph,mcp,server]"
 COPY --from=dashboard /dashboard/dist /app/dashboard/dist
+COPY site/ /app/site/
 RUN useradd --create-home agentguard && mkdir -p /data /app/reports && chown agentguard /data /app/reports
 USER agentguard
 VOLUME ["/data", "/app/reports"]
