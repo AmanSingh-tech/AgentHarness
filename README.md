@@ -230,6 +230,15 @@ injected actions blocked, policy violations attempted, blocks with an
 explanation, and audit completeness. Each combination is stored as a run set,
 so `agentguard compare` can diff any two.
 
+Real agents go in the same table, one column per agent × model × shield setting,
+with cost and tool calls per task added. Start small, since each run uses your
+subscription or API credit:
+
+```bash
+agentguard benchmark --agent mcp_client:claude-code --model sonnet --model opus \
+  --scenario ticket_prompt_injection --scenario refund_false_success --shield on --attempts 1
+```
+
 ## Production mode
 
 The same gateway, policy, approvals and audit log run in front of a real system

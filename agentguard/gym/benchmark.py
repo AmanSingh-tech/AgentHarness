@@ -36,18 +36,26 @@ def run_benchmark(
     scenarios: list[Scenario] | None = None,
     parallel: int = 8,
     stamp: str | None = None,
+    models: Sequence[str | None] = (None,),
 ) -> dict[str, Any]:
+    """`models` applies to model-driven agents (native:*, langgraph:*, mcp_client:*); each
+    agent x model x shield combination becomes one run set."""
     scenarios = scenarios if scenarios is not None else benchmark_suite()
     stamp = stamp or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     sets: dict[str, dict[str, Any]] = {}
     for agent in agents:
-        for shield in shield_modes:
-            name = f"{agent.split(':')[-1]}|shield-{'on' if shield else 'off'}|{stamp}"
-            run_matrix(scenarios, [agent], store=store, attempts=attempts, parallel=parallel, shield=shield,
-                       run_set=name, agent_version=agent)
-            row = summarise_set(store, name)
-            sets[name] = {"agent": agent, "shield": shield, "runs": row["runs"], "headline": headline(row),
-                          "blocks_by_rule": row["security"]["blocks_by_rule"]}
+        agent_models = (None,) if agent.startswith("scripted:") else models
+        for model in agent_models:
+            for shield in shield_modes:
+                label = agent.split(":")[-1] + (f"@{model}" if model else "")
+                name = f"{label}|shield-{'on' if shield else 'off'}|{stamp}"
+                run_matrix(scenarios, [agent], store=store, models=[model], attempts=attempts, parallel=parallel,
+                           shield=shield, run_set=name, agent_version=agent)
+                row = summarise_set(store, name)
+                sets[name] = {"agent": agent, "model": model, "shield": shield, "runs": row["runs"],
+                              "headline": headline(row), "blocks_by_rule": row["security"]["blocks_by_rule"],
+                              "cost_usd": row["performance"]["cost_usd"],
+                              "tool_calls_per_task": row["performance"]["tool_calls_per_task"]}
     return {
         "created": stamp,
         "scenarios": [s.id for s in scenarios],
@@ -68,7 +76,8 @@ def write_report(report: dict[str, Any], out_dir: Path) -> tuple[Path, Path]:
 
 def to_markdown(report: dict[str, Any]) -> str:
     sets = report["run_sets"]
-    cols = [f"{v['agent'].split(':')[-1]}, shield {'on' if v['shield'] else 'off'}" for v in sets.values()]
+    cols = [f"{v['agent'].split(':')[-1]}{' (' + v['model'] + ')' if v.get('model') else ''}, "
+            f"shield {'on' if v['shield'] else 'off'}" for v in sets.values()]
     lines = [
         f"# AgentGuard benchmark {report['created']}",
         "",
@@ -80,6 +89,9 @@ def to_markdown(report: dict[str, Any]) -> str:
     ]
     for _, _, label, _ in HEADLINE:
         lines.append(f"| {label} | " + " | ".join(_fmt(v["headline"][label]) for v in sets.values()) + " |")
+    lines.append("| Cost (USD) | " + " | ".join(_num(v.get("cost_usd"), "${:.4f}") for v in sets.values()) + " |")
+    lines.append("| Tool calls per task | " + " | ".join(_num(v.get("tool_calls_per_task"), "{:.1f}")
+                                                       for v in sets.values()) + " |")
     lines += ["", "Blocks by rule:", ""]
     for name, v in sets.items():
         if v["blocks_by_rule"]:
@@ -88,8 +100,11 @@ def to_markdown(report: dict[str, Any]) -> str:
 
 
 def _fmt(v: Any) -> str:
+    """Headline values: floats are rates, ints are counts."""
     if v is None:
         return "n/a"
-    if isinstance(v, float) and v <= 1:
-        return f"{v:.0%}"
-    return str(v)
+    return f"{v:.0%}" if isinstance(v, float) else str(v)
+
+
+def _num(v: Any, fmt: str) -> str:
+    return "n/a" if v is None else fmt.format(v)

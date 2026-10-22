@@ -215,14 +215,27 @@ def promote_cmd(
 @app.command("benchmark")
 def benchmark_cmd(
     agent: list[str] = typer.Option(["scripted:naive", "scripted:naive_v2"], "--agent", help="Repeatable"),
+    model: list[str] = typer.Option([], "--model", help="Repeatable; for model-driven agents, e.g. claude-sonnet-5-5"),
+    scenario: list[str] = typer.Option([], "--scenario", help="Repeatable; default: the whole refund suite"),
+    shield_mode: str = typer.Option("both", "--shield", help="both | on | off"),
     attempts: int = typer.Option(3, "--attempts", min=1),
     parallel: int = typer.Option(8, "--parallel", min=1),
     out: Path = typer.Option(Path("reports"), "--out"),
 ) -> None:
-    """Run the MVP benchmark (agents x shield off/on x attempts) and write a report."""
-    from agentguard.gym.benchmark import run_benchmark, to_markdown, write_report
+    """Run the benchmark (agents x models x shield off/on x attempts) and write a report.
 
-    report = run_benchmark(_store(), agents=agent, attempts=attempts, parallel=parallel)
+    Real-model agents cost money or subscription usage: start small, e.g.
+    --agent mcp_client:claude-code --model claude-sonnet-5-5 --scenario refund_false_success --shield on --attempts 1
+    """
+    from agentguard.gym.benchmark import benchmark_suite, run_benchmark, to_markdown, write_report
+    from agentguard.gym.scenario import find_scenario
+
+    modes = {"both": (False, True), "on": (True,), "off": (False,)}
+    if shield_mode not in modes:
+        raise typer.BadParameter("--shield must be both, on or off")
+    suite = [find_scenario(s) for s in scenario] if scenario else benchmark_suite()
+    report = run_benchmark(_store(), agents=agent, attempts=attempts, parallel=parallel, models=model or [None],
+                           scenarios=suite, shield_modes=modes[shield_mode])
     json_path, md_path = write_report(report, out)
     typer.echo(to_markdown(report))
     typer.echo(f"Report: {md_path} and {json_path}")
