@@ -30,3 +30,19 @@ def controls_from_trace(store: Store, run_id: str) -> dict[str, Any]:
         "audit_events": audit.events,
         "audit_ok": audit.ok,
     }
+
+
+def controls_markdown(controls: dict[str, Any]) -> str:
+    lines = ["## Responsible-AI controls in this run", ""]
+    lines.append(f"- Agents, each with its own identity and least privilege: {', '.join(controls.get('agents', []))}")
+    lines.append(f"- Human approvals: {controls.get('approvals_granted', 0)} granted, "
+                 f"{controls.get('approvals_rejected', 0)} rejected")
+    lines.append(f"- Actions blocked by policy: {controls.get('blocks', 0)}"
+                 + (f" ({', '.join(controls.get('blocked_rules', []))})" if controls.get("blocked_rules") else ""))
+    lines.append(f"- Prompt injections detected: {controls.get('injections', 0)}")
+    lines.append(f"- Post-action verifications: {controls.get('verifications_passed', 0)} passed, "
+                 f"{controls.get('verifications_failed', 0)} failed")
+    lines.append(f"- Audit log: {controls.get('audit_events', 0)} events, hash chain "
+                 f"{'verified' if controls.get('audit_ok') else 'NOT verified'}")
+    return "\n".join(lines) + "\n"
+

@@ -9,7 +9,7 @@ import PolicyPage from "./pages/PolicyPage.jsx";
 import OpsPage from "./pages/OpsPage.jsx";
 
 const PAGES = [
-  ["ops", "RefundOps", OpsPage],
+  ["ops", "Business processes", OpsPage],
   ["run", "Live run", RunPage],
   ["approvals", "Approvals", ApprovalsPage],
   ["blocks", "Blocked actions", BlocksPage],

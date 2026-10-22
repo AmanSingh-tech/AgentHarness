@@ -46,6 +46,8 @@ class ToolBackend(ABC):
 class World(ToolBackend):
     name: str
     fixtures_dir: Path  # where scenario `initial_state` paths are resolved
+    # Tables whose new rows are side effects the verifier must account for: kind -> table.
+    side_effect_tables: dict[str, str] = {}
 
     @abstractmethod
     def reset(self, seed: int) -> None: ...

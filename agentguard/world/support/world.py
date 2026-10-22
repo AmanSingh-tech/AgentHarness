@@ -71,6 +71,7 @@ def _locked(fn):
 class SupportWorld(World):
     name = "support"
     fixtures_dir = FIXTURES_DIR
+    side_effect_tables = {"ledger": "payments_ledger", "outbox": "outbox"}
 
     def __init__(self, fixture: str | Path | None = None) -> None:
         self.fixture_path = Path(fixture) if fixture else DEFAULT_FIXTURE

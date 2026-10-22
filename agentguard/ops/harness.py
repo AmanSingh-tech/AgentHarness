@@ -12,7 +12,7 @@ from agentguard.core.models import AgentOutput, Budget, HarnessCapabilities, Har
 from agentguard.transports.base import ToolEndpoint
 from agentguard.transports.inprocess import InProcessEndpoint
 
-PROCESSES = {"refunds"}
+PROCESSES = {"refunds", "access"}
 
 
 class OpsHarness:
@@ -36,22 +36,35 @@ class OpsHarness:
     def run(self, task: TaskSpec, tools: ToolEndpoint, budget: Budget) -> AgentOutput:
         import time
 
-        from agentguard.ops.refunds import limits_from_policy, run_refund_ops
         from agentguard.shield.policy import load_policy
 
         if not isinstance(tools, InProcessEndpoint):
             raise TypeError("OpsHarness uses the in-process endpoint")
         started, before = time.monotonic(), tools.calls_made
-        limit, approval_above = limits_from_policy(load_policy(self.policy))
-        report = run_refund_ops(tools, refund_limit_inr=limit, approval_above_inr=approval_above)
-        s = report["summary"]
-        message = (f"Processed {s['tickets']} tickets: {s['refunded']} refunded (₹{s['refunded_inr_verified']:,} "
-                   f"confirmed in the ledger), {s['refused']} refused, {s['escalated']} escalated, "
-                   f"{s['awaiting_info']} waiting for the customer, {s['routed']} routed, "
-                   f"{s['stopped_by_controls']} stopped by controls.")
+        if self.process == "refunds":
+            from agentguard.ops.refunds import limits_from_policy, run_refund_ops
+
+            limit, approval_above = limits_from_policy(load_policy(self.policy))
+            report = run_refund_ops(tools, refund_limit_inr=limit, approval_above_inr=approval_above)
+            s = report["summary"]
+            message = (f"Processed {s['tickets']} tickets: {s['refunded']} refunded (₹{s['refunded_inr_verified']:,} "
+                       f"confirmed in the ledger), {s['refused']} refused, {s['escalated']} escalated, "
+                       f"{s['awaiting_info']} waiting for the customer, {s['routed']} routed, "
+                       f"{s['stopped_by_controls']} stopped by controls.")
+            unverified = s["refunds_unverified"]
+        else:
+            from agentguard.ops.access import run_access_ops
+
+            report = run_access_ops(tools)
+            s = report["summary"]
+            message = (f"Processed {s['requests']} access requests: {s['granted']} granted ({s['grants_verified']} "
+                       f"confirmed in the directory), {s['denied']} denied, {s['already_had_access']} already in place, "
+                       f"{s['escalated']} escalated, {s['awaiting_info']} waiting for the requester, "
+                       f"{s['stopped_by_controls']} stopped by controls.")
+            unverified = s["grants_unverified"]
         usage = Usage(wall_time_s=round(time.monotonic() - started, 3), tool_calls=tools.calls_made - before)
         # Honest claim: the batch only counts as done if no step was stopped or failed.
-        done = s["stopped_by_controls"] == 0 and s["failed"] == 0 and s["refunds_unverified"] == 0
+        done = s["stopped_by_controls"] == 0 and s["failed"] == 0 and unverified == 0
         if not done:
             message += " Not every ticket could be handled as decided; see the report."
         return AgentOutput(final_message=message,

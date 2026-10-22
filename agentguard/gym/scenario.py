@@ -52,6 +52,24 @@ class OutboxExpect(_Expect):
     count: int = 1
 
 
+class RowsExpect(_Expect):
+    """Any world: `count` rows of `table` match every field in `match` (and contain `contains`)."""
+
+    table: str
+    match: dict[str, Any] = Field(default_factory=dict)
+    contains: dict[str, str] = Field(default_factory=dict)
+    count: int = 1
+
+
+class RecordExpect(_Expect):
+    """Any world: the record `id` of `table` has these field values (and substrings)."""
+
+    table: str
+    id: str
+    match: dict[str, Any] = Field(default_factory=dict)
+    contains: dict[str, str] = Field(default_factory=dict)
+
+
 class ForbiddenExpect(_Expect):
     tool_called: str
     args_match: str | None = None  # regex over the JSON-encoded arguments
@@ -65,6 +83,8 @@ class Expected(_Expect):
     tickets: list[TicketExpect] = Field(default_factory=list)
     orders: list[OrderExpect] = Field(default_factory=list)
     outbox: list[OutboxExpect] = Field(default_factory=list)
+    rows: list[RowsExpect] = Field(default_factory=list)
+    records: list[RecordExpect] = Field(default_factory=list)
     forbidden: list[ForbiddenExpect] = Field(default_factory=list)
 
 

@@ -27,6 +27,7 @@ app.add_typer(ops_app, name="ops")
 
 @ops_app.command("run")
 def ops_run(
+    process: str = typer.Option("refunds", "--process", help="refunds (Retail) | access (IT Infrastructure)"),
     approvals: str = typer.Option("auto", "--approvals",
                                   help="auto (approve held calls) | manual (decide in the dashboard) | reject"),
     shield: bool = typer.Option(True, "--shield/--no-shield"),
@@ -34,17 +35,22 @@ def ops_run(
                                            help="Production: an HTTP backend config instead of the simulated world"),
     out: Path = typer.Option(Path("reports"), "--out"),
 ) -> None:
-    """RefundOps: work the support inbox end to end (ingest, decide, act, report)."""
+    """Run a business process end to end (ingest, decide, act, report): RefundOps or AccessOps."""
     import json as _json
     from datetime import datetime, timezone
 
+    from agentguard.ops import access as access_ops
+    from agentguard.ops import refunds as refund_ops
     from agentguard.ops.controls import controls_from_trace
-    from agentguard.ops.refunds import limits_from_policy, run_refund_ops, to_markdown
     from agentguard.shield.approvals import ApprovalQueue, AutoApprover
     from agentguard.shield.policy import load_policy
 
     if approvals not in ("auto", "manual", "reject"):
         raise typer.BadParameter("--approvals must be auto, manual or reject")
+    if process not in ("refunds", "access"):
+        raise typer.BadParameter("--process must be refunds or access")
+    scenario_id = {"refunds": "refund_ops_inbox", "access": "access_ops_queue"}[process]
+    module = refund_ops if process == "refunds" else access_ops
     store = _store()
     default = {"auto": "approve", "manual": "manual", "reject": "reject"}[approvals]
     queue = ApprovalQueue(store, auto=AutoApprover(default=default), timeout_s=600)
@@ -55,7 +61,7 @@ def ops_run(
         from agentguard.gym.runner import run_scenario
         from agentguard.gym.scenario import find_scenario
 
-        r = run_scenario(find_scenario("refund_ops_inbox"), harness="ops:refunds", store=store, shield=shield,
+        r = run_scenario(find_scenario(scenario_id), harness=f"ops:{process}", store=store, shield=shield,
                          run_set="ops", approvals=queue)
         run_id, report = r.run_id, r.output.artifacts.get("report")
         verdict = r.verdict.outcome.value if r.verdict else None
@@ -64,29 +70,32 @@ def ops_run(
         from agentguard.runtime import RuntimeSession
 
         cfg = HttpBackendConfig.load(backend)
+        if process != "refunds":
+            raise typer.BadParameter("--backend is available for the refunds process")
         session = RuntimeSession(HttpToolBackend(cfg), store, agent_id="refund_ops", client="refundops",
                                  approvals=queue, backend_config=cfg.model_dump(mode="json"),
                                  task="Work the support inbox (RefundOps)")
-        limit, approval_above = limits_from_policy(load_policy())
-        report = run_refund_ops(session.endpoint, limit, approval_above)
+        limit, approval_above = refund_ops.limits_from_policy(load_policy())
+        report = refund_ops.run_refund_ops(session.endpoint, limit, approval_above)
         from agentguard.core.models import AgentOutput
 
         session.close(AgentOutput(final_message="RefundOps batch finished", exit_reason="completed",
                                   artifacts={"report": report}))
         run_id, verdict = session.run_id, None
     if report is None:
-        typer.echo(f"RefundOps did not produce a report (run {run_id})")
+        typer.echo(f"The process did not produce a report (run {run_id})")
         raise typer.Exit(1)
     controls = controls_from_trace(store, run_id)
-    md = to_markdown(report, controls)
+    md = module.to_markdown(report, controls)
     typer.echo(md)
     out.mkdir(parents=True, exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    (out / f"refundops-{stamp}.md").write_text(md)
-    (out / f"refundops-{stamp}.json").write_text(_json.dumps({"run_id": run_id, "report": report,
-                                                             "controls": controls, "verdict": verdict}, indent=2))
+    name = f"{process}ops-{stamp}"
+    (out / f"{name}.md").write_text(md)
+    (out / f"{name}.json").write_text(_json.dumps({"run_id": run_id, "report": report, "controls": controls,
+                                                  "verdict": verdict}, indent=2))
     typer.echo(f"Run {run_id}" + (f" · independent verdict: {verdict}" if verdict else "")
-               + f" · report: {out / f'refundops-{stamp}.md'}")
+               + f" · report: {out / f'{name}.md'}")
 
 
 @audit_app.command("verify")

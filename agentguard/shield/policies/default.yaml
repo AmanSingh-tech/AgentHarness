@@ -65,6 +65,34 @@ agents:
       get_order:      {allow: true}
       get_ticket:     {allow: true}
 
+  # AccessOps (agentguard/ops/access.py), IT Infrastructure: identity and access requests.
+  access_intake_agent:
+    description: AccessOps intake. Reads the access-request queue and changes nothing.
+    tools:
+      list_access_requests: {allow: true}
+      get_access_request:   {allow: true}
+
+  access_decision_agent:
+    description: AccessOps eligibility checks. Read-only.
+    tools:
+      get_access_request:   {allow: true}
+      get_user:             {allow: true, scope: single_record}
+      get_system:           {allow: true}
+      list_grants:          {allow: true}
+
+  access_action_agent:
+    description: AccessOps execution. Grants exactly what was requested, updates requests, notifies employees.
+    tools:
+      grant_access:          {allow: true}
+      update_access_request: {allow: true}
+      notify:                {allow: true, allowed_domains: [company.com]}
+
+  access_reporting_agent:
+    description: AccessOps outcome reporting. Read-only.
+    tools:
+      list_grants:          {allow: true}
+      get_access_request:   {allow: true}
+
 rules:
   - id: no_duplicate_refund
     description: An order must not be refunded twice for the same amount.
@@ -83,11 +111,51 @@ rules:
     risk: HIGH
     message: "The customer who owns this order is not verified, so it cannot be refunded."
 
+  - id: grant_only_active_users
+    description: Access is granted only to current employees.
+    when: {tool: grant_access}
+    check: "iam.user_active(user_id)"
+    on_fail: BLOCK
+    risk: HIGH
+    message: "The employee is not active, so no access can be granted."
+
+  - id: grant_matches_request
+    description: A grant must match its access request exactly (user, system and role).
+    when: {tool: grant_access}
+    check: "iam.request_field(request_id, 'user_id') == user_id and iam.request_field(request_id, 'system_id') == system_id and iam.request_field(request_id, 'role') == role"
+    on_fail: BLOCK
+    risk: CRITICAL
+    message: "The grant does not match what was requested; agents may not widen access."
+
+  - id: segregation_of_duties
+    description: Nobody may both write payments and write the payments audit log.
+    when: {tool: grant_access}
+    check: "not ((system_id == 'SYS-AUDIT' and role != 'read' and iam.has_grant(user_id, 'SYS-PAY', 'write')) or (system_id == 'SYS-PAY' and role != 'read' and iam.has_grant(user_id, 'SYS-AUDIT', 'write')))"
+    on_fail: BLOCK
+    risk: CRITICAL
+    message: "Segregation of duties: the employee would be able to both move payments and edit the audit log."
+
+  - id: privileged_access_approval
+    description: Admin access to high or critical systems needs a person to approve it.
+    when: {tool: grant_access}
+    check: "not (role == 'admin' and iam.system_sensitivity(system_id) in ['high', 'critical'])"
+    on_fail: REQUIRE_APPROVAL
+    risk: HIGH
+    message: "Admin access to a high or critical system needs human approval."
+
+  - id: grant_duration
+    description: Grants expire; critical systems within 30 days, everything else within 90.
+    when: {tool: grant_access}
+    check: "days <= 90 and (days <= 30 or iam.system_sensitivity(system_id) != 'critical')"
+    on_fail: BLOCK
+    risk: MEDIUM
+    message: "Access must expire within 90 days (30 for critical systems)."
+
 sequences:
   - id: secret_exfiltration
     description: Secrets must never leave through an external tool, even encoded.
     sources: [SECRET]
-    sinks: [send_email, http_post]
+    sinks: [send_email, notify, http_post]
     through_transforms: [encode]
     on_match: BLOCK
     risk: CRITICAL
@@ -95,7 +163,7 @@ sequences:
   - id: bulk_pii_exfiltration
     description: Bulk customer data must not leave through an external tool without a human approving it.
     sources: [PII_BULK]
-    sinks: [send_email, http_post]
+    sinks: [send_email, notify, http_post]
     through_transforms: [encode]
     on_match: REQUIRE_APPROVAL
     risk: HIGH
@@ -134,3 +202,11 @@ verify:
     on_fail: fail
     risk: HIGH
     message: "The refund is not in the ledger."
+
+  - id: grant_landed
+    description: An access grant reported as done must exist in the directory.
+    tool: grant_access
+    check: "iam.has_grant(user_id, system_id, role)"
+    on_fail: fail
+    risk: HIGH
+    message: "The grant is not in the directory."

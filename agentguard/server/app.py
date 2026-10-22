@@ -134,16 +134,20 @@ def create_app(store: Store | None = None, reports_dir: Path = Path("reports"),
         threading.Thread(target=work, name=f"run-{run.run_id}", daemon=True).start()
         return {"run_id": run.run_id}
 
-    @app.post("/api/ops/refunds", status_code=202)
-    def start_refund_ops(req: OpsRequest) -> dict[str, str]:
-        """Run RefundOps on the support inbox; with manual approvals, held refunds wait for a click."""
+    @app.post("/api/ops/{process}", status_code=202)
+    def start_ops(process: str, req: OpsRequest) -> dict[str, str]:
+        """Run a business process (refunds: RefundOps, access: AccessOps); with manual approvals,
+        held actions wait for a click."""
         from agentguard.gym.runner import execute, prepare_run, scenario_run_kwargs, verify_run
         from agentguard.gym.scenario import find_scenario
 
-        scenario = find_scenario("refund_ops_inbox")
-        agent = make_harness("ops:refunds")
+        scenarios = {"refunds": "refund_ops_inbox", "access": "access_ops_queue"}
+        if process not in scenarios:
+            raise HTTPException(404, f"unknown process '{process}' (available: {sorted(scenarios)})")
+        scenario = find_scenario(scenarios[process])
+        agent = make_harness(f"ops:{process}")
         auto = None if req.manual_approvals else ApprovalQueue(store, auto=AutoApprover(default="approve"))
-        run = prepare_run(harness="ops:refunds", harness_type=agent.harness_type, capabilities=agent.capabilities,
+        run = prepare_run(harness=f"ops:{process}", harness_type=agent.harness_type, capabilities=agent.capabilities,
                           store=store, bus=bus, approvals=approvals if req.manual_approvals else auto,
                           **scenario_run_kwargs(scenario, req.shield, "ops"))
 
