@@ -22,6 +22,11 @@ A harness-agnostic trust and reliability layer for AI agents:
 python3 -m venv .venv && .venv/bin/pip install -e ".[dev,llm,langgraph]"   # llm/langgraph extras are optional
 .venv/bin/pytest --cov=agentguard
 
+.venv/bin/agentguard demo                               # the end-to-end demo script, steps 1-6
+.venv/bin/agentguard benchmark --attempts 3             # v1 vs v2 x shield off/on -> reports/benchmark-*.md
+.venv/bin/agentguard compare "<run set A>" "<run set B>"
+.venv/bin/agentguard promote <run_id>                   # failed/blocked run -> validated regression scenario
+.venv/bin/agentguard diagnose <run_id>
 .venv/bin/agentguard validate-scenarios                 # null must fail, oracle must pass
 .venv/bin/agentguard scenarios
 .venv/bin/agentguard run --scenario normal_refund --harness scripted:null --harness scripted:oracle
@@ -141,6 +146,26 @@ stored runs and traces, grouped by harness, model, agent version or scenario:
 - **Performance:** latency p50/p95, tool calls per task, tokens, cost, cost per successful task.
 - **Governance:** approvals requested/granted/rejected, high-risk actions executed, audit completeness, share of blocks with an explanation.
 
+## Regression loop
+
+`agentguard promote <run_id>` turns a failed run, or a run the shield had to
+stop, into a new scenario under `gym/scenarios/regression/`:
+
+1. **Replay the situation.** The new scenario keeps the source run's world, seed, initial state, task and faults.
+2. **Diagnose.** The scenario's reference agent runs again on the same scenario, and `gym/diagnose.py` reports the first step where the two runs differ, plus the first fault and the first block, in three plain-English lines.
+3. **Forbid what was stopped.** Every blocked call (or call whose approval was refused) becomes a `forbidden` entry. The pattern is the most general one the reference agent never matches: the tool alone, then the tool plus one argument, then the tool plus all stable arguments. Volatile arguments such as idempotency keys never appear in a pattern.
+4. **Gate it.** The scenario is written only if the null agent fails it and the reference agent passes it, and only if no equivalent scenario already exists.
+
+## Benchmark
+
+`agentguard benchmark` runs every refund scenario for each agent with the shield
+off and on, k times, and writes a markdown and JSON report of the headline
+outcomes: task success rate, pass^k, recovery from injected faults, runs with a
+duplicate refund, incorrect success claims, runs with an unsafe side effect,
+injected actions blocked, policy violations attempted, blocks with an
+explanation, and audit completeness. Each combination is stored as a run set,
+so `agentguard compare` can diff any two.
+
 ## Faults
 
 Scenarios can inject faults inside the gateway, after the decision. Each fault
@@ -166,6 +191,7 @@ parameters of each are listed in `agentguard/gym/faults.py`.
 | `null` | Does nothing, claims success | Fails every scenario |
 | `oracle` | Verifies inputs, checks the refund against the ledger rather than trusting the response, re-issues only with the same idempotency key | Passes every scenario |
 | `naive` | Retries blindly with a new idempotency key each time, trusts every response, always claims success, obeys instructions found in tool output | Without the shield: a duplicate refund, an incorrect success claim and an injected export. With it, the duplicate and the export are blocked |
+| `naive_v2` | Agent v2: retries only transient errors and with the same idempotency key, checks the ledger before claiming success, ignores instructions in tool output. Still skips identity checks | Fixes the duplicate refund, the false success claim and the injected export. Still refunds the wrong customer's order unless the shield's policy stops it |
 | `adversarial` | Red-team test agent: tries to send a secret out after encoding it, and to export customer data | Blocked by `secret_exfiltration` and by the bulk-data approval |
 | `refuser` | Declines without calling any tool | The reference agent for scenarios whose correct answer is to refuse |
 

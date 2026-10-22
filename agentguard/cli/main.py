@@ -190,6 +190,70 @@ def promote_cmd(
     typer.echo(f"\n{accepted} regression scenario(s) {'validated' if dry_run else 'written'}")
 
 
+@app.command("benchmark")
+def benchmark_cmd(
+    agent: list[str] = typer.Option(["scripted:naive", "scripted:naive_v2"], "--agent", help="Repeatable"),
+    attempts: int = typer.Option(3, "--attempts", min=1),
+    parallel: int = typer.Option(8, "--parallel", min=1),
+    out: Path = typer.Option(Path("reports"), "--out"),
+) -> None:
+    """Run the MVP benchmark (agents x shield off/on x attempts) and write a report."""
+    from agentguard.gym.benchmark import run_benchmark, to_markdown, write_report
+
+    report = run_benchmark(_store(), agents=agent, attempts=attempts, parallel=parallel)
+    json_path, md_path = write_report(report, out)
+    typer.echo(to_markdown(report))
+    typer.echo(f"Report: {md_path} and {json_path}")
+    typer.echo("Run sets: " + ", ".join(report["run_sets"]))
+
+
+@app.command("compare")
+def compare_cmd(run_set_a: str = typer.Argument(...), run_set_b: str = typer.Argument(...)) -> None:
+    """Compare two run sets on the headline outcomes."""
+    from agentguard.gym.compare import compare
+
+    rows = compare(_store(), run_set_a, run_set_b)
+    typer.echo(f"{'outcome':34} {'A':>10} {'B':>10} {'delta':>9}")
+    for r in rows:
+        mark = {True: " better", False: " worse", None: ""}[r["better"]]
+        typer.echo(f"{r['metric']:34} {_cell(r[run_set_a]):>10} {_cell(r[run_set_b]):>10} {_cell(r['delta']):>9}{mark}")
+    typer.echo(f"A = {run_set_a}\nB = {run_set_b}")
+
+
+def _cell(v) -> str:
+    return "n/a" if v is None else str(v)
+
+
+@app.command("demo")
+def demo_cmd(
+    regression_out: Optional[Path] = typer.Option(None, "--regression-out",
+                                                  help="Where promoted scenarios go (default: a temp dir)"),
+) -> None:
+    """Run the end-to-end demo script (normal, timeout, false success, injection, exfiltration, regression)."""
+    from agentguard.gym.demo import run_demo
+
+    def show(step) -> None:
+        status = typer.style("OK  ", fg="green") if step.ok else typer.style("FAIL", fg="red")
+        typer.echo(f"\n{status} Step {step.number}: {step.title}")
+        typer.echo(f"     expect: {step.expectation}")
+        for r in step.runs:
+            extra = f" refunds={r.refunds}" if r.refunds is not None else ""
+            typer.echo(f"     {r.harness} shield={'on' if r.shield else 'off'} -> {r.outcome} "
+                       f"(claimed {r.claim}){extra} emails={r.emails}  [{r.run_id}]")
+            for stop in r.stops:
+                typer.echo(f"       {stop[:220]}")
+        for n in step.notes:
+            typer.echo(f"     {n}")
+        for row in step.table:
+            a, b = [v for k, v in row.items() if k not in ("metric", "delta", "better")]
+            typer.echo(f"     {row['metric']:34} v1={_cell(a):>8}  v2={_cell(b):>8}")
+
+    steps = run_demo(_store(), regression_out, on_step=show)
+    bad = [s.number for s in steps if not s.ok]
+    typer.echo(f"\n{len(steps) - len(bad)}/{len(steps)} demo steps behaved as expected")
+    raise typer.Exit(1 if bad else 0)
+
+
 @app.command("metrics")
 def metrics(
     group_by: str = typer.Option("harness,model,agent_version", "--group-by",

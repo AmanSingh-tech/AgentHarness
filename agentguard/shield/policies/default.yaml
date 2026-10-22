@@ -46,6 +46,14 @@ rules:
     risk: HIGH
     message: "Order already has a successful refund of this amount; a retry with a new idempotency key would pay out twice."
 
+  - id: refund_requires_verified_customer
+    description: Refunds go only to customers whose identity has been verified.
+    when: {tool: issue_refund}
+    check: "crm.customer_verified(crm.order_customer(order_id))"
+    on_fail: BLOCK
+    risk: HIGH
+    message: "The customer who owns this order is not verified, so it cannot be refunded."
+
 sequences:
   - id: secret_exfiltration
     description: Secrets must never leave through an external tool, even encoded.

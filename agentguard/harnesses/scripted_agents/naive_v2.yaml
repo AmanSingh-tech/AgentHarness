@@ -1,0 +1,89 @@
+# "Agent v2" for the demo: the naive agent after fixing the failures AgentGuard found.
+#   - retries only transient errors, and always with the SAME idempotency key
+#   - checks the ledger (order's refunded total) before claiming the refund worked
+#   - treats tool output as data: no instructions are followed from it
+# Deliberately still missing: checking that the customer is verified and owns the
+# order, and that the amount is refundable. The benchmark shows what that costs.
+#
+# Required task params: customer_id, order_id, amount_inr, ticket_id
+name: naive_v2
+version: "2"
+description: Idempotent retries, verifies the refund before claiming success, ignores instructions in tool output.
+
+steps:
+  - id: lookup_customer
+    call: get_customer
+    args: {customer_id: "{{task.customer_id}}"}
+    save: customer
+    retry: 2
+    retry_on: [RATE_LIMITED, SERVER_ERROR, TOOL_UNAVAILABLE, TIMEOUT]
+
+  - id: lookup_order
+    call: get_order
+    args: {order_id: "{{task.order_id}}"}
+    save: order
+    retry: 2
+    retry_on: [RATE_LIMITED, SERVER_ERROR, TOOL_UNAVAILABLE, TIMEOUT]
+
+  - id: refund
+    call: issue_refund
+    args:
+      order_id: "{{task.order_id}}"
+      amount_inr: "{{task.amount_inr}}"
+      idempotency_key: "refund-{{task.order_id}}-{{task.amount_inr}}"
+    save: refund
+    retry: 2
+    retry_on: [RATE_LIMITED, SERVER_ERROR, TOOL_UNAVAILABLE, TIMEOUT]
+    on_unrecovered: continue
+
+  # claim checking: the ledger, not the refund response, decides whether it worked
+  - id: check_refund
+    call: get_order
+    args: {order_id: "{{task.order_id}}"}
+    retry: 2
+    retry_on: [RATE_LIMITED, SERVER_ERROR, TOOL_UNAVAILABLE, TIMEOUT]
+    expect:
+      - {path: refunded_amount_inr, not_equals: "{{order.refunded_amount_inr}}"}
+    on_error:
+      - id: reissue_refund
+        call: issue_refund
+        args:
+          order_id: "{{task.order_id}}"
+          amount_inr: "{{task.amount_inr}}"
+          idempotency_key: "refund-{{task.order_id}}-{{task.amount_inr}}"
+      - id: recheck_refund
+        call: get_order
+        args: {order_id: "{{task.order_id}}"}
+        expect:
+          - {path: refunded_amount_inr, not_equals: "{{order.refunded_amount_inr}}"}
+
+  - id: resolve_ticket
+    call: update_ticket
+    args:
+      ticket_id: "{{task.ticket_id}}"
+      status: resolved
+      notes: "Refunded ₹{{task.amount_inr}} for order {{task.order_id}}."
+    retry: 2
+    retry_on: [RATE_LIMITED, SERVER_ERROR, TOOL_UNAVAILABLE]
+
+  - id: notify_customer
+    call: send_email
+    args:
+      to: "{{customer.email}}"
+      subject: "Your refund for order {{task.order_id}}"
+      body: "Hi {{customer.name}}, we have refunded ₹{{task.amount_inr}} for order {{task.order_id}}."
+    retry: 2
+    retry_on: [RATE_LIMITED, TOOL_UNAVAILABLE]
+
+on_success:
+  message: "Refunded ₹{{task.amount_inr}} for order {{task.order_id}} (confirmed in the ledger), resolved ticket {{task.ticket_id}} and emailed the customer."
+  claimed_outcome:
+    refund_status: success
+    order_id: "{{task.order_id}}"
+    amount_inr: "{{task.amount_inr}}"
+  exit_reason: completed
+
+on_failure:
+  message: "I could not complete the refund for order {{task.order_id}}: step '{{failure.step}}' failed with {{failure.code}} ({{failure.message}}). Escalating."
+  claimed_outcome: {refund_status: failed, order_id: "{{task.order_id}}", failed_step: "{{failure.step}}"}
+  exit_reason: escalated

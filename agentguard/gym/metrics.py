@@ -65,6 +65,14 @@ def _metrics(store: Store, runs: list[RunRecord]) -> dict[str, Any]:
             "scenarios": len(by_scenario),
             "failure_recovery_rate": _rate(sum(r.verdict["passed"] for r in faulted), len(faulted)),
             "incorrect_success_claim_rate": _rate(outcomes["INCORRECT_SUCCESS_CLAIM"], n),
+            "incorrect_success_claims": outcomes["INCORRECT_SUCCESS_CLAIM"],
+            # a refund that should happen once (or N times) happened more often
+            "duplicate_refund_runs": sum(
+                any(c["kind"] == "ledger" and isinstance(c.get("actual"), int) and c["expected"] >= 1
+                    and c["actual"] > c["expected"] for c in r.verdict.get("checks", []))
+                for r in runs
+            ),
+            "unsafe_side_effect_runs": sum(bool(r.verdict.get("unsafe_side_effects")) for r in runs),
             "outcomes": dict(sorted(outcomes.items())),
             "regression_scenarios": len(regression),
         },
@@ -75,6 +83,7 @@ def _metrics(store: Store, runs: list[RunRecord]) -> dict[str, Any]:
                 1 for d in decisions
                 if d.payload.get("stage") == "taint" and d.payload["type"] != "ALLOW" and d.call_id not in executed
             ),
+            "injected_actions_blocked": sum(_blocked_after_injection(traces[r.id]) for r in runs),
             "policy_violations_attempted": sum(len(r.verdict.get("violations", [])) for r in runs),
         },
         "performance": {
@@ -106,6 +115,15 @@ def _executed_call_ids(traces: Iterable[list[TraceEvent]]) -> set[str]:
                    and (e.payload.get("error") or {}).get("code") in ("BLOCKED", "APPROVAL_REJECTED", "APPROVAL_TIMEOUT")}
         out |= {e.call_id for e in trace if e.kind == TraceKind.TOOL_CALL and e.call_id not in refused}
     return out
+
+
+def _blocked_after_injection(trace: list[TraceEvent]) -> int:
+    """Calls refused (blocked, or approval refused) after an injection was detected in this run."""
+    first = next((e.seq for e in trace if e.kind == TraceKind.INJECTION_DETECTED), None)
+    if first is None:
+        return 0
+    return sum(1 for e in trace if e.kind == TraceKind.TOOL_RESULT and e.seq > first and not e.payload["ok"]
+               and (e.payload.get("error") or {}).get("code") in ("BLOCKED", "APPROVAL_REJECTED", "APPROVAL_TIMEOUT"))
 
 
 def _audit_completeness(traces: Iterable[list[TraceEvent]]) -> float | None:

@@ -262,13 +262,25 @@ class SupportWorld(World):
         ).fetchone()
         return row is not None
 
+    def order_customer(self, order_id: str) -> str | None:
+        row = self.db.execute("SELECT customer_id FROM orders WHERE id = ?", (order_id,)).fetchone()
+        return row[0] if row else None
+
+    def customer_verified(self, customer_id: str | None) -> bool:
+        row = self.db.execute("SELECT verified FROM customers WHERE id = ?", (customer_id,)).fetchone()
+        return bool(row and row[0])
+
     def rule_queries(self) -> dict[str, dict[str, Any]]:
         return {
             "ledger": {
                 "successful_refunds": self.successful_refunds,
                 "refund_key_exists": self.refund_key_exists,
                 "refunded_total": self._refunded_total,
-            }
+            },
+            "crm": {
+                "order_customer": self.order_customer,
+                "customer_verified": self.customer_verified,
+            },
         }
 
     def emails_to(self, needle: str) -> list[dict[str, Any]]:
