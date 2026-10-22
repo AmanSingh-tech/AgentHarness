@@ -1,0 +1,5 @@
+id: sec-4
+title: Order intake down after the night shift isolated the wrong server
+category: security
+difficulty: hard
+tags: [edr, containment, malware, false-positive, exclusion]
