@@ -14,6 +14,7 @@ agentguard ops run                      # RefundOps on the support inbox, with t
 agentguard ops run --process access     # AccessOps on the IT access-request queue
 agentguard ops run --decider claude      # Claude decides, a policy check confirms (uses your Claude Code login)
 agentguard serve                        # dashboard: Business processes, approvals, live traces, benchmark
+agentguard bench list                   # GuardBench: 34 ITSMBench-style enterprise tasks with hidden checks
 ```
 
 A harness-agnostic trust and reliability layer for AI agents:
@@ -21,7 +22,7 @@ A harness-agnostic trust and reliability layer for AI agents:
 - **AgentGym** runs agents in simulated enterprise worlds, injects faults, and verifies outcomes independently.
 - **AgentShield** is the single gateway that every tool call passes through. It handles policy, risk, taint tracking, injection defense and approvals.
 
-**Docs:** [How it works](docs/how-it-works.md) (sequence detection, policy enforcement,
+**Docs:** [GuardBench](docs/bench.md) · [How it works](docs/how-it-works.md) (sequence detection, policy enforcement,
 regression generation, measured MVP outcomes) · [What is new](docs/novelty.md)
 (comparison with τ-bench, AgentDojo, InjecAgent, Inspect, Invariant, NeMo
 Guardrails, Guardrails AI, Prompt Guard / Llama Guard, Lakera, LangSmith).
@@ -40,6 +41,7 @@ Guardrails, Guardrails AI, Prompt Guard / Llama Guard, Lakera, LangSmith).
 | MVP: novelty comparison and how-it-works docs | done |
 | Business processes: RefundOps (Retail) and AccessOps (IT Infrastructure), multi-agent, least privilege | done |
 | AI decision agent: Claude decides, a rule-based check confirms, disagreements go to a person | done |
+| GuardBench: 34 enterprise tasks, 24 mock systems, hidden goal/trap/harm checks, sweeps, leaderboard ([docs/bench.md](docs/bench.md)) | done |
 | Production mode, post-action verification, remote HTTP harness, audit hash chain, CI, docker compose | done |
 | Docker CLI sandbox with a locked network | not included |
 

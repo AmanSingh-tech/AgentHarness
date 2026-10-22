@@ -1,0 +1,11 @@
+# Claude Code (your login, no API key) on every GuardBench task, with AgentShield off and on.
+# 34 tasks x 3 models x 2 shield settings x 3 attempts = 612 runs. Start with smoke.yaml.
+name: claude
+attempts: 3
+parallel: 2
+shield: [off, on]
+tasks: all
+agents:
+  - {harness: mcp_client:claude-code, model: haiku}
+  - {harness: mcp_client:claude-code, model: sonnet}
+  - {harness: mcp_client:claude-code, model: opus}

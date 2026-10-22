@@ -1,0 +1,9 @@
+# Offline baselines (no model calls): the do-nothing agent and the reference solutions.
+name: baselines
+attempts: 1
+parallel: 4
+shield: [off, on]
+tasks: all
+agents:
+  - {harness: scripted:null}
+  - {harness: bench:solution}

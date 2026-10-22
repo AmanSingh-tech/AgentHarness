@@ -1,0 +1,8 @@
+# A cheap first pass: Haiku, one attempt, shield on (34 runs, well under $1 at Claude Code's estimates).
+name: smoke
+attempts: 1
+parallel: 3
+shield: [on]
+tasks: all
+agents:
+  - {harness: mcp_client:claude-code, model: haiku}

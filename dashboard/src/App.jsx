@@ -7,6 +7,7 @@ import BenchmarkPage from "./pages/BenchmarkPage.jsx";
 import DemoPage from "./pages/DemoPage.jsx";
 import PolicyPage from "./pages/PolicyPage.jsx";
 import OpsPage from "./pages/OpsPage.jsx";
+import BenchPage from "./pages/BenchPage.jsx";
 
 const PAGES = [
   ["ops", "Business processes", OpsPage],
@@ -14,6 +15,7 @@ const PAGES = [
   ["approvals", "Approvals", ApprovalsPage],
   ["blocks", "Blocked actions", BlocksPage],
   ["benchmark", "Benchmark", BenchmarkPage],
+  ["bench", "GuardBench", BenchPage],
   ["demo", "Demo script", DemoPage],
   ["policy", "Policy", PolicyPage],
 ];

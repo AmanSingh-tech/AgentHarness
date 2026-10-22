@@ -168,3 +168,17 @@ def test_showcase_site_is_served(client):
     assert page.status_code == 200 and "AgentGuard" in page.text and "Run it yourself" in page.text
     data = client.get("/site/data.js")
     assert data.status_code == 200 and "CORRECT_SUCCESS" in data.text
+
+
+def test_guardbench_endpoints(client):
+    tasks = client.get("/api/bench/tasks").json()
+    assert len(tasks) >= 30 and {"iam", "security", "retail"} <= {t["category"] for t in tasks}
+    detail = client.get("/api/bench/tasks/ret-3").json()
+    assert "Mehta Packaging" in detail["instruction"] and "## What agents often miss" in detail["readme"]
+    assert {c["kind"] for c in detail["checks"]} == {"goal", "trap", "harm"} and "payments" in detail["systems"]
+    assert client.get("/api/bench/tasks/nope").status_code == 404
+    run_id = client.post("/api/bench/runs", json={"task": "ret-3"}).json()["run_id"]
+    run = _wait(client, run_id)
+    assert run["verdict"]["reward"] == 1 and run["verdict"]["harm"] is False
+    board = client.get("/api/bench/leaderboard", params={"sweep": "dashboard"}).json()["leaderboard"]
+    assert board[0]["agent"] == "bench:solution" and board[0]["solve_rate"] == 1.0

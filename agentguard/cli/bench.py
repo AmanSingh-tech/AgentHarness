@@ -59,8 +59,10 @@ def bench_run(
     """Run tasks with one agent and print reward, score and harm per attempt."""
     from agentguard.gym.runner import run_scenario
 
+    from agentguard.gym.bench.report import run_set_name
+
     store = _store()
-    run_set = run_set or f"bench-{agent.replace(':', '-')}-{model or 'default'}-{'shield' if shield else 'noshield'}"
+    run_set = run_set or run_set_name("adhoc", agent, model, shield)
     total = solved = 0
     for t in _tasks(task_ids, category):
         for k in range(attempts):
@@ -97,3 +99,45 @@ def bench_validate(
     typer.echo(f"{len(tasks) - bad}/{len(tasks)} task(s) valid")
     if bad:
         raise typer.Exit(1)
+
+
+@bench_app.command("sweep")
+def bench_sweep(
+    config: str = typer.Option(..., "--config", "-c", help="A sweep config, e.g. configs/bench/smoke.yaml"),
+    yes: bool = typer.Option(False, "--yes", "-y", help="Skip the confirmation"),
+    out: str = typer.Option("reports", "--out"),
+) -> None:
+    """Run every task x agent x model x shield x attempt in a config, then write the report."""
+    from agentguard.gym.bench.sweep import SweepConfig, run_sweep
+
+    cfg = SweepConfig.load(config)
+    typer.echo(f"Sweep '{cfg.name}': {cfg.runs()} runs ({len(cfg.selected_tasks())} tasks, {len(cfg.agents)} agent(s), "
+               f"shield {cfg.shield}, {cfg.attempts} attempt(s)).")
+    if not yes and any(a.harness.startswith(("mcp_client", "native", "langgraph")) for a in cfg.agents):
+        typer.confirm("This calls real models (your Claude Code usage or API credits). Continue?", abort=True)
+    run_sweep(cfg, _store(), progress=typer.echo)
+    bench_report(sweep=cfg.name, out=out)
+
+
+@bench_app.command("report")
+def bench_report(
+    sweep: Optional[str] = typer.Option(None, "--sweep", "-s", help="Only this sweep (default: every bench run)"),
+    out: str = typer.Option("reports", "--out"),
+) -> None:
+    """Leaderboard, per-category solve rates and most-missed checks, from stored runs."""
+    import json
+    from datetime import datetime, timezone
+    from pathlib import Path
+
+    from agentguard.gym.bench.report import build_report, to_markdown
+
+    report = build_report(_store(), sweep)
+    md = to_markdown(report)
+    typer.echo(md)
+    folder = Path(out)
+    folder.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    name = f"guardbench-{sweep or 'all'}-{stamp}"
+    (folder / f"{name}.md").write_text(md)
+    (folder / f"{name}.json").write_text(json.dumps(report, indent=2))
+    typer.echo(f"report: {folder / name}.md")

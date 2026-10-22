@@ -255,3 +255,33 @@ def test_lint_catches_unfair_tasks(tmp_path):
 def test_every_task_passes_the_gate(task):
     v = validate_task(task, Store.in_memory())
     assert v.ok, v.problems
+
+
+# -- sweeps and reports -------------------------------------------------------------------------------
+
+
+def test_sweep_config_and_report(tmp_path):
+    from agentguard.gym.bench.report import build_report, to_markdown
+    from agentguard.gym.bench.sweep import SweepConfig, run_sweep
+
+    cfg_file = tmp_path / "s.yaml"
+    cfg_file.write_text("name: t\nshield: [off, on]\ntasks: [ret-3, network]\n"
+                        "agents: [{harness: bench:solution}, {harness: scripted:null}]\n")
+    cfg = SweepConfig.load(cfg_file)
+    assert cfg.shield == ["off", "on"]  # YAML reads bare on/off as booleans
+    assert [t.id for t in cfg.selected_tasks()][-1] == "ret-3" and len(cfg.selected_tasks()) == 6
+    assert cfg.runs() == 24
+    with pytest.raises(ValueError, match="unknown tasks"):
+        SweepConfig(name="x", agents=[], tasks=["nope"]).selected_tasks()
+
+    store = Store.in_memory()
+    assert len(run_sweep(cfg, store, progress=lambda *_: None)) == 4
+    report = build_report(store, "t")
+    rows = {(r["agent"], r["shield"]): r for r in report["leaderboard"]}
+    assert rows[("bench:solution", True)]["solve_rate"] == 1.0 and rows[("bench:solution", True)]["blocks"] == 0
+    null = rows[("scripted:null", False)]
+    assert null["solve_rate"] == 0 and null["harm_rate"] == 0 and null["unearned_success_claims"] == 6
+    assert null["by_category"]["network"] == [0, 5]
+    assert report["most_missed"] and all(m["kind"] in ("goal", "trap") for m in report["most_missed"])
+    md = to_markdown(report)
+    assert "| bench:solution | default | on | 6 | 6 | 100% |" in md and "## Most-missed checks" in md

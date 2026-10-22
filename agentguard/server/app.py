@@ -47,6 +47,13 @@ class RunRequest(BaseModel):
     run_set: str | None = None
 
 
+class BenchRunRequest(BaseModel):
+    task: str
+    harness: str = "bench:solution"
+    model: str | None = None
+    shield: bool = True
+
+
 class Resolution(BaseModel):
     by: str = "human:dashboard"
     note: str | None = None
@@ -357,6 +364,56 @@ def create_app(store: Store | None = None, reports_dir: Path = Path("reports"),
         if job_id not in jobs:
             raise HTTPException(404, "no such job")
         return dict(jobs[job_id])
+
+    # -- GuardBench -------------------------------------------------------------------------------------
+
+    @app.get("/api/bench/tasks")
+    def bench_tasks() -> list[dict[str, Any]]:
+        from agentguard.gym.bench.loader import load_tasks
+
+        return [t.summary() for t in load_tasks()]
+
+    @app.get("/api/bench/tasks/{task_id}")
+    def bench_task(task_id: str) -> dict[str, Any]:
+        from agentguard.gym.bench.loader import find_task
+        from agentguard.world.enterprise.engine import load_seed
+
+        try:
+            t = find_task(task_id)
+        except ValueError as e:
+            raise HTTPException(404, str(e)) from None
+        return {**t.summary(), "instruction": t.instruction, "readme": t.readme,
+                "systems": load_seed(t.seed_path)["systems"],
+                "checks": [{"id": c.id, "kind": c.kind, "desc": c.desc, "assert": c.assertion} for c in t.checks]}
+
+    @app.post("/api/bench/runs", status_code=202)
+    def bench_run(req: BenchRunRequest) -> dict[str, str]:
+        """Run one GuardBench task with any harness; the verdict carries reward, score and harm."""
+        from agentguard.gym.bench.loader import find_task
+        from agentguard.gym.bench.report import run_set_name
+        from agentguard.gym.runner import execute, prepare_run, scenario_run_kwargs, verify_run
+
+        try:
+            scenario = find_task(req.task).scenario()
+            agent = make_harness(req.harness)
+        except ValueError as e:
+            raise HTTPException(400, str(e)) from None
+        run = prepare_run(harness=req.harness, harness_type=agent.harness_type, capabilities=agent.capabilities,
+                          store=store, bus=bus, model=req.model,
+                          **scenario_run_kwargs(scenario, req.shield, run_set_name("dashboard", req.harness, req.model,
+                                                                                  req.shield)))
+
+        def work() -> None:
+            verify_run(scenario, execute(run, agent), store)
+
+        threading.Thread(target=work, name=f"bench-{run.run_id}", daemon=True).start()
+        return {"run_id": run.run_id}
+
+    @app.get("/api/bench/leaderboard")
+    def bench_leaderboard(sweep: str | None = None) -> dict[str, Any]:
+        from agentguard.gym.bench.report import build_report
+
+        return build_report(store, sweep)
 
     # -- showcase site and dashboard -----------------------------------------------------------------
 
