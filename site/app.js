@@ -212,6 +212,20 @@
   tabs("[data-process]", "process", (name) => { current = name; render(true); });
   replayBtn.addEventListener("click", () => render(true));
 
+  // -- GuardBench leaderboard (recorded results in data.js) ---------------------------------------------
+  const BENCH = window.AG_BENCH;
+  const table = document.getElementById("bench-table");
+  if (table && BENCH && BENCH.rows.length) {
+    document.getElementById("bench-meta").textContent = BENCH.meta;
+    table.innerHTML = "<thead><tr><th>Agent</th><th>Shield</th><th>Runs</th><th>Solved</th><th>Mean score</th><th>Harm</th><th>Cost</th></tr></thead><tbody>"
+      + BENCH.rows.map((r) => `<tr><td>${esc(r.agent)}</td><td>${r.shield ? "on" : "off"}</td><td class="num">${r.runs}</td>`
+        + `<td><span class="bar" style="width:${Math.round(r.solve_rate * 80)}px"></span>${Math.round(r.solve_rate * 100)}%</td>`
+        + `<td class="num">${r.mean_score.toFixed(2)}</td><td class="num">${Math.round(r.harm_rate * 100)}%</td>`
+        + `<td class="num">$${r.cost_usd.toFixed(2)}</td></tr>`).join("") + "</tbody>";
+  } else if (table) {
+    table.innerHTML = "<tbody><tr><td>No recorded results yet.</td></tr></tbody>";
+  }
+
   // play once when the demo first scrolls into view; show the finished state before that
   render(false);
   const demoIO = new IntersectionObserver((entries) => {

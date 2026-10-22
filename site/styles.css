@@ -282,6 +282,16 @@ html:not(.js) .loader { display: none; }
 .grid-numbers .big { font-size: clamp(48px, 6vw, 88px); letter-spacing: -0.05em; line-height: 0.9; }
 .grid-numbers .mono { color: var(--muted); max-width: 30ch; }
 
+/* -- GuardBench leaderboard ------------------------------------------------------------------------- */
+.bench-board { margin-top: 12px; }
+.table-wrap { overflow-x: auto; margin-top: 18px; }
+.board { width: 100%; border-collapse: collapse; font-size: 13px; min-width: 560px; }
+.board th { text-align: left; color: var(--muted); font-weight: 400; text-transform: uppercase; font-size: 11px; padding: 8px 10px; }
+.board td { padding: 10px; border-top: 1px solid var(--line); }
+.board td.num { text-align: right; font-variant-numeric: tabular-nums; }
+.board .bar { display: inline-block; height: 6px; border-radius: 3px; background: var(--accent); margin-right: 8px; vertical-align: middle; }
+.bench-note { margin-top: 14px; }
+
 /* -- controls list (the agency's numbered services list) ------------------------------------------ */
 .services { border-top: 1px solid var(--line); }
 .services li {

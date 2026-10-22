@@ -26,7 +26,7 @@
     <nav class="nav-links mono" aria-label="Sections">
       <a href="#process"><span>01</span> Process</a>
       <a href="#demo"><span>02</span> Demo</a>
-      <a href="#controls"><span>03</span> Controls</a>
+      <a href="#bench"><span>03</span> GuardBench</a>
       <a href="#run"><span>04</span> Run it</a>
     </nav>
     <div class="nav-actions">
@@ -139,6 +139,28 @@
         <li class="reveal"><span class="big">18/18</span><span class="mono">Claude decisions confirmed by the policy check</span></li>
         <li class="reveal"><span class="big">230</span><span class="mono">automated tests · 28 validated scenarios</span></li>
       </ul>
+    </section>
+
+    <!-- GuardBench -->
+    <section class="section" id="bench">
+      <div class="section-head">
+        <p class="label mono">GuardBench · an ITSMBench-style benchmark</p>
+        <h2 class="h1 reveal">34 tickets <span class="glyph">↪</span>with a trap in each</h2>
+        <p class="lede narrow">Short ITSM and payments tickets in a seeded world of 24 mock enterprise systems. The agent discovers the APIs, investigates and acts. Hidden checks grade the end state: the work asked for, the trap agents usually miss, and damage that must not happen. Every run goes through AgentShield.</p>
+      </div>
+      <ul class="grid-numbers">
+        <li class="reveal"><span class="big">34</span><span class="mono">tasks across IAM, offboarding, security, network, change, GRC and retail</span></li>
+        <li class="reveal"><span class="big">456</span><span class="mono">hidden checks · 108 traps · 183 do-no-harm</span></li>
+        <li class="reveal"><span class="big">24</span><span class="mono">mock systems · 247 API operations, discovered by the agent</span></li>
+      </ul>
+      <div class="demo bench-board">
+        <div class="demo-top">
+          <div><h3 class="h3">Leaderboard</h3><p class="mono muted" id="bench-meta">Claude Code over MCP, through AgentShield</p></div>
+          <a class="btn btn-ghost" href="https://github.com/AmanSingh-tech/AgentHarness/blob/main/docs/bench.md"><span>Read the tasks ↗</span></a>
+        </div>
+        <div class="table-wrap"><table class="board mono" id="bench-table"></table></div>
+        <p class="muted mono bench-note">Solved: every hidden check passed. Harm: a do-no-harm check failed. Run it: <code>agentguard bench sweep -c configs/bench/smoke.yaml</code></p>
+      </div>
     </section>
 
     <!-- Controls -->
