@@ -1,0 +1,173 @@
+system: idp
+title: Identity provider
+description: Workforce single sign-on - user accounts and their status, MFA factors, groups and memberships, application assignments, sign-in sessions and the system log.
+collections:
+  users:
+    fields:
+      login: string
+      email: string
+      name: string
+      status: string            # ACTIVE | SUSPENDED | LOCKED_OUT | DEPROVISIONED | STAGED
+      department: string
+      title: string
+      manager_id: string
+      employee_id: string
+      user_type: string         # employee | contractor | service | guest
+      last_login: string
+      updated_at: string
+  factors:
+    id_prefix: FAC
+    fields:
+      user_id: string
+      type: string              # sms | totp | push | webauthn | email
+      status: string
+      phone: string
+      created_at: string
+  groups:
+    fields:
+      name: string
+      description: string
+      privileged: boolean
+      owner: string
+  memberships:
+    id_prefix: MEM
+    fields:
+      group_id: string
+      user_id: string
+      added_at: string
+      added_by: string
+      expires_at: string
+      reason: string
+      created_at: string
+  app_assignments:
+    id_prefix: APA
+    fields:
+      user_id: string
+      app: string
+      role: string
+      status: string
+      created_at: string
+  sessions:
+    id_prefix: SES
+    fields:
+      user_id: string
+      ip: string
+      country: string
+      device: string
+      started_at: string
+      status: string            # active | revoked
+      updated_at: string
+  logs:
+    id_prefix: LOG
+    fields:
+      user_id: string
+      event: string
+      detail: string
+      actor: string
+      at: string
+operations:
+  list_users:
+    kind: list
+    collection: users
+    filters: [status, department, manager_id, user_type]
+    labels: [PII]
+  get_user:
+    kind: get
+    collection: users
+    labels: [PII]
+  search_users:
+    kind: search
+    collection: users
+    fields: [login, email, name, employee_id]
+    labels: [PII]
+  suspend_user:
+    kind: transition
+    collection: users
+    set: {status: SUSPENDED}
+    when: {status: [ACTIVE, LOCKED_OUT]}
+    description: Suspend a user - they can no longer sign in; nothing is deleted.
+  unsuspend_user:
+    kind: transition
+    collection: users
+    set: {status: ACTIVE}
+    when: {status: [SUSPENDED]}
+    description: Lift a suspension and let the user sign in again.
+  unlock_user:
+    kind: transition
+    collection: users
+    set: {status: ACTIVE}
+    when: {status: [LOCKED_OUT]}
+  deactivate_user:
+    kind: transition
+    collection: users
+    set: {status: DEPROVISIONED}
+    when: {status: [ACTIVE, SUSPENDED, LOCKED_OUT, STAGED]}
+    irreversible: true
+    description: Deprovision a user permanently - removes their access everywhere; cannot be undone.
+  list_factors:
+    kind: list
+    collection: factors
+    filters: [user_id, type]
+    required: [user_id]
+  reset_factors:
+    kind: delete_where
+    collection: factors
+    keys: [user_id]
+    description: Remove every MFA factor of a user, forcing re-enrolment.
+  delete_factor:
+    kind: delete
+    collection: factors
+  list_groups:
+    kind: list
+    collection: groups
+    filters: [privileged]
+  get_group:
+    kind: get
+    collection: groups
+  list_memberships:
+    kind: list
+    collection: memberships
+    filters: [group_id, user_id]
+  add_membership:
+    kind: create
+    collection: memberships
+    fields: [group_id, user_id, reason, expires_at]
+    required: [group_id, user_id]
+    unique: [group_id, user_id]
+  remove_membership:
+    kind: delete_where
+    collection: memberships
+    keys: [group_id, user_id]
+    description: Remove a user from a group.
+  list_app_assignments:
+    kind: list
+    collection: app_assignments
+    filters: [user_id, app, status]
+  remove_app_assignment:
+    kind: delete
+    collection: app_assignments
+    description: Unassign an application from a user.
+  list_sessions:
+    kind: list
+    collection: sessions
+    filters: [user_id, status]
+  revoke_session:
+    kind: transition
+    collection: sessions
+    set: {status: revoked}
+  revoke_user_sessions:
+    kind: transition_where
+    collection: sessions
+    keys: [user_id]
+    set: {status: revoked}
+    description: Sign a user out everywhere - revoke all their sessions.
+  list_logs:
+    kind: list
+    collection: logs
+    filters: [user_id, event, actor]
+    labels: [UNTRUSTED]
+  search_logs:
+    kind: search
+    collection: logs
+    fields: [event, detail, actor]
+    labels: [UNTRUSTED]

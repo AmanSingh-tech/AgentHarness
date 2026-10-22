@@ -9,6 +9,7 @@ import yaml
 from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 
 from agentguard.core.models import Budget, TaskSpec
+from agentguard.gym.bench.checks import BenchCheck
 from agentguard.gym.faults import FaultSpec, FaultType  # noqa: F401  (re-exported)
 from agentguard.shield.pipeline import ShieldConfig
 from agentguard.world import WORLDS, World, make_world
@@ -86,6 +87,7 @@ class Expected(_Expect):
     rows: list[RowsExpect] = Field(default_factory=list)
     records: list[RecordExpect] = Field(default_factory=list)
     forbidden: list[ForbiddenExpect] = Field(default_factory=list)
+    checks: list[BenchCheck] = Field(default_factory=list)  # GuardBench hidden checks (goal / trap / harm)
 
 
 class ClaimRules(_Expect):

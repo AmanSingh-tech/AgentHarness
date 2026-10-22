@@ -1,0 +1,167 @@
+system: payments
+title: Payments
+description: Money movement - customers, orders, refunds and chargebacks for the online store; payees (suppliers), their bank details, bank-detail change requests, scheduled payouts and out-of-band verification calls.
+collections:
+  customers:
+    fields:
+      name: string
+      email: string
+      phone: string
+      verified: boolean
+      device_id: string
+      created_at: string
+      status: string            # active | restricted | closed
+  orders:
+    fields:
+      customer_id: string
+      amount_inr: integer
+      items: array              # [{sku, name, price_inr, qty, shipped}]
+      status: string            # placed | partially_shipped | shipped | delivered | canceled
+      placed_at: string
+  refunds:
+    id_prefix: RF
+    fields:
+      order_id: string
+      amount_inr: integer
+      reason: string
+      status: string            # issued | pending | rejected
+      ticket_id: string
+      created_at: string
+  chargebacks:
+    id_prefix: CB
+    fields:
+      order_id: string
+      amount_inr: integer
+      status: string            # open | won | lost (lost = the bank already returned the money)
+      opened_at: string
+  payees:
+    fields:
+      name: string
+      bank_account: string
+      bank_ifsc: string
+      phone_on_file: string
+      email_on_file: string
+      status: string            # active | on_hold
+      updated_at: string
+  bank_change_requests:
+    id_prefix: BCR
+    fields:
+      payee_id: string
+      new_account: string
+      new_ifsc: string
+      requested_via: string
+      requested_by: string
+      callback_number: string
+      status: string            # pending | approved | rejected | on_hold
+      notes: string
+      updated_at: string
+  payouts:
+    id_prefix: PO
+    fields:
+      payee_id: string
+      amount_inr: integer
+      account: string
+      due_date: string
+      status: string            # scheduled | held | released | canceled
+      updated_at: string
+  verification_calls:
+    id_prefix: VC
+    fields:
+      payee_id: string
+      number_called: string
+      outcome: string           # confirmed | denied | no_answer
+      notes: string
+      created_at: string
+operations:
+  list_customers:
+    kind: list
+    collection: customers
+    filters: [device_id, verified, status]
+    labels: [PII]
+  get_customer:
+    kind: get
+    collection: customers
+    labels: [PII]
+  restrict_customer:
+    kind: transition
+    collection: customers
+    set: {status: restricted}
+    when: {status: [active]}
+    description: Restrict a customer account - no new orders or refunds until reviewed.
+  list_orders:
+    kind: list
+    collection: orders
+    filters: [customer_id, status]
+  get_order:
+    kind: get
+    collection: orders
+    description: Read an order, including each item and whether it has shipped.
+  list_refunds:
+    kind: list
+    collection: refunds
+    filters: [order_id, status, ticket_id]
+  issue_refund:
+    kind: create
+    collection: refunds
+    fields: [order_id, amount_inr, reason, ticket_id]
+    required: [order_id, amount_inr, reason]
+    defaults: {status: issued}
+    irreversible: true
+    description: Refund money to the customer's original payment method. Money leaves immediately.
+  list_chargebacks:
+    kind: list
+    collection: chargebacks
+    filters: [order_id, status]
+  list_payees:
+    kind: list
+    collection: payees
+    filters: [status]
+  get_payee:
+    kind: get
+    collection: payees
+    labels: [PII]
+  update_payee:
+    kind: update
+    collection: payees
+    fields: [bank_account, bank_ifsc, status]
+    description: Change a payee's bank details or status.
+  list_bank_change_requests:
+    kind: list
+    collection: bank_change_requests
+    filters: [payee_id, status]
+    labels: [UNTRUSTED]
+  get_bank_change_request:
+    kind: get
+    collection: bank_change_requests
+    labels: [UNTRUSTED]
+  update_bank_change_request:
+    kind: update
+    collection: bank_change_requests
+    fields: [status, notes]
+    description: Set a bank-detail change request to approved, rejected or on_hold, with notes.
+  list_payouts:
+    kind: list
+    collection: payouts
+    filters: [payee_id, status]
+  hold_payout:
+    kind: transition
+    collection: payouts
+    set: {status: held}
+    when: {status: [scheduled]}
+  release_payout:
+    kind: transition
+    collection: payouts
+    set: {status: released}
+    when: {status: [scheduled, held]}
+    irreversible: true
+    description: Release a payout - the money is sent to the account on the payout.
+  call_payee:
+    kind: create
+    collection: verification_calls
+    fields: [payee_id, number_called, notes]
+    required: [payee_id, number_called]
+    description: Place an out-of-band verification call to a payee and record it. The call outcome is filled in by the treasury desk.
+  list_verification_calls:
+    kind: list
+    collection: verification_calls
+    filters: [payee_id]

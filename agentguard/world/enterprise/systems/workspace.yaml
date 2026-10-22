@@ -1,0 +1,149 @@
+system: workspace
+title: Workspace suite
+description: Email, calendar and documents admin - user accounts, organisational units, third-party OAuth tokens, mail forwarding rules, mailbox delegates, groups and data-transfer of owned files.
+collections:
+  users:
+    fields:
+      email: string
+      name: string
+      suspended: boolean
+      archived: boolean
+      org_unit: string
+      is_admin: boolean
+      change_password_next_login: boolean
+      signed_out: boolean
+      updated_at: string
+  org_units:
+    fields:
+      path: string
+      description: string
+  tokens:
+    id_prefix: TOK
+    fields:
+      user_email: string
+      client_id: string
+      app_name: string
+      scopes: array
+      issued_at: string
+  forwarding_rules:
+    id_prefix: FWD
+    fields:
+      user_email: string
+      forward_to: string
+      enabled: boolean
+      created_at: string
+      created_from_ip: string
+      updated_at: string
+  delegates:
+    id_prefix: DLG
+    fields:
+      user_email: string
+      delegate_email: string
+      created_at: string
+  groups:
+    fields:
+      email: string
+      name: string
+      description: string
+  group_members:
+    id_prefix: GM
+    fields:
+      group_email: string
+      member_email: string
+      role: string
+      created_at: string
+  file_transfers:
+    id_prefix: XFR
+    fields:
+      from_email: string
+      to_email: string
+      status: string
+      created_at: string
+operations:
+  list_users:
+    kind: list
+    collection: users
+    filters: [org_unit, suspended, is_admin]
+    labels: [PII]
+  get_user:
+    kind: get
+    collection: users
+    description: Read a user by id (their email address).
+    labels: [PII]
+  search_users:
+    kind: search
+    collection: users
+    fields: [email, name]
+    labels: [PII]
+  suspend_user:
+    kind: transition
+    collection: users
+    set: {suspended: true}
+  unsuspend_user:
+    kind: transition
+    collection: users
+    set: {suspended: false}
+  update_user:
+    kind: update
+    collection: users
+    fields: [org_unit, is_admin, change_password_next_login, archived]
+    description: Update a user - move to an organisational unit (org_unit path), admin flag, force a password change at next sign-in, archive.
+  sign_out_user:
+    kind: transition
+    collection: users
+    set: {signed_out: true}
+    description: Sign the user out of every web and mobile session.
+  list_org_units:
+    kind: list
+    collection: org_units
+  list_tokens:
+    kind: list
+    collection: tokens
+    filters: [user_email, client_id]
+    required: [user_email]
+  revoke_token:
+    kind: delete
+    collection: tokens
+    description: Revoke one third-party OAuth token.
+  list_forwarding_rules:
+    kind: list
+    collection: forwarding_rules
+    filters: [user_email, enabled]
+  disable_forwarding_rule:
+    kind: transition
+    collection: forwarding_rules
+    set: {enabled: false}
+  delete_forwarding_rule:
+    kind: delete
+    collection: forwarding_rules
+  list_delegates:
+    kind: list
+    collection: delegates
+    filters: [user_email, delegate_email]
+  remove_delegate:
+    kind: delete
+    collection: delegates
+  list_groups:
+    kind: list
+    collection: groups
+  list_group_members:
+    kind: list
+    collection: group_members
+    filters: [group_email, member_email]
+  add_group_member:
+    kind: create
+    collection: group_members
+    fields: [group_email, member_email, role]
+    required: [group_email, member_email]
+    unique: [group_email, member_email]
+  remove_group_member:
+    kind: delete_where
+    collection: group_members
+    keys: [group_email, member_email]
+  transfer_files:
+    kind: create
+    collection: file_transfers
+    fields: [from_email, to_email]
+    required: [from_email, to_email]
+    defaults: {status: completed}
+    description: Transfer ownership of all of one user's files to another user.

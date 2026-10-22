@@ -1,0 +1,175 @@
+system: servicedesk
+title: Service desk
+description: IT service management - incidents, service and access requests, change records, people, assignment groups and the knowledge base (runbooks and policies).
+collections:
+  incidents:
+    id_prefix: INC
+    fields:
+      short_description: string
+      description: string
+      caller_id: string
+      category: string
+      priority: string          # 1-critical .. 4-low
+      state: string             # new | in_progress | on_hold | resolved | closed | canceled
+      assignment_group: string
+      assigned_to: string
+      escalation_reason: string
+      close_notes: string
+      work_notes: string
+      related: array
+      opened_at: string
+      updated_at: string
+  requests:
+    id_prefix: REQ
+    fields:
+      requester_id: string
+      requested_for: string
+      item: string
+      details: string
+      state: string             # open | in_progress | on_hold | fulfilled | rejected | closed
+      approval: string          # pending | approved | rejected | not_required
+      approver_id: string
+      assignment_group: string
+      work_notes: string
+      opened_at: string
+      updated_at: string
+  changes:
+    id_prefix: CHG
+    fields:
+      short_description: string
+      description: string
+      ci: string
+      state: string             # draft | scheduled | in_progress | implemented | closed | canceled
+      approval: string          # pending | approved | rejected
+      risk: string              # low | moderate | high
+      planned_start: string
+      planned_end: string
+      implementation_plan: string
+      rollback_plan: string
+      test_plan: string
+      requested_by: string
+      approver_id: string
+      work_notes: string
+      updated_at: string
+  users:
+    fields:
+      name: string
+      email: string
+      department: string
+      title: string
+      manager_id: string
+      active: boolean
+      on_leave: boolean
+      delegate_id: string
+  groups:
+    fields:
+      name: string
+      description: string
+      members: array
+      manager_id: string
+  kb:
+    id_prefix: KB
+    fields:
+      title: string
+      body: string
+      tags: array
+      owner: string
+      updated: string
+operations:
+  list_incidents:
+    kind: list
+    collection: incidents
+    filters: [state, priority, assignment_group, caller_id, category]
+    labels: [UNTRUSTED]
+  get_incident:
+    kind: get
+    collection: incidents
+    description: Read one incident, including its description, work notes and related records.
+    labels: [UNTRUSTED]
+  search_incidents:
+    kind: search
+    collection: incidents
+    fields: [short_description, description, work_notes, close_notes]
+    labels: [UNTRUSTED]
+  create_incident:
+    kind: create
+    collection: incidents
+    fields: [short_description, description, caller_id, category, priority, assignment_group, related]
+    required: [short_description]
+    defaults: {state: new}
+  update_incident:
+    kind: update
+    collection: incidents
+    fields: [state, priority, assignment_group, assigned_to, escalation_reason, close_notes, category, related]
+    description: Update an incident - state (new, in_progress, on_hold, resolved, closed, canceled), priority, assignment group, assignee, escalation reason, close notes.
+  add_incident_note:
+    kind: append
+    collection: incidents
+    field: work_notes
+    description: Add a work note to an incident.
+  list_requests:
+    kind: list
+    collection: requests
+    filters: [state, approval, requester_id, requested_for, assignment_group]
+    labels: [UNTRUSTED]
+  get_request:
+    kind: get
+    collection: requests
+    labels: [UNTRUSTED]
+  update_request:
+    kind: update
+    collection: requests
+    fields: [state, approval, approver_id, assignment_group]
+    description: Update a request - state (open, in_progress, on_hold, fulfilled, rejected, closed), approval (pending, approved, rejected, not_required), approver, assignment group.
+  add_request_note:
+    kind: append
+    collection: requests
+    field: work_notes
+  list_changes:
+    kind: list
+    collection: changes
+    filters: [state, approval, ci, risk]
+  get_change:
+    kind: get
+    collection: changes
+  search_changes:
+    kind: search
+    collection: changes
+    fields: [short_description, description, ci, implementation_plan]
+  update_change:
+    kind: update
+    collection: changes
+    fields: [state, approval, risk, approver_id, planned_start, planned_end]
+    description: Update a change record - state (draft, scheduled, in_progress, implemented, closed, canceled), approval (pending, approved, rejected), risk.
+  add_change_note:
+    kind: append
+    collection: changes
+    field: work_notes
+  list_users:
+    kind: list
+    collection: users
+    filters: [department, manager_id, active]
+    labels: [PII]
+  get_user:
+    kind: get
+    collection: users
+    labels: [PII]
+  search_users:
+    kind: search
+    collection: users
+    fields: [name, email, title, department]
+    labels: [PII]
+  list_groups:
+    kind: list
+    collection: groups
+  get_group:
+    kind: get
+    collection: groups
+  search_kb:
+    kind: search
+    collection: kb
+    fields: [title, body, tags]
+    description: Search the knowledge base - runbooks, policies and procedures. Results include the full article.
+  get_kb_article:
+    kind: get
+    collection: kb

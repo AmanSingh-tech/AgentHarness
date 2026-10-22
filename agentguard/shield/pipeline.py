@@ -33,6 +33,7 @@ from agentguard.core.models import (
 from agentguard.shield import injection, risk
 from agentguard.shield.approvals import AutoApprover
 from agentguard.shield.policy import Pattern, Policy, ToolPermission
+from agentguard.shield.policy.model import tool_matches
 from agentguard.core.models import ToolError
 from agentguard.shield.policy.expr import ExprError
 from agentguard.shield.taint import TaintMatch, TaintTracker
@@ -167,7 +168,7 @@ class PolicyStage:
         if agent is None:
             return [_d(DecisionType.BLOCK, f"No policy is defined for agent '{agent_id}', so it may not call any tool.",
                        "policy.unknown_agent", RiskLevel.MEDIUM, self.name)]
-        perm = agent.tools.get(tool)
+        perm = agent.permission(tool)
         base = f"{agent_id}.{tool}"
         if perm is None or not perm.allow:
             why = "is not listed for" if perm is None else "is denied for"
@@ -223,7 +224,7 @@ class PolicyStage:
     def _rules(self, call: ToolCall) -> list[Decision]:
         votes = []
         for rule in self.policy.rules:
-            if rule.when.tool != call.tool:
+            if not tool_matches(rule.when.tool, call.tool):
                 continue
             if rule.when.args_match and not re.search(rule.when.args_match, json.dumps(call.args, ensure_ascii=False)):
                 continue
@@ -286,12 +287,12 @@ class TaintStage:
         matches.sort(key=lambda m: len(m.record.chain), reverse=True)
         hits: list[Decision] = []
         for seq in self.sequences:
-            if call.tool not in seq.sinks:
+            if not any(tool_matches(t, call.tool) for t in seq.sinks):
                 continue
             for m in matches:
                 if not (set(seq.sources) & m.record.labels):
                     continue
-                if any(t not in seq.through_transforms for t in m.record.transforms):
+                if any(not any(tool_matches(x, t) for x in seq.through_transforms) for t in m.record.transforms):
                     continue
                 chain = [h.to_dict() for h in m.record.chain] + [{"seq": call.seq, "call_id": call.id, "tool": call.tool}]
                 path = " -> ".join(f"{h['tool']} (#{h['seq']})" for h in chain)
@@ -388,17 +389,17 @@ class PatternStage:
 
 
 def _applies(p: Pattern, call: ToolCall, spec: ToolSpec) -> bool:
-    if p.when.tool is not None and p.when.tool != call.tool:
+    if p.when.tool is not None and not tool_matches(p.when.tool, call.tool):
         return False
     return not p.when.side_effect or spec.side_effect in p.when.side_effect
 
 
 def _same_target(p: Pattern, c: CallRecord) -> bool:
-    return p.when.tool is None or c.tool == p.when.tool  # side-effect-only patterns count every executed call
+    return p.when.tool is None or tool_matches(p.when.tool, c.tool)  # side-effect-only patterns count every executed call
 
 
 def _satisfies(c: CallRecord, req: Any, call: ToolCall) -> bool:
-    if c.tool != req.tool or (req.ok is not None and c.ok != req.ok):
+    if not tool_matches(req.tool, c.tool) or (req.ok is not None and c.ok != req.ok):
         return False
     for key, want in req.args.items():
         if isinstance(want, str) and want.startswith("$"):
@@ -432,7 +433,7 @@ class VerifyStage:
         if not result.ok:
             return events
         for v in self.checks:
-            if v.tool != call.tool:
+            if not tool_matches(v.tool, call.tool):
                 continue
             variables = {**call.args, "args": call.args, "result": result.output}
             try:

@@ -1,0 +1,49 @@
+system: mail
+title: Mail
+description: Shared and team mailboxes the operator can read, and outbound email. Message bodies are written by whoever sent them.
+collections:
+  messages:
+    id_prefix: MSG
+    fields:
+      mailbox: string
+      from: string
+      to: string
+      subject: string
+      body: string
+      received_at: string
+      headers: object
+  sent:
+    id_prefix: OUT
+    fields:
+      to: string
+      cc: string
+      subject: string
+      body: string
+      created_at: string
+operations:
+  list_messages:
+    kind: list
+    collection: messages
+    filters: [mailbox, from]
+    labels: [UNTRUSTED]
+  get_message:
+    kind: get
+    collection: messages
+    description: Read one message, including its headers.
+    labels: [UNTRUSTED]
+  search_messages:
+    kind: search
+    collection: messages
+    fields: [from, to, subject, body]
+    labels: [UNTRUSTED]
+  send_message:
+    kind: create
+    collection: sent
+    fields: [to, cc, subject, body]
+    required: [to, subject, body]
+    side_effect: external
+    description: Send an email.
+  list_sent:
+    kind: list
+    collection: sent
+    filters: [to]

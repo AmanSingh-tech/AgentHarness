@@ -53,12 +53,13 @@ langgraph = "agentguard.harnesses.llm.langgraph_harness:LangGraphHarness"
 mcp_client = "agentguard.harnesses.mcp_client:ClaudeCodeHarness"
 remote_http = "agentguard.harnesses.remote_http:RemoteHttpHarness"
 ops = "agentguard.ops.harness:OpsHarness"
+bench = "agentguard.gym.bench.harness:BenchSolutionHarness"
 
 [tool.setuptools.packages.find]
 include = ["agentguard*"]
 
 [tool.setuptools.package-data]
-"agentguard" = ["**/*.yaml"]
+"agentguard" = ["**/*.yaml", "gym/bench/tasks/**/*.md", "gym/bench/tasks/**/*.py"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

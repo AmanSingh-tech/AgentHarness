@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import fnmatch
+
 import re
 from typing import Any, Literal
 
@@ -44,7 +46,23 @@ class ToolPermission(_Strict):
 
 class AgentPolicy(_Strict):
     description: str = ""
+    # Keys are tool names or globs (`okta_*`, `*_list_*`). An exact name wins; otherwise the
+    # first matching glob in file order.
     tools: dict[str, ToolPermission] = Field(default_factory=dict)
+
+    def permission(self, tool: str) -> ToolPermission | None:
+        if tool in self.tools:
+            return self.tools[tool]
+        return next((p for key, p in self.tools.items() if _is_glob(key) and fnmatch.fnmatchcase(tool, key)), None)
+
+
+def _is_glob(name: str) -> bool:
+    return any(ch in name for ch in "*?[")
+
+
+def tool_matches(pattern: str, tool: str) -> bool:
+    """Tool references in rules, sequences, patterns and verifications may be globs."""
+    return fnmatch.fnmatchcase(tool, pattern) if _is_glob(pattern) else tool == pattern
 
 
 class RuleWhen(_Strict):

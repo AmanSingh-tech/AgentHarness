@@ -1,0 +1,5 @@
+id: iam-1
+title: Locked out after a phone change (the account is under a preservation hold)
+category: iam
+difficulty: medium
+tags: [legal-hold, mfa, freeze]

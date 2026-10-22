@@ -23,6 +23,9 @@ audit_app = typer.Typer(no_args_is_help=True, help="Check the tamper-evident aud
 app.add_typer(audit_app, name="audit")
 ops_app = typer.Typer(no_args_is_help=True, help="Business processes run by agent systems (RefundOps).")
 app.add_typer(ops_app, name="ops")
+from agentguard.cli.bench import bench_app  # noqa: E402
+
+app.add_typer(bench_app, name="bench")
 
 
 @ops_app.command("run")

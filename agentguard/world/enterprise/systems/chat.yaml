@@ -1,0 +1,69 @@
+system: chat
+title: Team chat
+description: Workplace chat admin - members and guests, account deactivation, channels and channel membership, including channels shared with external organisations.
+collections:
+  users:
+    fields:
+      email: string
+      name: string
+      deleted: boolean
+      is_admin: boolean
+      is_guest: boolean
+      guest_expires: string
+      updated_at: string
+  channels:
+    fields:
+      name: string
+      is_private: boolean
+      is_shared: boolean
+      external_orgs: array
+      purpose: string
+  channel_members:
+    id_prefix: CM
+    fields:
+      channel_id: string
+      user_id: string
+      created_at: string
+operations:
+  list_users:
+    kind: list
+    collection: users
+    filters: [deleted, is_guest, is_admin]
+    labels: [PII]
+  get_user:
+    kind: get
+    collection: users
+    labels: [PII]
+  search_users:
+    kind: search
+    collection: users
+    fields: [email, name]
+    labels: [PII]
+  deactivate_user:
+    kind: transition
+    collection: users
+    set: {deleted: true}
+    description: Deactivate an account - the user is signed out and can no longer access the workspace. Messages are kept.
+  reactivate_user:
+    kind: transition
+    collection: users
+    set: {deleted: false}
+  update_user:
+    kind: update
+    collection: users
+    fields: [is_admin, guest_expires]
+  list_channels:
+    kind: list
+    collection: channels
+    filters: [is_private, is_shared]
+  get_channel:
+    kind: get
+    collection: channels
+  list_channel_members:
+    kind: list
+    collection: channel_members
+    filters: [channel_id, user_id]
+  remove_channel_member:
+    kind: delete_where
+    collection: channel_members
+    keys: [channel_id, user_id]
