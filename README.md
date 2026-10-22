@@ -200,6 +200,20 @@ would skip them but needs an API key.
 client, e.g. `claude mcp add agentguard -- agentguard mcp-serve --scenario normal_refund`.
 The run is verified when the client disconnects.
 
+## Agents deployed as web services
+
+`remote_http:<url>` tests a black-box agent that runs as its own service. For
+each run, AgentGuard starts a tool gateway (`transports/http_proxy.py`) with a
+fresh bearer token, then POSTs the task (text, params, budget, gateway URL and
+token) to the agent. The agent calls back `GET /tools`, `POST /call` and
+`POST /submit`; every call goes through the gateway and AgentShield, and the
+token confines it to its own run.
+
+```bash
+uvicorn examples.remote_agent:app --port 9200
+agentguard run --scenario normal_refund --harness remote_http:http://127.0.0.1:9200/run
+```
+
 ## Metrics
 
 `agentguard metrics` (or `gym.metrics.compute_metrics`) computes these from the

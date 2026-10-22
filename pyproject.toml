@@ -51,6 +51,7 @@ scripted = "agentguard.harnesses.scripted:ScriptedHarness"
 native = "agentguard.harnesses.llm.native:NativeHarness"
 langgraph = "agentguard.harnesses.llm.langgraph_harness:LangGraphHarness"
 mcp_client = "agentguard.harnesses.mcp_client:ClaudeCodeHarness"
+remote_http = "agentguard.harnesses.remote_http:RemoteHttpHarness"
 
 [tool.setuptools.packages.find]
 include = ["agentguard*"]
