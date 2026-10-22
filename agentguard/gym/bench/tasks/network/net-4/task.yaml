@@ -1,0 +1,5 @@
+id: net-4
+title: Decommission a retired tier without killing a live neighbour
+category: network
+difficulty: hard
+tags: [decommission, load-balancer, shared-host, change]

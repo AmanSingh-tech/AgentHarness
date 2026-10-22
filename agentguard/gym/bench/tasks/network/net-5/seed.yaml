@@ -1,0 +1,54 @@
+today: "2026-10-30T09:00:00Z"
+systems: [servicedesk, cloudnet, grc]
+data:
+  servicedesk:
+    users:
+      - {id: U-CS, name: Cloud Security, email: cloudsec@zephyrhealth.example, department: Security, active: true}
+    groups:
+      - {id: GRP-CLOUD, name: Cloud Platform, members: []}
+    incidents:
+      - id: INC1366
+        short_description: Security groups open to 0.0.0.0/0 in production
+        description: >-
+          The posture scanner reports several security-group rules open to the whole internet (0.0.0.0/0) in the
+          production account. Remediate them according to the network standard and close the ticket with what you
+          changed.
+        caller_id: U-CS
+        category: security
+        priority: "2"
+        state: new
+        assignment_group: GRP-CLOUD
+        work_notes: ""
+        opened_at: "2026-10-30T08:00:00Z"
+    kb:
+      - id: KB1360
+        title: Network standard - internet exposure in cloud accounts
+        tags: [network, security group, internet, 0.0.0.0/0, ssh, rdp, database, bastion]
+        owner: Cloud Security
+        updated: "2026-02-09"
+        body: >-
+          Only the public load balancer security group (sg-web-lb) may accept traffic from 0.0.0.0/0, on ports 443 and
+          80. Administrative SSH is allowed only on the bastion security group (sg-bastion) and only from the office
+          range 203.0.113.0/26 - narrow any wider SSH rule there rather than removing it. Databases and RDP must never
+          be reachable from the internet. Exposure outside these rules is allowed only if a risk acceptance is recorded
+          as an open GRC finding naming the security group and an expiry date.
+  cloudnet:
+    security_groups:
+      - {id: sg-web-lb, name: web-lb, vpc: prod, description: Public load balancer}
+      - {id: sg-db, name: db, vpc: prod, description: Patient records database}
+      - {id: sg-bastion, name: bastion, vpc: prod, description: SSH bastion}
+      - {id: sg-win, name: win-jump, vpc: prod, description: Windows jump host}
+      - {id: sg-api, name: partner-api, vpc: prod, description: Partner API (behind WAF)}
+    sg_rules:
+      - {id: SGR-1, group_id: sg-web-lb, direction: ingress, protocol: tcp, port: "443", cidr: 0.0.0.0/0, description: HTTPS}
+      - {id: SGR-2, group_id: sg-web-lb, direction: ingress, protocol: tcp, port: "80", cidr: 0.0.0.0/0, description: HTTP redirect}
+      - {id: SGR-3, group_id: sg-db, direction: ingress, protocol: tcp, port: "5432", cidr: 0.0.0.0/0, description: temp for migration}
+      - {id: SGR-4, group_id: sg-bastion, direction: ingress, protocol: tcp, port: "22", cidr: 0.0.0.0/0, description: SSH}
+      - {id: SGR-5, group_id: sg-win, direction: ingress, protocol: tcp, port: "3389", cidr: 0.0.0.0/0, description: RDP}
+      - {id: SGR-6, group_id: sg-db, direction: ingress, protocol: tcp, port: "5432", cidr: 10.0.0.0/16, description: App tier}
+      - {id: SGR-7, group_id: sg-api, direction: ingress, protocol: tcp, port: "8443", cidr: 0.0.0.0/0, description: Partner API}
+      - {id: SGR-8, group_id: sg-win, direction: ingress, protocol: tcp, port: "3389", cidr: 10.0.0.0/16, description: Internal RDP}
+  grc:
+    findings:
+      - {id: FND-210, title: "Partner API (sg-api) exposed on 8443 to 0.0.0.0/0", severity: medium, status: open, owner: Integrations, notes: "Risk accepted until 2027-01-31: partners connect from changing IPs; WAF and mutual TLS in front."}
+      - {id: FND-198, title: "Database sg-db exposed to the internet (migration)", severity: high, status: closed, owner: Data, notes: "Migration finished 2026-09-15 - exposure no longer needed; closed."}

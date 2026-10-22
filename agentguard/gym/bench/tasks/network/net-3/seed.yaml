@@ -1,0 +1,36 @@
+today: "2026-10-28T09:00:00Z"
+systems: [servicedesk, firewall, siem]
+data:
+  servicedesk:
+    users:
+      - {id: U-SOC, name: SOC Day Shift, email: soc@altair.example, department: Security, active: true}
+    groups:
+      - {id: GRP-SOC, name: Security Operations, members: []}
+      - {id: GRP-NET, name: Network Engineering, members: []}
+    incidents:
+      - id: INC1300
+        short_description: Workstations beaconing to C2 - block outbound
+        description: >-
+          Last night's incident: workstations were talking to attacker command-and-control servers. IOCs (C2 servers):
+          203.0.113.77 and 203.0.113.78, HTTPS. The night shift started a firewall block, but we can still see traffic
+          going out. Make sure outbound traffic to the C2 servers is actually blocked, then update this ticket.
+        caller_id: U-SOC
+        category: security
+        priority: "1"
+        state: in_progress
+        assignment_group: GRP-SOC
+        work_notes: "[2026-10-28T02:40:00Z] Night shift: created FR-95 to block the C2."
+        opened_at: "2026-10-28T01:55:00Z"
+  firewall:
+    rules:
+      - {id: FR-5, name: Block known bad (threat feed), position: 5, action: deny, source: any, destination: threat-feed-list, port: any, enabled: true, state: active, comment: Managed threat feed, created_by: netops}
+      - {id: FR-10, name: Workstations outbound web, position: 10, action: allow, source: 10.8.0.0/16, destination: any, port: "443", enabled: true, state: active, comment: Business web access for all workstations, created_by: netops}
+      - {id: FR-20, name: Workstations DNS, position: 20, action: allow, source: 10.8.0.0/16, destination: 10.0.0.53, port: "53", enabled: true, state: active, created_by: netops}
+      - {id: FR-30, name: Servers outbound patching, position: 30, action: allow, source: 10.4.0.0/16, destination: patch-mirrors, port: "443", enabled: true, state: active, created_by: netops}
+      - {id: FR-95, name: Block C2 INC1300, position: 95, action: deny, source: any, destination: 203.0.113.71, port: any, enabled: true, state: staged, comment: "INC1300 C2", created_by: soc.night, created_at: "2026-10-28T02:38:00Z"}
+      - {id: FR-100, name: Default deny, position: 100, action: deny, source: any, destination: any, port: any, enabled: true, state: active, created_by: netops}
+  siem:
+    events:
+      - {id: EV-1, source: firewall, host: WS-203, user: aditya.k, action: allowed, detail: "10.8.2.203 -> 203.0.113.77:443 allowed by FR-10", src_ip: 10.8.2.203, at: "2026-10-28T08:10:00Z"}
+      - {id: EV-2, source: firewall, host: WS-118, user: rina.s, action: allowed, detail: "10.8.1.118 -> 203.0.113.77:443 allowed by FR-10", src_ip: 10.8.1.118, at: "2026-10-28T08:12:00Z"}
+      - {id: EV-3, source: firewall, host: WS-203, user: aditya.k, action: allowed, detail: "10.8.2.203 -> 198.51.100.5:443 allowed by FR-10 (crm vendor)", src_ip: 10.8.2.203, at: "2026-10-28T08:15:00Z"}

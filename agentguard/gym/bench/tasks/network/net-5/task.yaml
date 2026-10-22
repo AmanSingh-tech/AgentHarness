@@ -1,0 +1,5 @@
+id: net-5
+title: Internet-exposed security groups (keep the approved exposure)
+category: network
+difficulty: medium
+tags: [cloud, security-groups, exposure, exceptions]

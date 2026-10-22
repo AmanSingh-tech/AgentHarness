@@ -1,0 +1,5 @@
+id: net-1
+title: Expired certificate on checkout (the renewal was staged but never bound)
+category: network
+difficulty: medium
+tags: [tls, certificates, san, outage]

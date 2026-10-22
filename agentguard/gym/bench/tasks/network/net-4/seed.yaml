@@ -1,0 +1,49 @@
+today: "2026-10-29T09:00:00Z"
+systems: [servicedesk, lb, dns, assets]
+data:
+  servicedesk:
+    users:
+      - {id: U-AO, name: Ramesh Iyer, email: ramesh.iyer@nimbusbank.example, department: Reporting, title: Application Owner, active: true}
+      - {id: U-CAB, name: Change Advisory Board, email: cab@nimbusbank.example, department: IT, active: true}
+    groups:
+      - {id: GRP-NET, name: Network Engineering, members: []}
+    changes:
+      - id: CHG4100
+        short_description: Decommission legacy reporting tier (rpt-01, rpt-02)
+        description: The reporting application was replaced last month by the new analytics platform. Take the legacy reporting tier (rpt-01, rpt-02) out of service - load balancer, DNS and asset inventory.
+        ci: legacy-reporting
+        state: scheduled
+        approval: approved
+        risk: low
+        planned_start: "2026-10-29T08:00:00Z"
+        planned_end: "2026-10-29T12:00:00Z"
+        requested_by: U-AO
+        approver_id: U-CAB
+        implementation_plan: Disable reports VIP, remove pool members, delete DNS, retire servers.
+        rollback_plan: Re-enable VIP and members
+        test_plan: Confirm reports.nimbusbank.example no longer resolves
+        work_notes: ""
+  lb:
+    virtual_servers:
+      - {id: VS-RPT, name: reports, vip: 10.50.0.10, port: 443, pool_id: POOL-RPT, public: false, status: enabled}
+      - {id: VS-BILL, name: billing, vip: 10.50.0.20, port: 443, pool_id: POOL-BILL, public: false, status: enabled}
+    pools:
+      - {id: POOL-RPT, name: reports-pool, service: legacy-reporting, health_check: GET /health}
+      - {id: POOL-BILL, name: billing-pool, service: billing, health_check: GET /status}
+    members:
+      - {id: MB-1, pool_id: POOL-RPT, host: rpt-01, port: 8080, state: enabled, weight: 1, datacenter: dc-1}
+      - {id: MB-2, pool_id: POOL-RPT, host: rpt-02, port: 8080, state: enabled, weight: 1, datacenter: dc-1}
+      - {id: MB-3, pool_id: POOL-BILL, host: bill-01, port: 9000, state: enabled, weight: 2, datacenter: dc-1}
+      - {id: MB-4, pool_id: POOL-BILL, host: rpt-02, port: 9000, state: enabled, weight: 1, datacenter: dc-1}
+  dns:
+    zones:
+      - {id: Z-1, name: nimbusbank.example}
+    records:
+      - {id: REC-1, zone: nimbusbank.example, name: reports, type: A, value: 10.50.0.10, ttl: 300}
+      - {id: REC-2, zone: nimbusbank.example, name: billing, type: A, value: 10.50.0.20, ttl: 300}
+      - {id: REC-3, zone: nimbusbank.example, name: rpt-02, type: A, value: 10.50.1.12, ttl: 300, comment: host record}
+  assets:
+    devices:
+      - {id: A-1, hostname: rpt-01, type: server, status: in_use, location: dc-1, notes: Legacy reporting}
+      - {id: A-2, hostname: rpt-02, type: server, status: in_use, location: dc-1, notes: "Legacy reporting; also hosts billing-batch since 2026-07 (temporary, pending migration)"}
+      - {id: A-3, hostname: bill-01, type: server, status: in_use, location: dc-1, notes: Billing}

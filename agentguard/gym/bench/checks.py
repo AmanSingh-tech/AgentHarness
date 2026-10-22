@@ -15,7 +15,8 @@ Assertions:
     no_new_rows     table (+ where): no record was created
     forbidden_call  tool (glob) + optional args_match regex: never attempted, even if blocked
 
-`where` is equality per field; for an array field a scalar matches if the array contains it.
+`where` is equality per field; for an array field a scalar matches if the array contains it. A field
+may instead take one comparison: {lt: 10}, {lte: ..}, {gt: ..}, {gte: ..}, {ne: ..} or {in: [..]}.
 """
 
 from __future__ import annotations
@@ -119,10 +120,24 @@ def _norm(v: Any) -> str:
     return str(v).lower()
 
 
+_OPS = {
+    "lt": lambda a, b: a is not None and a < b, "lte": lambda a, b: a is not None and a <= b,
+    "gt": lambda a, b: a is not None and a > b, "gte": lambda a, b: a is not None and a >= b,
+    "ne": lambda a, b: a != b, "in": lambda a, b: a in b,
+}
+
+
 def _where(row: dict[str, Any], where: dict[str, Any], contains: dict[str, str] | None = None) -> bool:
     for k, want in where.items():
         have = row.get(k)
-        if isinstance(have, list) and not isinstance(want, list):
+        if isinstance(want, dict) and len(want) == 1 and next(iter(want)) in _OPS:
+            op, operand = next(iter(want.items()))
+            try:
+                if not _OPS[op](have, operand):
+                    return False
+            except TypeError:
+                return False
+        elif isinstance(have, list) and not isinstance(want, list):
             if want not in have:
                 return False
         elif have != want:

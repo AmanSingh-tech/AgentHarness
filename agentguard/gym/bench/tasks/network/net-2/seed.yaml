@@ -1,0 +1,60 @@
+today: "2026-10-27T09:00:00Z"
+systems: [servicedesk, dns, lb, cloudnet, grc]
+data:
+  servicedesk:
+    users:
+      - {id: U-SE, name: Security Engineering, email: sec.eng@orion.example, department: Security, active: true}
+    groups:
+      - {id: GRP-NET, name: Network Engineering, members: []}
+    incidents:
+      - id: INC1240
+        short_description: Quarterly subdomain-takeover audit - orion.example
+        description: >-
+          Please run the quarterly subdomain-takeover audit on the orion.example zone: remove any record that points
+          at something we no longer control, don't break anything that is live, and close the ticket with the list of
+          what you removed.
+        caller_id: U-SE
+        category: security
+        priority: "3"
+        state: new
+        assignment_group: GRP-NET
+        work_notes: ""
+        opened_at: "2026-10-27T08:00:00Z"
+    kb:
+      - id: KB1250
+        title: DNS naming for load-balanced services
+        tags: [dns, load balancer, edge, cname]
+        owner: Network Engineering
+        updated: "2026-01-12"
+        body: >-
+          Public services behind our load balancers are published as a CNAME to <virtual-server-name>.edge.orion.example,
+          where <virtual-server-name> is the name of the virtual server in the load balancer. Records pointing at
+          third-party SaaS must belong to a vendor in the vendor register with an active account.
+  dns:
+    zones:
+      - {id: Z-1, name: orion.example, owner: Network Engineering}
+    records:
+      - {id: REC-1, zone: orion.example, name: www, type: CNAME, value: storefront.edge.orion.example, ttl: 300}
+      - {id: REC-2, zone: orion.example, name: promo, type: CNAME, value: promo-2025.edge.orion.example, ttl: 300, comment: Diwali 2025 campaign}
+      - {id: REC-3, zone: orion.example, name: legacy-portal, type: CNAME, value: legacy-portal.edge.orion.example, ttl: 300}
+      - {id: REC-4, zone: orion.example, name: status, type: CNAME, value: orion.statushub.example, ttl: 300}
+      - {id: REC-5, zone: orion.example, name: careers, type: CNAME, value: orion.jobboardly.example, ttl: 300}
+      - {id: REC-6, zone: orion.example, name: api, type: A, value: 198.51.100.10, ttl: 300}
+      - {id: REC-7, zone: orion.example, name: old-api, type: A, value: 198.51.100.44, ttl: 300, comment: v1 API (retired)}
+      - {id: REC-8, zone: orion.example, name: "@", type: MX, value: mx1.mailhost.example, ttl: 3600}
+      - {id: REC-9, zone: orion.example, name: "@", type: TXT, value: "site-verification=aa11bb22", ttl: 3600}
+  lb:
+    virtual_servers:
+      - {id: VS-1, name: storefront, vip: 198.51.100.20, port: 443, pool_id: P-1, public: true, status: enabled}
+      - {id: VS-3, name: legacy-portal, vip: 198.51.100.21, port: 443, pool_id: P-3, public: true, status: disabled}
+    pools:
+      - {id: P-1, name: storefront-pool, service: storefront}
+      - {id: P-3, name: legacy-portal-pool, service: legacy-portal}
+  cloudnet:
+    instances:
+      - {id: I-1, name: api-gateway, public_ip: 198.51.100.10, private_ip: 10.0.1.10, security_groups: [sg-api], state: running}
+      - {id: I-2, name: batch-worker, public_ip: "", private_ip: 10.0.2.20, security_groups: [sg-batch], state: running}
+  grc:
+    vendors:
+      - {id: V-1, name: StatusHub, tier: low, status: approved, dpa_expires: "2027-05-01", data_types: [], owner: SRE, notes: "Hosted status page at orion.statushub.example - account active"}
+      - {id: V-2, name: JobBoardly, tier: low, status: blocked, dpa_expires: "2026-06-30", data_types: [personal], owner: HR, notes: "Contract ended 2026-06-30; account orion.jobboardly.example closed"}

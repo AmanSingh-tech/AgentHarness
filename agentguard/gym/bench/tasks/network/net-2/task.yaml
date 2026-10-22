@@ -1,0 +1,5 @@
+id: net-2
+title: Subdomain-takeover audit of the company DNS zone
+category: network
+difficulty: hard
+tags: [dns, dangling-records, subdomain-takeover, inventory]

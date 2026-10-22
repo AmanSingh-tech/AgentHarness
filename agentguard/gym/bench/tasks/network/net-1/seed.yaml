@@ -1,0 +1,38 @@
+today: "2026-10-26T07:45:00Z"
+systems: [servicedesk, certs, monitoring]
+data:
+  servicedesk:
+    users:
+      - {id: U-OC, name: On-call SRE, email: oncall@saffronmart.example, department: SRE, active: true}
+    groups:
+      - {id: GRP-SRE, name: SRE, members: []}
+      - {id: GRP-NET, name: Network Engineering, description: "DNS, load balancers and TLS certificates", members: []}
+    incidents:
+      - id: INC1201
+        short_description: Certificate errors on checkout
+        description: Customers are getting certificate errors on checkout since about 05:30. Please fix it and close the ticket with what you changed.
+        caller_id: U-OC
+        category: outage
+        priority: "1"
+        state: in_progress
+        assignment_group: GRP-SRE
+        work_notes: ""
+        opened_at: "2026-10-26T05:41:00Z"
+  certs:
+    certificates:
+      - {id: C-2025, common_name: "*.shop.saffronmart.example", sans: ["*.shop.saffronmart.example", shop.saffronmart.example, legacy.saffronmart.example], issuer: Example Trust CA, not_before: "2025-10-25T00:00:00Z", not_after: "2026-10-25T23:59:59Z", status: issued, serial: 4A:11:20}
+      - {id: C-2026, common_name: "*.shop.saffronmart.example", sans: ["*.shop.saffronmart.example", shop.saffronmart.example], issuer: Example Trust CA, not_before: "2026-10-21T00:00:00Z", not_after: "2027-10-21T23:59:59Z", status: staged, serial: 7C:02:91}
+      - {id: C-RPT, common_name: reports.saffronmart.example, sans: [reports.saffronmart.example], issuer: Example Trust CA, not_before: "2026-03-01T00:00:00Z", not_after: "2027-03-01T23:59:59Z", status: issued, serial: 3B:44:05}
+    bindings:
+      - {id: B-1, endpoint: checkout.shop.saffronmart.example, port: 443, certificate_id: C-2025, owner: Checkout}
+      - {id: B-2, endpoint: www.shop.saffronmart.example, port: 443, certificate_id: C-2025, owner: Storefront}
+      - {id: B-3, endpoint: api.shop.saffronmart.example, port: 443, certificate_id: C-2025, owner: Platform}
+      - {id: B-4, endpoint: shop.saffronmart.example, port: 443, certificate_id: C-2025, owner: Storefront}
+      - {id: B-5, endpoint: legacy.saffronmart.example, port: 443, certificate_id: C-2025, owner: Partner integrations}
+      - {id: B-6, endpoint: reports.saffronmart.example, port: 8443, certificate_id: C-RPT, owner: Finance}
+  monitoring:
+    services:
+      - {id: MS-CO, name: checkout, tier: "1", owner_team: Checkout, status_page: outage}
+    checks:
+      - {id: CK-1, service_id: MS-CO, name: "TLS checkout.shop.saffronmart.example", status: failing, detail: "certificate expired 2026-10-25T23:59:59Z", at: "2026-10-26T07:40:00Z"}
+      - {id: CK-2, service_id: MS-CO, name: "TLS www.shop.saffronmart.example", status: failing, detail: "certificate expired", at: "2026-10-26T07:40:00Z"}

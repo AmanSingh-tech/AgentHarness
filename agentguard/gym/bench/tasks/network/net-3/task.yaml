@@ -1,0 +1,5 @@
+id: net-3
+title: The C2 block that never blocked anything
+category: network
+difficulty: hard
+tags: [firewall, rule-order, staged-change, ioc]
