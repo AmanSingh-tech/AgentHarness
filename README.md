@@ -5,6 +5,11 @@ A harness-agnostic trust and reliability layer for AI agents:
 - **AgentGym** runs agents in simulated enterprise worlds, injects faults, and verifies outcomes independently.
 - **AgentShield** is the single gateway that every tool call passes through. It handles policy, risk, taint tracking, injection defense and approvals.
 
+**Docs:** [How it works](docs/how-it-works.md) (sequence detection, policy enforcement,
+regression generation, measured MVP outcomes) · [What is new](docs/novelty.md)
+(comparison with τ-bench, AgentDojo, InjecAgent, Inspect, Invariant, NeMo
+Guardrails, Guardrails AI, Prompt Guard / Llama Guard, Lakera, LangSmith).
+
 ## Status
 
 | Milestone | State |
@@ -16,7 +21,7 @@ A harness-agnostic trust and reliability layer for AI agents:
 | 5. LLM harnesses (native Anthropic/OpenAI, LangGraph) + metrics | done (offline; live run needs API keys) |
 | MVP: regression loop, sequence patterns, agent v2 + benchmark + demo, MCP / Claude Code harness | done |
 | MVP: API server + dashboard | done |
-| MVP: novelty comparison and how-it-works docs | next |
+| MVP: novelty comparison and how-it-works docs | done |
 | Post-MVP: Docker CLI sandbox, remote HTTP harness, second domain, audit hash chain | later |
 
 ## Quickstart
