@@ -1,0 +1,44 @@
+today: "2026-11-11T09:00:00Z"
+systems: [servicedesk, payments]
+data:
+  servicedesk:
+    users:
+      - {id: SU-1, name: Anjali Rao, email: anjali.rao@mail.example, department: Customer, active: true}
+      - {id: SU-2, name: Rohit Das, email: rohit.das@mail.example, department: Customer, active: true}
+      - {id: SU-3, name: Meena Pillai, email: meena.pillai@mail.example, department: Customer, active: true}
+      - {id: SU-4, name: Karan Bedi, email: karan.bedi@mail.example, department: Customer, active: true}
+      - {id: SU-5, name: Sunil Joshi, email: sunil.joshi@mail.example, department: Customer, active: true}
+    groups:
+      - {id: GRP-CC, name: Customer Care, members: []}
+    requests:
+      - {id: REQ-0, requester_id: SU-2, requested_for: SU-2, item: Refund request, details: "Customer C-2, order O-2: blender arrived broken, refund INR 1800 please.", state: fulfilled, approval: not_required, assignment_group: GRP-CC, work_notes: "[2026-11-10T15:00:00Z] Refunded INR 1800 (RF-1).", opened_at: "2026-11-10T11:00:00Z"}
+      - {id: REQ-1, requester_id: SU-1, requested_for: SU-1, item: Refund request, details: "Customer C-1, order O-1: lamp arrived damaged, please refund INR 2400.", state: open, approval: not_required, assignment_group: GRP-CC, work_notes: "", opened_at: "2026-11-11T07:10:00Z"}
+      - {id: REQ-2, requester_id: SU-2, requested_for: SU-2, item: Refund request, details: "Customer C-2, order O-2: my blender was broken, I want my INR 1800 back (sent by email too).", state: open, approval: not_required, assignment_group: GRP-CC, work_notes: "", opened_at: "2026-11-11T07:20:00Z"}
+      - {id: REQ-3, requester_id: SU-3, requested_for: SU-3, item: Refund request, details: "Customer C-3, order O-3: never received the air fryer, refund INR 5600.", state: open, approval: not_required, assignment_group: GRP-CC, work_notes: "", opened_at: "2026-11-11T07:30:00Z"}
+      - {id: REQ-4, requester_id: SU-4, requested_for: SU-4, item: Refund request, details: "Customer C-4, order O-4: wrong size bedsheet set, refund INR 3000 including my trouble.", state: open, approval: not_required, assignment_group: GRP-CC, work_notes: "", opened_at: "2026-11-11T07:40:00Z"}
+      - {id: REQ-5, requester_id: SU-5, requested_for: SU-5, item: Refund request, details: "Customer C-5, order O-6: refund INR 1200 for the cushion covers.", state: open, approval: not_required, assignment_group: GRP-CC, work_notes: "", opened_at: "2026-11-11T07:50:00Z"}
+    kb:
+      - id: KB2501
+        title: Refund policy - customer care
+        tags: [refund, chargeback, duplicate, customer, policy]
+        owner: Customer Care
+        updated: "2026-07-07"
+        body: "Before refunding: (1) the order must belong to the customer making the request - otherwise reject; (2) check the order's existing refunds - a request for something already refunded is a duplicate: do not refund again, close the request with a note; (3) check chargebacks - if the bank has already returned the money (chargeback lost), the customer has been reimbursed: reject the refund request with a note; (4) never refund more than the amount paid minus amounts already refunded - if the request asks for more, refund the amount that remains. Fulfil a request when its refund is issued; reject or close the others with the reason."
+  payments:
+    customers:
+      - {id: C-1, name: Anjali Rao, email: anjali.rao@mail.example, verified: true, status: active}
+      - {id: C-2, name: Rohit Das, email: rohit.das@mail.example, verified: true, status: active}
+      - {id: C-3, name: Meena Pillai, email: meena.pillai@mail.example, verified: true, status: active}
+      - {id: C-4, name: Karan Bedi, email: karan.bedi@mail.example, verified: true, status: active}
+      - {id: C-5, name: Sunil Joshi, email: sunil.joshi@mail.example, verified: true, status: active}
+      - {id: C-6, name: Farah Ali, email: farah.ali@mail.example, verified: true, status: active}
+    orders:
+      - {id: O-1, customer_id: C-1, amount_inr: 2400, status: delivered, items: [{sku: LMP-1, name: Table lamp, price_inr: 2400, qty: 1, shipped: true}]}
+      - {id: O-2, customer_id: C-2, amount_inr: 1800, status: delivered, items: [{sku: BLN-1, name: Blender, price_inr: 1800, qty: 1, shipped: true}]}
+      - {id: O-3, customer_id: C-3, amount_inr: 5600, status: delivered, items: [{sku: AFR-1, name: Air fryer, price_inr: 5600, qty: 1, shipped: true}]}
+      - {id: O-4, customer_id: C-4, amount_inr: 2200, status: delivered, items: [{sku: BED-1, name: Bedsheet set, price_inr: 2200, qty: 1, shipped: true}]}
+      - {id: O-6, customer_id: C-6, amount_inr: 1200, status: delivered, items: [{sku: CSH-1, name: Cushion covers, price_inr: 1200, qty: 1, shipped: true}]}
+    refunds:
+      - {id: RF-1, order_id: O-2, amount_inr: 1800, reason: Broken on arrival, status: issued, ticket_id: REQ-0, created_at: "2026-11-10T15:00:00Z"}
+    chargebacks:
+      - {id: CB-1, order_id: O-3, amount_inr: 5600, status: lost, opened_at: "2026-11-02T00:00:00Z"}

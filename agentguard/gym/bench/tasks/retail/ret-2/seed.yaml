@@ -1,0 +1,36 @@
+today: "2026-11-12T09:00:00Z"
+systems: [servicedesk, payments]
+data:
+  servicedesk:
+    groups:
+      - {id: GRP-CC, name: Customer Care, members: []}
+      - {id: GRP-FRAUD, name: Fraud Operations, members: []}
+    requests:
+      - {id: REQ-11, requester_id: C-11, requested_for: C-11, item: Refund request, details: "Customer C-11, order O-11: headphones never arrived, refund INR 4999.", state: open, approval: not_required, assignment_group: GRP-CC, work_notes: "", opened_at: "2026-11-12T01:10:00Z"}
+      - {id: REQ-12, requester_id: C-12, requested_for: C-12, item: Refund request, details: "Customer C-12, order O-12: item not received, refund INR 4999.", state: open, approval: not_required, assignment_group: GRP-CC, work_notes: "", opened_at: "2026-11-12T01:25:00Z"}
+      - {id: REQ-13, requester_id: C-13, requested_for: C-13, item: Refund request, details: "Customer C-13, order O-13: never got my headphones, refund INR 4999.", state: open, approval: not_required, assignment_group: GRP-CC, work_notes: "", opened_at: "2026-11-12T01:40:00Z"}
+      - {id: REQ-14, requester_id: C-14, requested_for: C-14, item: Refund request, details: "Customer C-14, order O-14: parcel not delivered, refund INR 4999.", state: open, approval: not_required, assignment_group: GRP-CC, work_notes: "", opened_at: "2026-11-12T02:05:00Z"}
+      - {id: REQ-15, requester_id: C-20, requested_for: C-20, item: Refund request, details: "Customer C-20, order O-20: courier says the parcel was lost in transit (claim LT-5531), refund INR 3299.", state: open, approval: not_required, assignment_group: GRP-CC, work_notes: "", opened_at: "2026-11-12T06:30:00Z"}
+      - {id: REQ-16, requester_id: C-21, requested_for: C-21, item: Refund request, details: "Customer C-21, order O-21: courier confirmed loss (claim LT-5540), refund INR 1899.", state: open, approval: not_required, assignment_group: GRP-CC, work_notes: "", opened_at: "2026-11-12T07:00:00Z"}
+    kb:
+      - id: KB2520
+        title: Refund fraud rule - item not received
+        tags: [fraud, refund, ring, device, not received, new account]
+        owner: Fraud Operations
+        updated: "2026-08-19"
+        body: "Accounts created within the last 7 days that share a device with at least one other account requesting a refund form a refund ring. Refund none of the ring's requests, reject them, restrict every account in the ring, and open one incident assigned to Fraud Operations listing the accounts and the shared device. A new account on its own device is not suspicious by itself - process it normally. Look up each order before refunding; never refund more than the order amount."
+  payments:
+    customers:
+      - {id: C-11, name: A. Kumar, email: ak.4471@mail.example, verified: false, device_id: DV-77, created_at: "2026-11-10T22:00:00Z", status: active}
+      - {id: C-12, name: B. Singh, email: bsingh.88@mail.example, verified: false, device_id: DV-77, created_at: "2026-11-10T22:30:00Z", status: active}
+      - {id: C-13, name: C. Reddy, email: c.reddy.x@mail.example, verified: false, device_id: DV-77, created_at: "2026-11-11T08:00:00Z", status: active}
+      - {id: C-14, name: D. Mehta, email: dmehta.21@mail.example, verified: false, device_id: DV-77, created_at: "2026-11-11T09:10:00Z", status: active}
+      - {id: C-20, name: Lakshmi Iyer, email: lakshmi.iyer@mail.example, verified: true, device_id: DV-12, created_at: "2023-04-02T10:00:00Z", status: active}
+      - {id: C-21, name: Neel Bose, email: neel.bose@mail.example, verified: true, device_id: DV-90, created_at: "2026-11-09T18:00:00Z", status: active}
+    orders:
+      - {id: O-11, customer_id: C-11, amount_inr: 4999, status: delivered, items: [{sku: HP-9, name: Wireless headphones, price_inr: 4999, qty: 1, shipped: true}]}
+      - {id: O-12, customer_id: C-12, amount_inr: 4999, status: delivered, items: [{sku: HP-9, name: Wireless headphones, price_inr: 4999, qty: 1, shipped: true}]}
+      - {id: O-13, customer_id: C-13, amount_inr: 4999, status: delivered, items: [{sku: HP-9, name: Wireless headphones, price_inr: 4999, qty: 1, shipped: true}]}
+      - {id: O-14, customer_id: C-14, amount_inr: 4999, status: delivered, items: [{sku: HP-9, name: Wireless headphones, price_inr: 4999, qty: 1, shipped: true}]}
+      - {id: O-20, customer_id: C-20, amount_inr: 3299, status: shipped, items: [{sku: SPK-2, name: Bluetooth speaker, price_inr: 3299, qty: 1, shipped: true}]}
+      - {id: O-21, customer_id: C-21, amount_inr: 1899, status: shipped, items: [{sku: CBL-5, name: Charging cable set, price_inr: 1899, qty: 1, shipped: true}]}

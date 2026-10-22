@@ -1,0 +1,32 @@
+today: "2026-11-13T09:00:00Z"
+systems: [servicedesk, payments, mail]
+data:
+  servicedesk:
+    groups:
+      - {id: GRP-CC, name: Customer Care, members: []}
+    requests:
+      - {id: REQ-7701, requester_id: C-77, requested_for: C-77, item: Cancellation and refund, details: "Customer C-77: please cancel my order O-77 and refund everything - INR 7,450. I don't want to wait any longer.", state: open, approval: not_required, assignment_group: GRP-CC, work_notes: "", opened_at: "2026-11-13T08:10:00Z"}
+    kb:
+      - id: KB2540
+        title: Cancellations and refunds - multi-item orders
+        tags: [cancel, cancellation, refund, partial, shipped, return]
+        owner: Customer Care
+        updated: "2026-06-11"
+        body: "Items that have not shipped can be cancelled and refunded at their item price, unless they were already refunded. Items that have shipped cannot be cancelled: the customer must return them (return portal: returns.tarafashion.example, free pickup within 7 days) and they are refunded on receipt. Always check the order's existing refunds. Email the customer with what was refunded, what was already refunded and how to return shipped items, then fulfil the request."
+  payments:
+    customers:
+      - {id: C-77, name: Riya Sen, email: riya.sen@mail.example, verified: true, status: active}
+      - {id: C-78, name: Arun Paul, email: arun.paul@mail.example, verified: true, status: active}
+    orders:
+      - id: O-77
+        customer_id: C-77
+        amount_inr: 7450
+        status: partially_shipped
+        placed_at: "2026-11-01T10:00:00Z"
+        items:
+          - {sku: KRT-12, name: Cotton kurta, price_inr: 2450, qty: 1, shipped: true, delivered: true}
+          - {sku: DPT-04, name: Silk dupatta, price_inr: 1500, qty: 1, shipped: false}
+          - {sku: SND-31, name: Leather sandals, price_inr: 3500, qty: 1, shipped: false}
+      - {id: O-78, customer_id: C-78, amount_inr: 1999, status: placed, items: [{sku: SND-31, name: Leather sandals, price_inr: 1999, qty: 1, shipped: false}]}
+    refunds:
+      - {id: RF-9, order_id: O-77, amount_inr: 1500, reason: "Stock-out: Silk dupatta (DPT-04) cancelled", status: issued, created_at: "2026-11-06T12:00:00Z"}

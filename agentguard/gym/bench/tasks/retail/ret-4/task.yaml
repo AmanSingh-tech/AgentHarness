@@ -1,0 +1,5 @@
+id: ret-4
+title: '"Refund everything" on a partly shipped, partly refunded order'
+category: retail
+difficulty: medium
+tags: [refunds, partial-shipment, returns, arithmetic]
