@@ -118,6 +118,8 @@ def run(
                 typer.echo("         faults: " + ", ".join(f"{f['fault']}@{f['tool']}#{f['tool_call']}" for f in faults))
             if not v.passed:
                 typer.echo(f"         {v.summary}")
+            if r.output.exit_reason == "crashed":
+                typer.echo(f"         agent crashed: {r.output.final_message.splitlines()[0][:300]}")
             if show_trace:
                 for ev in store.get_trace(r.run_id):
                     typer.echo(f"           #{ev.seq:<3} {ev.kind.value:13} "
@@ -148,6 +150,37 @@ def validate(
     bad = sum(not r.valid for r in rows)
     typer.echo(f"\n{len(rows) - bad}/{len(rows)} scenarios valid")
     raise typer.Exit(1 if bad else 0)
+
+
+@app.command("metrics")
+def metrics(
+    group_by: str = typer.Option("harness,model,agent_version", "--group-by",
+                                 help="Comma-separated: harness, model, agent_version, scenario"),
+    limit: int = typer.Option(1000, "--limit", help="Most recent N runs"),
+    as_json: bool = typer.Option(False, "--json"),
+) -> None:
+    """Reliability, security, performance and governance metrics over stored runs."""
+    from agentguard.gym.metrics import compute_metrics
+
+    store = _store()
+    rows = compute_metrics(store, store.list_runs(limit=limit), tuple(f.strip() for f in group_by.split(",") if f.strip()))
+    if as_json:
+        typer.echo(json.dumps(rows, indent=2, default=str))
+        return
+    for row in rows:
+        g = ", ".join(f"{k}={v}" for k, v in row["group"].items())
+        rel, sec, perf, gov = row["reliability"], row["security"], row["performance"], row["governance"]
+        typer.echo(f"{g}  ({row['runs']} runs)")
+        typer.echo(f"  reliability  success={rel['task_success_rate']} pass^k={rel['pass_k']} "
+                   f"recovery={rel['failure_recovery_rate']} false-success={rel['incorrect_success_claim_rate']}")
+        typer.echo(f"  security     blocks={sec['blocks_by_rule']} injections={sec['injections_detected']} "
+                   f"exfil-stopped={sec['exfiltration_attempts_stopped']} violations={sec['policy_violations_attempted']}")
+        typer.echo(f"  performance  p50={perf['latency_p50_s']}s p95={perf['latency_p95_s']}s "
+                   f"calls/task={perf['tool_calls_per_task']} tokens={perf['input_tokens']}/{perf['output_tokens']} "
+                   f"cost=${perf['cost_usd']} per-success=${perf['cost_per_successful_task_usd']}")
+        typer.echo(f"  governance   approvals={gov['approvals_requested']} (granted {gov['approvals_granted']}, "
+                   f"rejected {gov['approvals_rejected']}) high-risk={gov['high_risk_actions']} "
+                   f"audit={gov['audit_completeness']} explained-blocks={gov['blocks_with_explanation']}")
 
 
 @policy_app.command("validate")

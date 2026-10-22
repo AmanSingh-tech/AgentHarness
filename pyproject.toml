@@ -21,6 +21,17 @@ dev = [
   "pytest==8.3.3",
   "pytest-cov==5.0.0",
 ]
+llm = [
+  "anthropic==1.17.0",
+  "openai==3.36.1",
+]
+langgraph = [
+  "langchain==1.4.7",
+  "langgraph==1.2.16",
+  "langchain-core==1.6.13",
+  "langchain-anthropic==1.7.6",
+  "langchain-openai==1.7.2",
+]
 
 [project.scripts]
 agentguard = "agentguard.cli.main:app"
@@ -28,6 +39,8 @@ agentguard = "agentguard.cli.main:app"
 # Third-party harnesses register here too; the key is the prefix in `--harness <key>:<variant>`.
 [project.entry-points."agentguard.harnesses"]
 scripted = "agentguard.harnesses.scripted:ScriptedHarness"
+native = "agentguard.harnesses.llm.native:NativeHarness"
+langgraph = "agentguard.harnesses.llm.langgraph_harness:LangGraphHarness"
 
 [tool.setuptools.packages.find]
 include = ["agentguard*"]

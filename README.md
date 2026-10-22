@@ -13,12 +13,13 @@ A harness-agnostic trust and reliability layer for AI agents:
 | 2. Scenarios, independent verifier, matrix runner with pass^k, `validate-scenarios` | done |
 | 3. Fault injector (all 11 types) + naive agent | done |
 | 4. AgentShield: policy DSL, risk, injection, taint, approvals | done |
-| 5. LLM harnesses (native function calling, LangGraph) | next |
+| 5. LLM harnesses (native Anthropic/OpenAI, LangGraph) + metrics | done (offline; live run needs API keys) |
+| 6. MCP proxy, Docker CLI sandbox, remote HTTP harnesses | next |
 
 ## Quickstart
 
 ```bash
-python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
+python3 -m venv .venv && .venv/bin/pip install -e ".[dev,llm,langgraph]"   # llm/langgraph extras are optional
 .venv/bin/pytest --cov=agentguard
 
 .venv/bin/agentguard validate-scenarios                 # null must fail, oracle must pass
@@ -28,6 +29,9 @@ python3 -m venv .venv && .venv/bin/pip install -e ".[dev]"
 .venv/bin/agentguard run --suite agentguard/gym/scenarios --harness scripted:oracle --attempts 3 --parallel 8
 .venv/bin/agentguard run --suite agentguard/gym/scenarios --harness scripted:naive --no-shield   # the agent alone
 .venv/bin/agentguard run --scenario secret_exfiltration --harness scripted:adversarial
+.venv/bin/agentguard run --suite agentguard/gym/scenarios --harness native:anthropic --model claude-opus-5-5
+.venv/bin/agentguard run --scenario normal_refund --harness langgraph:openai --model <openai-model>
+.venv/bin/agentguard metrics --group-by harness,model,agent_version
 .venv/bin/agentguard policy show
 .venv/bin/agentguard policy validate my_policy.yaml
 .venv/bin/agentguard world reset support --seed 42
@@ -102,6 +106,36 @@ shield:
     rules: [{rule_id: bulk_pii_exfiltration, decision: reject}]
 ```
 
+## LLM harnesses
+
+| Harness | Type | Notes |
+|---|---|---|
+| `native:anthropic` | NATIVE_FUNCTION_CALLING | Our own tool-calling loop on the Messages API. Defaults to `claude-opus-5-5` at effort `high`, with server-side refusal fallbacks (`fallbacks: "default"`) on the models that support them |
+| `native:openai` | NATIVE_FUNCTION_CALLING | Chat Completions with function calling. Needs `--model` |
+| `langgraph:anthropic`, `langgraph:openai` | FRAMEWORK | A LangGraph agent (`langchain.agents.create_agent`) whose tools are generated from the ToolSpecs |
+
+Every world tool call goes through the gateway. Each harness adds one local
+tool, `submit_result(status, summary)`, which never reaches the world. It is
+how the model makes a structured claim, and the verifier still checks that
+claim against the world state. The harnesses enforce the scenario's budget
+(tool calls, wall time, tokens, cost) and record tokens and cost per run. A
+model without a price in `harnesses/llm/providers.py` is recorded with cost 0.
+
+Set keys in `.env` (see `.env.example`). Real-model tests are opt-in because
+they cost money: `AGENTGUARD_LIVE=1 pytest tests/test_live_models.py -s`.
+Without that flag, the harnesses are tested with fake clients that replay a
+fixed conversation through the real loop, gateway, shield and verifier.
+
+## Metrics
+
+`agentguard metrics` (or `gym.metrics.compute_metrics`) computes these from the
+stored runs and traces, grouped by harness, model, agent version or scenario:
+
+- **Reliability:** success rate, pass^k, failure-recovery rate, incorrect-success-claim rate, regression scenarios.
+- **Security:** blocks by rule, injections detected, exfiltration attempts stopped, policy violations attempted.
+- **Performance:** latency p50/p95, tool calls per task, tokens, cost, cost per successful task.
+- **Governance:** approvals requested/granted/rejected, high-risk actions executed, audit completeness, share of blocks with an explanation.
+
 ## Faults
 
 Scenarios can inject faults inside the gateway, after the decision. Each fault
@@ -141,8 +175,9 @@ agentguard/
   shield/      gateway.py (the choke point), pipeline.py (stages), policy/ (DSL), taint.py,
                injection.py, risk.py, approvals.py; policies/default.yaml
   transports/  ToolEndpoint base; inprocess.py
-  harnesses/   AgentHarness protocol + registry; scripted.py + scripted_agents/*.yaml
-  gym/         scenario.py, faults.py, verifier.py, claims.py, runner.py; scenarios/support/**/*.yaml
+  harnesses/   AgentHarness protocol + registry; scripted.py + scripted_agents/*.yaml;
+               llm/ (providers.py, native.py, langgraph_harness.py)
+  gym/         scenario.py, faults.py, verifier.py, claims.py, runner.py, metrics.py; scenarios/support/**/*.yaml
   cli/         Typer app
 tests/
 ```
