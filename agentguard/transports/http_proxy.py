@@ -2,6 +2,7 @@
 
     GET  /tools               -> {"tools": [{name, description, input_schema, side_effect}, ...]}
     POST /call   {tool, args} -> {"ok": true, "output": ...} | {"ok": false, "error": {...}}
+    POST /tools/<name>  {args} -> the same, REST style (handy for curl in shell agents)
     POST /submit {status, summary}  -> the agent's structured claim
 
 Every request needs `Authorization: Bearer <token>`; the token is minted per run,
@@ -61,6 +62,11 @@ def build_http_gateway(endpoint: InProcessEndpoint, token: str,
         # the gateway may block on an approval: keep the event loop free
         result = await run_in_threadpool(endpoint.call, body.tool, body.args)
         return Response(_render(result), media_type="application/json")
+
+    @app.post("/tools/{tool}")
+    async def call_rest(tool: str, args: dict[str, Any] | None = None) -> Response:
+        """REST style for shell agents: curl -X POST $GW/tools/get_order -d '{"order_id": "O-1"}'"""
+        return await call(Call(tool=tool, args=args or {}))
 
     @app.post("/submit")
     def submit(body: Submit) -> dict[str, Any]:
