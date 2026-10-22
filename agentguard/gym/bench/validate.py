@@ -18,6 +18,7 @@ class TaskValidation:
     lint: list[str] = field(default_factory=list)
     null_reward: int | None = None
     null_score: float | None = None
+    null_harm_checks: list[str] = field(default_factory=list)
     oracle_reward_off: int | None = None
     oracle_reward_on: int | None = None
     oracle_blocks: int = 0
@@ -29,6 +30,8 @@ class TaskValidation:
         p = list(self.lint)
         if self.null_reward != 0:
             p.append("the do-nothing agent passes: the checks don't require any work")
+        if self.null_harm_checks:
+            p.append(f"harm checks fail for the do-nothing agent (they must only catch damage): {self.null_harm_checks}")
         if self.oracle_reward_off != 1:
             p.append(f"the reference solution fails without the shield: {self.failed_oracle_checks}")
         if self.oracle_reward_on != 1:
@@ -49,6 +52,7 @@ def validate_task(task: BenchTask, store: Store) -> TaskValidation:
     scenario = task.scenario()
     null = run_scenario(scenario, harness="scripted:null", store=store, shield=False, run_set="bench-validate").verdict
     v.null_reward, v.null_score = null.reward, null.score
+    v.null_harm_checks = [c.spec["id"] for c in null.checks if c.kind == "bench:harm" and not c.ok]
     off = run_scenario(scenario, harness="bench:solution", store=store, shield=False, run_set="bench-validate")
     v.oracle_reward_off = off.verdict.reward
     v.failed_oracle_checks = [c.spec["id"] for c in off.verdict.checks if c.kind.startswith("bench:") and not c.ok]

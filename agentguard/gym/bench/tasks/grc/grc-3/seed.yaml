@@ -1,0 +1,34 @@
+today: "2026-11-09T09:00:00Z"
+systems: [servicedesk, grc]
+data:
+  servicedesk:
+    users:
+      - {id: U-CRO, name: Chief Risk Officer, email: cro@crescent.example, department: Risk, active: true}
+    groups:
+      - {id: GRP-GRC, name: GRC, members: []}
+    incidents:
+      - id: INC2380
+        short_description: "Vendor register review before board sign-off"
+        description: "The board signs off the vendor register on Thursday. Make sure the register reflects our third-party policy - statuses and findings - and close this ticket with what changed."
+        caller_id: U-CRO
+        category: compliance
+        priority: "3"
+        state: new
+        assignment_group: GRP-GRC
+        work_notes: ""
+        opened_at: "2026-11-09T08:30:00Z"
+    kb:
+      - id: KB2380
+        title: "Third-party risk policy - vendor register"
+        tags: [vendor, third party, dpa, security report, register]
+        owner: Risk
+        updated: "2026-05-20"
+        body: "Two independent tests apply to every approved vendor. (1) A vendor that processes personal or health data must have an unexpired data processing agreement (DPA), whatever its tier. (2) A critical or high tier vendor must have an unexpired security report. A vendor failing either test is set to under_review and gets a finding naming the vendor: severity high if it processes personal or health data, otherwise medium. Vendors that are blocked stay blocked. Low-tier vendors that process no data need neither document."
+  grc:
+    vendors:
+      - {id: V-1, name: CloudLab, tier: critical, status: approved, dpa_expires: "2026-10-01", security_report_expires: "2027-02-01", data_types: [health, personal], owner: Clinical Research}
+      - {id: V-2, name: PayFast, tier: high, status: approved, dpa_expires: "2027-06-30", security_report_expires: "2026-08-31", data_types: [financial], owner: Finance}
+      - {id: V-3, name: PrintCo, tier: low, status: approved, dpa_expires: "", security_report_expires: "2026-01-31", data_types: [], owner: Facilities}
+      - {id: V-4, name: OldCRM, tier: high, status: blocked, dpa_expires: "2025-12-31", security_report_expires: "2025-12-31", data_types: [personal], owner: Sales, notes: "Blocked 2026-01 - contract terminated"}
+      - {id: V-5, name: HRPay, tier: high, status: approved, dpa_expires: "2027-09-30", security_report_expires: "2027-03-31", data_types: [personal, financial], owner: HR}
+      - {id: V-6, name: LinguaNow, tier: low, status: approved, dpa_expires: "2026-07-31", security_report_expires: "", data_types: [personal], owner: Patient Services, notes: "Translates patient letters"}

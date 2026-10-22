@@ -1,0 +1,70 @@
+today: "2026-11-05T09:00:00Z"
+systems: [servicedesk, governance, idp]
+data:
+  servicedesk:
+    users:
+      - {id: U-IA, name: Internal Audit, email: audit@solace.example, department: Audit, active: true}
+      - {id: U-4, name: Gauri Patil, email: gauri.patil@solace.example, department: Claims, manager_id: U-90, active: true}
+      - {id: U-90, name: Claims Director, email: claims.director@solace.example, department: Claims, active: true}
+    groups:
+      - {id: GRP-IAM, name: Identity & Access, members: []}
+    incidents:
+      - id: INC2301
+        short_description: "Verify Q3 access certification revocations were applied"
+        description: "The Q3 access certification campaign is marked complete. Please confirm that its revoke decisions were actually carried out in the identity provider, fix anything that wasn't, and close the ticket with what you found."
+        caller_id: U-IA
+        category: access
+        priority: "3"
+        state: new
+        assignment_group: GRP-IAM
+        work_notes: ""
+        opened_at: "2026-11-05T08:30:00Z"
+    requests:
+      - id: REQ-3300
+        requester_id: U-4
+        requested_for: U-4
+        item: "Group membership: Claims Admin (G-CLAIMS-ADMIN)"
+        details: "Covering the claims admin role during the catastrophe-claims surge (cyclone season)."
+        state: fulfilled
+        approval: approved
+        approver_id: U-90
+        assignment_group: GRP-IAM
+        work_notes: "[2026-10-15T10:00:00Z] Fulfilled after director approval."
+        opened_at: "2026-10-14T09:00:00Z"
+    kb:
+      - id: KB2310
+        title: Access certification - applying decisions
+        tags: [certification, access review, revoke, campaign, applied]
+        owner: Identity & Access
+        updated: "2026-04-02"
+        body: "Carry out every revoke decision in the target system (group membership or application assignment), then mark the decision applied. The applied flag is a claim - verify the access is really gone. If the access was re-granted after the campaign closed through an approved access request, the revoke decision is superseded: leave the access in place and leave the decision unapplied for the campaign owner to close. Decisions to approve need no action."
+  governance:
+    campaigns:
+      - {id: CAMP-Q3, name: "Q3 2026 access certification", status: completed, due: "2026-09-30", owner: Identity & Access}
+    decisions:
+      - {id: D-1, campaign_id: CAMP-Q3, user_id: U-1, system: idp, entitlement: "group:G-CLAIMS-ADMIN", decision: revoke, reviewer: claims.director, applied: false}
+      - {id: D-2, campaign_id: CAMP-Q3, user_id: U-2, system: idp, entitlement: "group:G-FIN-RPT", decision: revoke, reviewer: finance.director, applied: true}
+      - {id: D-3, campaign_id: CAMP-Q3, user_id: U-3, system: idp, entitlement: "app:Payroll:admin", decision: revoke, reviewer: hr.director, applied: false}
+      - {id: D-4, campaign_id: CAMP-Q3, user_id: U-4, system: idp, entitlement: "group:G-CLAIMS-ADMIN", decision: revoke, reviewer: claims.director, applied: false}
+      - {id: D-5, campaign_id: CAMP-Q3, user_id: U-5, system: idp, entitlement: "group:G-FIN-RPT", decision: approve, reviewer: finance.director, applied: false}
+      - {id: D-6, campaign_id: CAMP-Q3, user_id: U-6, system: idp, entitlement: "group:G-CLAIMS-ADMIN", decision: revoke, reviewer: claims.director, applied: false}
+  idp:
+    users:
+      - {id: U-1, login: arvind.s, email: arvind.s@solace.example, name: Arvind S, status: ACTIVE}
+      - {id: U-2, login: bela.k, email: bela.k@solace.example, name: Bela K, status: ACTIVE}
+      - {id: U-3, login: chetan.m, email: chetan.m@solace.example, name: Chetan M, status: ACTIVE}
+      - {id: U-4, login: gauri.patil, email: gauri.patil@solace.example, name: Gauri Patil, status: ACTIVE}
+      - {id: U-5, login: hema.r, email: hema.r@solace.example, name: Hema R, status: ACTIVE}
+      - {id: U-6, login: ishaan.v, email: ishaan.v@solace.example, name: Ishaan V, status: DEPROVISIONED}
+    groups:
+      - {id: G-CLAIMS-ADMIN, name: Claims Admin, privileged: true}
+      - {id: G-FIN-RPT, name: Finance Reports, privileged: false}
+    memberships:
+      - {id: M-1, group_id: G-CLAIMS-ADMIN, user_id: U-1}
+      - {id: M-2, group_id: G-FIN-RPT, user_id: U-2}
+      - {id: M-4, group_id: G-CLAIMS-ADMIN, user_id: U-4, added_at: "2026-10-15", reason: REQ-3300}
+      - {id: M-5, group_id: G-FIN-RPT, user_id: U-5}
+    app_assignments:
+      - {id: APA-1, user_id: U-3, app: Payroll, role: admin, status: active}
+      - {id: APA-2, user_id: U-3, app: Expenses, role: user, status: active}
+      - {id: APA-3, user_id: U-5, app: Payroll, role: viewer, status: active}

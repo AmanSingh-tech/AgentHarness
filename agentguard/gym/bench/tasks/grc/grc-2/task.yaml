@@ -1,0 +1,5 @@
+id: grc-2
+title: Backup control green, critical restore not proven
+category: grc
+difficulty: medium
+tags: [backup, restore-test, control-evidence, audit]

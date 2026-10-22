@@ -1,0 +1,54 @@
+today: "2026-11-10T09:00:00Z"
+systems: [servicedesk, grc, workspace, licenses, hr]
+data:
+  servicedesk:
+    users:
+      - {id: U-LGL, name: Legal, email: legal@brightwater.example, department: Legal, active: true}
+    groups:
+      - {id: GRP-IAM, name: Identity & Access, members: []}
+    incidents:
+      - id: INC2410
+        short_description: "Confirm preservation for legal hold LH-2026-11"
+        description: "Legal hold LH-2026-11 (Brightwater v. Orca Shipping) was issued last week. Please confirm that every custodian's data is actually being preserved, fix any gaps, and close the ticket with the outcome."
+        caller_id: U-LGL
+        category: legal
+        priority: "2"
+        state: new
+        assignment_group: GRP-IAM
+        work_notes: ""
+        opened_at: "2026-11-10T08:30:00Z"
+    kb:
+      - id: KB2420
+        title: "Legal hold - preserving custodian data"
+        tags: [legal hold, preservation, custodian, mailbox, licence, seat]
+        owner: Legal
+        updated: "2026-02-28"
+        body: "For every custodian on an active legal hold: (1) their workspace account must be in the /Legal Hold organisational unit, which disables automated deletion policies; (2) their mailbox is retained only while an Office Suite licence seat stays assigned to them - when a seat is removed, the mailbox and its files are deleted after 20 days, so a custodian who leaves must keep (or be re-assigned) their seat. Preservation does not require the custodian to have access: a leaver's account stays suspended. People who are not custodians are out of scope."
+  grc:
+    legal_holds:
+      - {id: LH-2026-11, matter: "Brightwater v. Orca Shipping", custodians: [ana.lobo@brightwater.example, ben.thomas@brightwater.example, chen.wei@brightwater.example], systems: [mail, files], status: active, created_at: "2026-11-03"}
+  workspace:
+    org_units:
+      - {id: OU-1, path: /Sales}
+      - {id: OU-2, path: /Operations}
+      - {id: OU-3, path: /Leavers}
+      - {id: OU-4, path: /Legal Hold}
+    users:
+      - {id: ana.lobo@brightwater.example, email: ana.lobo@brightwater.example, name: Ana Lobo, suspended: false, archived: false, org_unit: /Sales}
+      - {id: ben.thomas@brightwater.example, email: ben.thomas@brightwater.example, name: Ben Thomas, suspended: true, archived: false, org_unit: /Leavers}
+      - {id: chen.wei@brightwater.example, email: chen.wei@brightwater.example, name: Chen Wei, suspended: false, archived: false, org_unit: /Legal Hold}
+      - {id: dina.roy@brightwater.example, email: dina.roy@brightwater.example, name: Dina Roy, suspended: true, archived: false, org_unit: /Leavers}
+  licenses:
+    subscriptions:
+      - {id: SUB-OFF, product: Office Suite, seats_purchased: 500, owner: IT}
+    seats:
+      - {id: SEAT-A, subscription_id: SUB-OFF, user_email: ana.lobo@brightwater.example}
+      - {id: SEAT-C, subscription_id: SUB-OFF, user_email: chen.wei@brightwater.example}
+  hr:
+    workers:
+      - {id: W-1, name: Ana Lobo, email: ana.lobo@brightwater.example, employee_id: E-1, status: active, department: Sales, worker_type: employee}
+      - {id: W-2, name: Ben Thomas, email: ben.thomas@brightwater.example, employee_id: E-2, status: terminated, department: Operations, worker_type: employee, end_date: "2026-11-04"}
+      - {id: W-3, name: Chen Wei, email: chen.wei@brightwater.example, employee_id: E-3, status: active, department: Operations, worker_type: employee}
+      - {id: W-4, name: Dina Roy, email: dina.roy@brightwater.example, employee_id: E-4, status: terminated, department: Sales, worker_type: employee, end_date: "2026-11-02"}
+    events:
+      - {id: EV-1, worker_id: W-2, type: termination, effective_date: "2026-11-04", detail: "Resignation - leaver process completed (account suspended, moved to /Leavers, Office Suite seat removed)"}
