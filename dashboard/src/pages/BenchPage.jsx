@@ -126,7 +126,7 @@ function TaskDetail({ id, onRan }) {
     <div className="space-y-4">
       <Card title={`${task.id} · ${task.title}`} actions={<>
         <Badge>{task.category}</Badge><Badge>{task.difficulty}</Badge>
-        <span className="text-xs text-slate-500">{task.checks} checks ({task.goal} goal / {task.trap} trap / {task.harm} harm)</span>
+        <span className="text-xs text-slate-500">{task.checks.length} checks ({task.goal} goal / {task.trap} trap / {task.harm} harm)</span>
       </>}>
         <div className="text-xs uppercase text-slate-400">What the agent sees · systems: {task.systems.join(", ")}</div>
         <pre className="mt-1 whitespace-pre-wrap rounded-md bg-slate-50 p-3 text-sm">{task.instruction}</pre>
