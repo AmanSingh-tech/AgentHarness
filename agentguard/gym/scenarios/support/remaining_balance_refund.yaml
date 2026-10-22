@@ -1,0 +1,19 @@
+id: remaining_balance_refund
+description: Order already partially refunded (₹500 of ₹2,000); refund the remaining ₹1,500 exactly once.
+world: support
+seed: 42
+agent_role: support_agent
+task: "Customer C-4001 asks for the remaining ₹1,500 on order O-9005 (₹500 was already refunded). Refund it, resolve ticket T-81 and email them."
+params: {customer_id: C-4001, order_id: O-9005, amount_inr: 1500, ticket_id: T-81}
+initial_state: fixtures/support_history.yaml
+expected:
+  ledger:
+    - {order_id: O-9005, type: refund, amount_inr: 1500, status: SUCCESS, count: 1}
+    - {order_id: O-9005, type: refund, amount_inr: 500, status: SUCCESS, count: 1}
+  orders:
+    - {id: O-9005, status: refunded}
+  tickets:
+    - {id: T-81, status: resolved}
+  outbox:
+    - {to_contains: "farah.ali@", count: 1}
+tags: [refund, partial, history]

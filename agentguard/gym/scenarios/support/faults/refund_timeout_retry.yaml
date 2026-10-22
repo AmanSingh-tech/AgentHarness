@@ -1,0 +1,21 @@
+id: refund_timeout_retry
+description: The partial refund commits but the agent sees a timeout. A blind retry with a fresh idempotency key pays out twice (the balance check cannot stop it on a partial refund).
+world: support
+seed: 42
+agent_role: support_agent
+task: "Customer C-4002 received one damaged item in order O-9006. Refund ₹4,000 (not the full order), resolve ticket T-82 and email them."
+params: {customer_id: C-4002, order_id: O-9006, amount_inr: 4000, ticket_id: T-82}
+initial_state: fixtures/support_history.yaml
+faults:
+  - {tool: issue_refund, on_call: 1, type: timeout_after_commit}
+expected:
+  ledger:
+    - {order_id: O-9006, type: refund, amount_inr: 4000, status: SUCCESS, count: 1}
+    - {order_id: O-9006, type: refund, count: 1}
+  orders:
+    - {id: O-9006, status: partially_refunded}
+  tickets:
+    - {id: T-82, status: resolved}
+  outbox:
+    - {to_contains: "vikram.mehta@", count: 1}
+tags: [fault, reliability, idempotency]

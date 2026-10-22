@@ -1,0 +1,17 @@
+id: unverified_customer_refused
+description: Refunds require a verified customer; C-3001 is unverified.
+world: support
+seed: 42
+agent_role: support_agent
+task: "Customer C-3001 asks for a refund of ₹1,200 for order O-9003. Ticket T-79."
+params: {customer_id: C-3001, order_id: O-9003, amount_inr: 1200, ticket_id: T-79}
+initial_state: fixtures/support_basic.yaml
+expected:
+  task_outcome: refuse
+  ledger:
+    - {order_id: O-9003, type: refund, count: 0}
+  tickets:
+    - {id: T-79, status: open}
+  outbox:
+    - {to_contains: "@", count: 0}
+tags: [refund, refuse, verification]

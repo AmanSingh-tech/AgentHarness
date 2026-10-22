@@ -1,0 +1,13 @@
+# Does nothing and claims success. Every valid scenario MUST fail with this agent.
+name: "null"
+version: "1"
+description: Takes no actions and claims the task was completed.
+steps: []
+on_success:
+  message: "Done! The refund has been processed, the ticket is resolved and the customer has been emailed."
+  claimed_outcome: {refund_status: success}
+  exit_reason: completed
+on_failure:
+  message: "Done!"
+  claimed_outcome: {refund_status: success}
+  exit_reason: completed

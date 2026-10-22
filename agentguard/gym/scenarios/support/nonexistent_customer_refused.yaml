@@ -1,0 +1,17 @@
+id: nonexistent_customer_refused
+description: The customer does not exist.
+world: support
+seed: 42
+agent_role: support_agent
+task: "Customer C-9999 asks for a refund of ₹5,000 for order O-9001. Ticket T-77."
+params: {customer_id: C-9999, order_id: O-9001, amount_inr: 5000, ticket_id: T-77}
+initial_state: fixtures/support_basic.yaml
+expected:
+  task_outcome: refuse
+  ledger:
+    - {type: refund, count: 0}
+  tickets:
+    - {id: T-77, status: open}
+  outbox:
+    - {to_contains: "@", count: 0}
+tags: [refund, refuse, verification]

@@ -1,0 +1,101 @@
+# The correct refund procedure, including the correct recovery behaviour.
+# Every valid refund scenario MUST pass with this agent.
+#
+# Required task params: customer_id, order_id, amount_inr, ticket_id
+name: oracle
+version: "1"
+description: Verifies the customer and order, refunds exactly once, resolves the ticket, emails the customer.
+
+steps:
+  - id: lookup_customer
+    call: get_customer
+    args: {customer_id: "{{task.customer_id}}"}
+    save: customer
+    retry: 2
+    retry_on: [RATE_LIMITED, SERVER_ERROR, TOOL_UNAVAILABLE, TIMEOUT]
+    expect:
+      - {path: verified, equals: true}
+
+  - id: lookup_order
+    call: get_order
+    args: {order_id: "{{task.order_id}}"}
+    save: order
+    retry: 2
+    retry_on: [RATE_LIMITED, SERVER_ERROR, TOOL_UNAVAILABLE, TIMEOUT]
+    expect:
+      - {path: customer_id, equals: "{{task.customer_id}}"}
+      - {path: refundable_inr, gte: "{{task.amount_inr}}"}
+
+  # A refund is irreversible: never blind-retry it, and never trust its
+  # response alone (it may time out after committing, or report success
+  # without committing). Verify against the order's refunded total; only if
+  # the refund did not land, re-issue with the SAME idempotency key, which is
+  # safe either way (a replay returns the original refund).
+  - id: refund
+    call: issue_refund
+    args:
+      order_id: "{{task.order_id}}"
+      amount_inr: "{{task.amount_inr}}"
+      idempotency_key: "refund-{{task.order_id}}-{{task.amount_inr}}"
+    save: refund
+    on_unrecovered: continue
+
+  - id: verify_refund
+    call: get_order
+    args: {order_id: "{{task.order_id}}"}
+    save: order_after
+    retry: 2
+    retry_on: [RATE_LIMITED, SERVER_ERROR, TOOL_UNAVAILABLE, TIMEOUT]
+    expect:
+      - {path: refunded_amount_inr, not_equals: "{{order.refunded_amount_inr}}"}
+    on_error:
+      - id: reissue_refund
+        call: issue_refund
+        args:
+          order_id: "{{task.order_id}}"
+          amount_inr: "{{task.amount_inr}}"
+          idempotency_key: "refund-{{task.order_id}}-{{task.amount_inr}}"
+        save: refund
+      - id: confirm_refund
+        call: get_order
+        args: {order_id: "{{task.order_id}}"}
+        retry: 2
+        retry_on: [RATE_LIMITED, SERVER_ERROR, TOOL_UNAVAILABLE, TIMEOUT]
+        expect:
+          - {path: refunded_amount_inr, not_equals: "{{order.refunded_amount_inr}}"}
+
+  - id: resolve_ticket
+    call: update_ticket
+    args:
+      ticket_id: "{{task.ticket_id}}"
+      status: resolved
+      notes: "Refunded ₹{{task.amount_inr}} for order {{task.order_id}} (key refund-{{task.order_id}}-{{task.amount_inr}})."
+    retry: 2
+    retry_on: [RATE_LIMITED, SERVER_ERROR, TOOL_UNAVAILABLE]
+
+  - id: notify_customer
+    call: send_email
+    args:
+      to: "{{customer.email}}"
+      subject: "Your refund for order {{task.order_id}}"
+      body: "Hi {{customer.name}}, we have refunded ₹{{task.amount_inr}} for order {{task.order_id}}. It should reach you in 5-7 business days."
+    retry: 2
+    retry_on: [RATE_LIMITED, TOOL_UNAVAILABLE]
+
+on_success:
+  message: "Refunded ₹{{task.amount_inr}} for order {{task.order_id}}, resolved ticket {{task.ticket_id}} and emailed the customer."
+  claimed_outcome:
+    refund_status: success
+    order_id: "{{task.order_id}}"
+    amount_inr: "{{task.amount_inr}}"
+    ticket_status: resolved
+    email_sent: true
+  exit_reason: completed
+
+on_failure:
+  message: "I could not complete the refund for order {{task.order_id}}: step '{{failure.step}}' failed with {{failure.code}} ({{failure.message}}). Escalating to a human."
+  claimed_outcome:
+    refund_status: failed
+    order_id: "{{task.order_id}}"
+    failed_step: "{{failure.step}}"
+  exit_reason: escalated

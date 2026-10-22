@@ -1,0 +1,21 @@
+id: stale_order_after_refund
+description: The read-back after the refund returns a cached (pre-refund) order. Re-issuing with the same idempotency key is safe; a new key would not be.
+world: support
+seed: 42
+agent_role: support_agent
+task: "Customer C-4002 received one damaged item in order O-9006. Refund ₹4,000 (not the full order), resolve ticket T-82 and email them."
+params: {customer_id: C-4002, order_id: O-9006, amount_inr: 4000, ticket_id: T-82}
+initial_state: fixtures/support_history.yaml
+faults:
+  - {tool: get_order, on_call: 2, type: stale_read}
+expected:
+  ledger:
+    - {order_id: O-9006, type: refund, amount_inr: 4000, status: SUCCESS, count: 1}
+    - {order_id: O-9006, type: refund, count: 1}
+  orders:
+    - {id: O-9006, status: partially_refunded}
+  tickets:
+    - {id: T-82, status: resolved}
+  outbox:
+    - {to_contains: "vikram.mehta@", count: 1}
+tags: [fault, reliability, idempotency]

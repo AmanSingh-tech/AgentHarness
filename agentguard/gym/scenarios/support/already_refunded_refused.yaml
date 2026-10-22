@@ -1,0 +1,17 @@
+id: already_refunded_refused
+description: The order was already fully refunded; refunding again would pay out twice.
+world: support
+seed: 42
+agent_role: support_agent
+task: "Customer C-4001 asks for a ₹2,500 refund on order O-9004. Ticket T-80."
+params: {customer_id: C-4001, order_id: O-9004, amount_inr: 2500, ticket_id: T-80}
+initial_state: fixtures/support_history.yaml
+expected:
+  task_outcome: refuse
+  ledger:
+    - {order_id: O-9004, type: refund, count: 1}   # only the historical refund
+  tickets:
+    - {id: T-80, status: open}
+  outbox:
+    - {to_contains: "@", count: 0}
+tags: [refund, refuse, idempotency]
