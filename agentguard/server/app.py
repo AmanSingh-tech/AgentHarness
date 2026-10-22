@@ -58,6 +58,8 @@ class PolicyText(BaseModel):
 class OpsRequest(BaseModel):
     shield: bool = True
     manual_approvals: bool = True
+    decider: str = "rules"  # rules | claude
+    model: str | None = None
 
 
 class BenchmarkRequest(BaseModel):
@@ -145,10 +147,15 @@ def create_app(store: Store | None = None, reports_dir: Path = Path("reports"),
         if process not in scenarios:
             raise HTTPException(404, f"unknown process '{process}' (available: {sorted(scenarios)})")
         scenario = find_scenario(scenarios[process])
-        agent = make_harness(f"ops:{process}")
+        spec = f"ops:{process}" + (f"+{req.decider}" if req.decider != "rules" else "")
+        try:
+            agent = make_harness(spec)
+        except ValueError as e:
+            raise HTTPException(400, str(e)) from None
         auto = None if req.manual_approvals else ApprovalQueue(store, auto=AutoApprover(default="approve"))
-        run = prepare_run(harness=f"ops:{process}", harness_type=agent.harness_type, capabilities=agent.capabilities,
-                          store=store, bus=bus, approvals=approvals if req.manual_approvals else auto,
+        run = prepare_run(harness=spec, harness_type=agent.harness_type, capabilities=agent.capabilities,
+                          store=store, bus=bus, model=req.model,
+                          approvals=approvals if req.manual_approvals else auto,
                           **scenario_run_kwargs(scenario, req.shield, "ops"))
 
         def work() -> None:

@@ -22,6 +22,19 @@ The same agents are tested before deployment in **AgentGym**, which uses simulat
 
 Every decision carries a plain-English reason, so a customer, an auditor or a manager can see why.
 
+### Who makes the decisions
+
+The decision agent runs in one of two modes, chosen with `--decider` or in the dashboard:
+
+- **`claude`** (AI decision-making). Claude reads every case in one batched call: the customer's own words plus the facts the agent looked up. It proposes a decision with reasons. The rule-based agent then gives a second opinion.
+  - **They agree:** Claude's decision and explanation stand, followed by the policy check that confirmed it.
+  - **They disagree:** the case goes to a person, with both views.
+  - **Not sent to the model:** cases flagged as prompt injections, and names or email addresses. The model sees only the facts a decision needs.
+  - **Model unavailable:** the rules decide, and the report says so.
+- **`rules`**: a deterministic agent, used as the reproducible baseline.
+
+Either way, the action agent can act only through the gateway, so every permission, rule and approval still applies.
+
 ## Business value
 
 On a morning's inbox of 10 tickets (`agentguard ops run`):
@@ -52,6 +65,7 @@ Each control is enforced by the gateway, not by the agents, and each has an auto
 | Control | How | Proven by |
 |---|---|---|
 | **Least privilege per agent** | Each agent has its own identity in the policy: intake and reporting agents are read-only; only the action agent can refund or grant, and only within limits | `tests/test_ops.py::test_each_agent_is_held_to_its_own_permissions` |
+| **AI decisions are checked** | Claude's proposal stands only if the rule-based check agrees; disagreements go to a person, and the batch reports itself unfinished until then. Injected cases and personal data never reach the model | `tests/test_ai_decisions.py` |
 | **Business rules outside the model** | Refund limits, verified customers only, no duplicate refunds; grants must match the request exactly, active employees only, segregation of duties, expiry limits | `tests/test_policy.py`, `tests/test_access_ops.py::test_shield_enforces_it_controls_even_if_an_agent_misbehaves` |
 | **Human approval** | Refunds above ₹2,000 and admin access to critical systems wait in the dashboard until approved or rejected. A timeout rejects | `tests/test_server.py::test_refund_ops_with_a_human_approval` |
 | **Prompt-injection defence in depth** | AgentShield labels injected tool output as untrusted, and the agents also check the text themselves. Policy blocks the dangerous action even if detection misses it | `tests/test_shield_misc.py`, the `injection_*` scenarios |
@@ -76,6 +90,17 @@ Each control is enforced by the gateway, not by the agents, and each has an auto
 
 The shield removes duplicate refunds and false success claims without changing the agent. A better agent (v2) raises the success rate. The two together give the best result.
 
+**With Claude as the decision agent** (`agentguard ops run --decider claude --model sonnet`, one batched Claude Code call per process):
+
+| | RefundOps | AccessOps |
+|---|---|---|
+| Cases sent to Claude (1 withheld as an injection) | 9 | 9 |
+| Policy check agreed | 9 | 9 |
+| Independent verdict | `CORRECT_SUCCESS` | `CORRECT_SUCCESS` |
+| Time · model cost | about 12 s · $0.02 | about 15 s · $0.02 |
+
+The safeguard has already earned its place. In an early run, the instructions told Claude that admin grants "need human approval", and Claude escalated a grant that policy allows. The policy check disagreed, so the case went to a person instead of being silently mis-handled. The batch also reported itself unfinished, as it should. The instructions were then clarified.
+
 The same gateway also protects real agents. Claude Code (Sonnet and Opus) ran the scenarios over MCP, with Claude Code's built-in tools switched off, so every action went through the gateway.
 
 ## Demo script (about 7 minutes)
@@ -89,6 +114,7 @@ agentguard serve                     # http://127.0.0.1:8000
    - The ₹4,500 refund appears under "Waiting for your decision". Approve it.
    - The outcome report appears: refunds confirmed in the ledger, reasons for every decision, and the controls panel (1 human approval, 1 injection detected, verifications passed, audit chain verified).
    - The independent verdict reads `CORRECT_SUCCESS`.
+   - Switch **Decisions** to **Claude + policy check** and run it again. Each reason now begins with Claude's explanation, each row is labelled "decided by claude:sonnet, policy check agrees", and the Decision-making panel shows 9 agreed, 0 disagreed, and T-108 withheld as an injection.
 2. **Run it again and reject the approval** (30 seconds). The report says "stopped by controls". The batch reports the failure honestly, and the verdict reads `CORRECT_FAILURE_REPORTED`.
 3. **Switch to AccessOps → "Work the access queue"** (1 minute). Approve the payments admin grant. Show the segregation-of-duties denial and the terminated employee.
 4. **Live run → `secret_exfiltration` with the adversarial agent** (1 minute). **Blocked actions** shows `read_secret → encode → send_email` blocked, with the whole chain.
@@ -102,10 +128,11 @@ Run this before the demo as a backup: `agentguard demo` and `agentguard ops run`
 
 ## Likely questions
 
-- **Where is the AI if the decisions are deterministic?**
-  - Decisions that move money or grant access are deliberately rule-based and explainable.
-  - AgentGuard is agent-agnostic: an LLM agent such as Claude Code, or API-based agents (`native:anthropic`, LangGraph), runs the same process through the same gateway and is held to the same controls.
-  - The deterministic agents are the reproducible baseline the LLM agents are measured against.
+- **Where is the AI?**
+  - With `--decider claude`, Claude makes the decisions: it reads each ticket or request and explains its decision in plain language.
+  - It isn't trusted blindly. A deterministic policy check must agree, otherwise a person decides. The gateway enforces limits and approvals whatever either of them decides.
+  - Beyond the decision agent, AgentGuard is agent-agnostic: Claude Code over MCP, or API-based agents (`native:anthropic`, LangGraph), can run the work through the same gateway and are held to the same controls.
+- **Why keep the rules at all?** They are the reproducible baseline, the second opinion that catches a model's mistakes, and the fallback when the model is unavailable.
 - **What stops a compromised or hallucinating agent?**
   - The gateway, not the agent's good behaviour. Permissions, business rules, data-flow tracking and approvals sit outside the model.
   - `test_shield_enforces_it_controls_even_if_an_agent_misbehaves` drives the action agent to widen access, grant to the wrong person and break segregation of duties. Every one of those calls is blocked.

@@ -37,7 +37,7 @@ const STATUS_STYLE = {
 export default function OpsPage() {
   const [process, setProcess] = useState("refunds");
   const P = PROCESSES[process];
-  const [opts, setOpts] = useState({ shield: true, manual_approvals: true });
+  const [opts, setOpts] = useState({ shield: true, manual_approvals: true, decider: "rules", model: "sonnet" });
   const [runId, setRunId] = useState(null);
   const [events, setEvents] = useState([]);
   const [run, setRun] = useState(null);
@@ -84,6 +84,16 @@ export default function OpsPage() {
           onChange={(e) => { setProcess(e.target.value); setRunId(null); setEvents([]); setRun(null); setControls(null); }}>
           <option value="refunds">RefundOps (Retail)</option><option value="access">AccessOps (IT)</option>
         </select>
+        <select className="rounded border-slate-300 py-0.5 text-xs" value={opts.decider} disabled={running}
+          title="Who makes the decisions" onChange={(e) => setOpts({ ...opts, decider: e.target.value })}>
+          <option value="rules">Decisions: rules</option><option value="claude">Decisions: Claude + policy check</option>
+        </select>
+        {opts.decider === "claude" && (
+          <select className="rounded border-slate-300 py-0.5 text-xs" value={opts.model} disabled={running}
+            onChange={(e) => setOpts({ ...opts, model: e.target.value })}>
+            <option value="haiku">Haiku</option><option value="sonnet">Sonnet</option><option value="opus">Opus</option>
+          </select>
+        )}
         <label className="flex items-center gap-1 text-xs"><input type="checkbox" checked={opts.shield}
           onChange={(e) => setOpts({ ...opts, shield: e.target.checked })} /> AgentShield</label>
         <label className="flex items-center gap-1 text-xs"><input type="checkbox" checked={opts.manual_approvals}
@@ -96,6 +106,9 @@ export default function OpsPage() {
               <div className="text-xs font-semibold uppercase text-slate-500">{i + 1}. {title}</div>
               <div className="mt-0.5 font-mono text-xs">{agent}</div>
               <p className="mt-1 text-xs text-slate-600">{text}</p>
+              {i === 1 && opts.decider === "claude" && (
+                <p className="mt-1 text-xs text-violet-700">Claude ({opts.model}) decides; the rule-based check must agree, otherwise a person decides. Injected cases never reach the model.</p>
+              )}
               <p className="mt-1 text-xs text-slate-400">{events.filter((e) => e.kind === "tool_call" && e.payload.agent_id === agent).length} tool calls</p>
             </div>
           ))}
@@ -129,6 +142,8 @@ export default function OpsPage() {
         </Card>
       )}
 
+      {report?.decision_making && report.decision_making.decider !== "rules" && <DecisionMaking d={report.decision_making} />}
+
       {controls && <Controls c={controls} />}
 
       <Card title={runId ? `Live activity · run ${runId}` : "Live activity"}>
@@ -155,7 +170,10 @@ export function ItemsTable({ items, access }) {
             <td><Badge>{i.decision}</Badge></td>
             <td><Badge className={STATUS_STYLE[i.status]}>{i.status.replaceAll("_", " ")}</Badge><div className="text-xs text-slate-500">{i.action}</div></td>
             <td>{i.verified === true ? "✅ confirmed" : i.verified === false ? "❌ not found" : ""}</td>
-            <td className="text-xs text-slate-600">{i.reasons.join(" ")}</td>
+            <td className="text-xs text-slate-600">{i.reasons.join(" ")}
+              {i.decided_by && i.decided_by !== "rules" && (
+                <div className={`mt-0.5 text-[11px] ${i.decided_by.includes("disagreement") ? "text-amber-700" : "text-violet-700"}`}>decided by {i.decided_by}</div>
+              )}</td>
           </tr>
         ))}
       </tbody>
@@ -199,6 +217,26 @@ export function Controls({ c }) {
       <dl className="grid gap-x-6 gap-y-1 text-sm md:grid-cols-2">
         {rows.map(([k, v]) => (<React.Fragment key={k}><dt className="text-slate-500">{k}</dt><dd>{v}</dd></React.Fragment>))}
       </dl>
+    </Card>
+  );
+}
+
+export function DecisionMaking({ d }) {
+  return (
+    <Card title="Decision-making">
+      <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
+        {[["Decision agent", d.decider], ["Sent to the model", d.sent_to_model], ["Policy check agreed", d.agreed],
+          ["Disagreed → a person", d.disagreed], ["Model cost", `$${(d.cost_usd || 0).toFixed(4)}`]].map(([k, v]) => (
+          <div key={k} className="rounded-md bg-violet-50 p-2">
+            <div className="text-[11px] uppercase text-slate-500">{k}</div><div className="text-lg font-semibold">{v}</div>
+          </div>
+        ))}
+      </div>
+      {d.withheld?.length > 0 && <p className="mt-2 text-xs text-slate-600">Withheld from the model as possible prompt injections: <span className="font-mono">{d.withheld.join(", ")}</span></p>}
+      {d.fallback && <p className="mt-2 text-xs text-rose-700">⚠️ The model was unavailable, so the rules decided: {d.fallback}</p>}
+      {d.disagreements?.map((x) => (
+        <p key={x.id} className="mt-1 text-xs text-amber-800"><span className="font-mono">{x.id}</span>: Claude proposed {x.ai}, the policy check says {x.policy}. Sent to a person.</p>
+      ))}
     </Card>
   );
 }

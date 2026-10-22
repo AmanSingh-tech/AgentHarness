@@ -33,6 +33,9 @@ def ops_run(
     shield: bool = typer.Option(True, "--shield/--no-shield"),
     backend: Optional[Path] = typer.Option(None, "--backend", exists=True, dir_okay=False,
                                            help="Production: an HTTP backend config instead of the simulated world"),
+    decider: str = typer.Option("rules", "--decider",
+                                help="rules (deterministic) | claude (Claude decides, the rules check; uses Claude Code)"),
+    model: Optional[str] = typer.Option(None, "--model", help="Claude model for --decider claude (default: sonnet)"),
     out: Path = typer.Option(Path("reports"), "--out"),
 ) -> None:
     """Run a business process end to end (ingest, decide, act, report): RefundOps or AccessOps."""
@@ -49,6 +52,9 @@ def ops_run(
         raise typer.BadParameter("--approvals must be auto, manual or reject")
     if process not in ("refunds", "access"):
         raise typer.BadParameter("--process must be refunds or access")
+    if decider not in ("rules", "claude"):
+        raise typer.BadParameter("--decider must be rules or claude")
+    harness = f"ops:{process}" + ("+claude" if decider == "claude" else "")
     scenario_id = {"refunds": "refund_ops_inbox", "access": "access_ops_queue"}[process]
     module = refund_ops if process == "refunds" else access_ops
     store = _store()
@@ -61,8 +67,8 @@ def ops_run(
         from agentguard.gym.runner import run_scenario
         from agentguard.gym.scenario import find_scenario
 
-        r = run_scenario(find_scenario(scenario_id), harness=f"ops:{process}", store=store, shield=shield,
-                         run_set="ops", approvals=queue)
+        r = run_scenario(find_scenario(scenario_id), harness=harness, store=store, shield=shield,
+                         run_set="ops", approvals=queue, model=model)
         run_id, report = r.run_id, r.output.artifacts.get("report")
         verdict = r.verdict.outcome.value if r.verdict else None
     else:
@@ -75,8 +81,10 @@ def ops_run(
         session = RuntimeSession(HttpToolBackend(cfg), store, agent_id="refund_ops", client="refundops",
                                  approvals=queue, backend_config=cfg.model_dump(mode="json"),
                                  task="Work the support inbox (RefundOps)")
+        from agentguard.ops.reasoner import make_reasoner
+
         limit, approval_above = refund_ops.limits_from_policy(load_policy())
-        report = refund_ops.run_refund_ops(session.endpoint, limit, approval_above)
+        report = refund_ops.run_refund_ops(session.endpoint, limit, approval_above, make_reasoner(decider, model))
         from agentguard.core.models import AgentOutput
 
         session.close(AgentOutput(final_message="RefundOps batch finished", exit_reason="completed",

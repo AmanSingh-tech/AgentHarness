@@ -11,6 +11,7 @@ what really happened. For the judges: [docs/hackathon.md](docs/hackathon.md).
 ```bash
 agentguard ops run                      # RefundOps on the support inbox, with the outcome report
 agentguard ops run --process access     # AccessOps on the IT access-request queue
+agentguard ops run --decider claude      # Claude decides, a policy check confirms (uses your Claude Code login)
 agentguard serve                        # dashboard: Business processes, approvals, live traces, benchmark
 ```
 
@@ -37,6 +38,7 @@ Guardrails, Guardrails AI, Prompt Guard / Llama Guard, Lakera, LangSmith).
 | MVP: API server + dashboard | done |
 | MVP: novelty comparison and how-it-works docs | done |
 | Business processes: RefundOps (Retail) and AccessOps (IT Infrastructure), multi-agent, least privilege | done |
+| AI decision agent: Claude decides, a rule-based check confirms, disagreements go to a person | done |
 | Production mode, post-action verification, remote HTTP harness, audit hash chain, CI, docker compose | done |
 | Docker CLI sandbox with a locked network | not included |
 

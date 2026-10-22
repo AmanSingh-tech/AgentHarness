@@ -150,3 +150,14 @@ def test_refund_ops_with_a_human_approval(client):
     assert report["summary"]["refunded_inr_verified"] == 6000
     c = client.get(f"/api/runs/{run_id}/controls").json()
     assert c["approvals"][0]["by"] == "human:judge" and c["audit_ok"]
+
+
+def test_ops_with_the_claude_decider(client, monkeypatch, tmp_path):
+    assert client.post("/api/ops/refunds", json={"decider": "magic"}).status_code == 400
+    monkeypatch.setenv("AGENTGUARD_CLAUDE_BIN", str(tmp_path / "no-such-claude"))
+    run_id = client.post("/api/ops/access", json={"manual_approvals": False, "decider": "claude",
+                                                  "model": "haiku"}).json()["run_id"]
+    run = _wait(client, run_id)
+    assert run["outcome"] == "CORRECT_SUCCESS"  # the rules took over, and the report says why
+    log = run["output"]["artifacts"]["report"]["decision_making"]
+    assert log["decider"] == "claude:haiku" and "could not be started" in log["fallback"]
