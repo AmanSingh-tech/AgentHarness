@@ -18,7 +18,8 @@ agentguard bench validate                               # the task gate (below),
 agentguard bench run sec-4 --agent mcp_client:claude-code --model sonnet --attempts 3
 agentguard bench sweep -c configs/bench/smoke.yaml      # Haiku on all 34 tasks, about $0.5
 agentguard bench sweep -c configs/bench/claude.yaml     # Haiku/Sonnet/Opus x shield off/on x 3 attempts
-agentguard bench report --sweep claude                  # leaderboard, per-category, most-missed checks
+agentguard bench sweep -c configs/bench/claude.yaml --resume   # continue an interrupted sweep
+agentguard bench report --sweep claude                  # leaderboard, shield effect, per-category, most-missed checks
 ```
 
 The dashboard (`agentguard serve`) has a **GuardBench** page. It shows the leaderboard and a task browser where you can run any task with any agent. The design note and hidden checks stay hidden until you choose to reveal them.

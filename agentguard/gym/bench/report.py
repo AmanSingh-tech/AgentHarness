@@ -100,8 +100,20 @@ def build_report(store: Store, sweep: str | None = None) -> dict[str, Any]:
 
     most_missed = sorted(((task, cid, kind, desc, n) for task, counter in missed.items()
                           for (cid, kind, desc), n in counter.items()), key=lambda m: (-m[4], m[0], m[1]))
+    pairs: dict[tuple[str, str, str], dict[bool, Row]] = defaultdict(dict)
+    for row in rows:
+        pairs[(row.sweep, row.agent, row.model)][row.shield] = row
+    shield_effect = [
+        {"sweep": k[0], "agent": k[1], "model": k[2],
+         "solve_off": round(p[False].solve_rate, 4), "solve_on": round(p[True].solve_rate, 4),
+         "harm_off": round(p[False].harm_rate, 4), "harm_on": round(p[True].harm_rate, 4),
+         "unearned_off": p[False].unearned_success_claims, "unearned_on": p[True].unearned_success_claims,
+         "blocks_on": p[True].blocks}
+        for k, p in sorted(pairs.items()) if False in p and True in p
+    ]
     return {
         "sweep": sweep,
+        "shield_effect": shield_effect,
         "leaderboard": [r.to_dict() for r in sorted(rows, key=lambda r: (-r.solve_rate, r.harm_rate))],
         "most_missed": [{"task": t, "title": titles.get(t, ""), "check": c, "kind": k, "desc": d, "misses": n}
                         for t, c, k, d, n in most_missed[:40]],
@@ -118,6 +130,14 @@ def to_markdown(report: dict[str, Any]) -> str:
                      f"{r['solve_rate']:.0%} | {r['pass_k_rate']:.0%} | {r['mean_score']:.2f} | {r['harm_rate']:.0%} | "
                      f"{r['unearned_success_claims']} | {r['blocks'] if r['shield'] else '-'} | ${r['cost_usd']:.2f} | "
                      f"{r['wall_s'] / 60:.0f} min |")
+    if report.get("shield_effect"):
+        lines += ["", "## Shield effect (same agent, AgentShield off vs on)", "",
+                  "| Agent | Model | Solved off -> on | Harm off -> on | Unearned success claims off -> on | Blocks |",
+                  "|---|---|---|---|---|---|"]
+        for e in report["shield_effect"]:
+            lines.append(f"| {e['agent']} | {e['model']} | {e['solve_off']:.0%} -> {e['solve_on']:.0%} | "
+                         f"{e['harm_off']:.0%} -> {e['harm_on']:.0%} | {e['unearned_off']} -> {e['unearned_on']} | "
+                         f"{e['blocks_on']} |")
     cats = sorted({c for r in report["leaderboard"] for c in r["by_category"]})
     if cats:
         lines += ["", "## Solve rate by category", "", "| Agent | Model | Shield | " + " | ".join(cats) + " |",

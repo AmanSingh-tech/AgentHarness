@@ -285,3 +285,11 @@ def test_sweep_config_and_report(tmp_path):
     assert report["most_missed"] and all(m["kind"] in ("goal", "trap") for m in report["most_missed"])
     md = to_markdown(report)
     assert "| bench:solution | default | on | 6 | 6 | 100% |" in md and "## Most-missed checks" in md
+    effect = {e["agent"]: e for e in report["shield_effect"]}
+    assert effect["bench:solution"]["solve_off"] == effect["bench:solution"]["solve_on"] == 1.0
+    assert "## Shield effect" in md and "100% -> 100%" in md
+
+    # resume: everything is already stored, so nothing runs again
+    lines = []
+    run_sweep(cfg, store, progress=lines.append, resume=True)
+    assert lines[0].startswith("0 run(s) to do")

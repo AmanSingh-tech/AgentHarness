@@ -105,9 +105,11 @@ def bench_validate(
 def bench_sweep(
     config: str = typer.Option(..., "--config", "-c", help="A sweep config, e.g. configs/bench/smoke.yaml"),
     yes: bool = typer.Option(False, "--yes", "-y", help="Skip the confirmation"),
+    resume: bool = typer.Option(False, "--resume", help="Skip attempts already stored for this sweep"),
     out: str = typer.Option("reports", "--out"),
 ) -> None:
-    """Run every task x agent x model x shield x attempt in a config, then write the report."""
+    """Run every task x agent x model x shield x attempt in a config, then write the report.
+    Interrupted? Run the same command with --resume."""
     from agentguard.gym.bench.sweep import SweepConfig, run_sweep
 
     cfg = SweepConfig.load(config)
@@ -115,7 +117,7 @@ def bench_sweep(
                f"shield {cfg.shield}, {cfg.attempts} attempt(s)).")
     if not yes and any(a.harness.startswith(("mcp_client", "native", "langgraph")) for a in cfg.agents):
         typer.confirm("This calls real models (your Claude Code usage or API credits). Continue?", abort=True)
-    run_sweep(cfg, _store(), progress=typer.echo)
+    run_sweep(cfg, _store(), progress=typer.echo, resume=resume)
     bench_report(sweep=cfg.name, out=out)
 
 

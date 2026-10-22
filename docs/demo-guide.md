@@ -161,6 +161,10 @@ Before you start:
 - "With the shield on: zero duplicate refunds and zero false success claims. A better agent pushes success to 96%."
 - "Every incident becomes a test. It's kept only if a do-nothing agent fails it and the reference agent passes it."
 
+**If you have an extra minute:** open **GuardBench**, pick `ret-3`, reveal the design note, and run Claude Code · Haiku on it live. It takes about 20 seconds and a fraction of a cent.
+
+**Say:** "We also measure agents. GuardBench has 34 enterprise tickets, each with a trap. Haiku solves 38%, and damaged something it should have left alone in 9% of runs."
+
 **Close:** "Real processes, AI that decides, controls outside the model, and evidence for every claim. Thank you."
 
 ---

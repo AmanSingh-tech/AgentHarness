@@ -103,6 +103,18 @@ The safeguard has already earned its place. In an early run, the instructions to
 
 The same gateway also protects real agents. Claude Code (Sonnet and Opus) ran the scenarios over MCP, with Claude Code's built-in tools switched off, so every action went through the gateway.
 
+## Measuring any agent: GuardBench
+
+The business processes show AgentGuard running agents. GuardBench measures them. It has 34 ITSM and payments tickets in the style of ITSMBench, across 24 mock enterprise systems. Each ticket hides a trap, and 456 hidden checks grade the end state: the work asked for, the trap, and damage that must not happen. Every run goes through AgentShield. See [bench.md](bench.md).
+
+| Agent (AgentShield on) | Solved | Mean score | Runs with harm | Cost |
+|---|---|---|---|---|
+| Reference solutions | 100% | 1.00 | 0% | – |
+| Claude Code · Haiku | 38% | 0.86 | 9% | $0.26 for 34 tasks |
+| Do-nothing agent | 0% | 0.48 | 0% | – |
+
+Haiku usually does most of the work and then misses the trap. It also claimed success on 16 tasks it hadn't solved, which is why outcomes are graded on the world state. When AgentShield blocked a refund issued without reading the order first, Haiku read the reason, looked the order up, retried and succeeded.
+
 ## Demo script (about 7 minutes)
 
 The full presenter's guide, with setup, talking points and recovery steps, is in [demo-guide.md](demo-guide.md). The showcase site in [`site/`](../site/), served at `/site`, replays a real Claude run and has the run instructions.
@@ -143,4 +155,5 @@ Run this before the demo as a backup: `agentguard demo` and `agentguard ops run`
 - **How is it different from guardrail products?**
   - See [novelty.md](novelty.md), which has cited comparisons.
   - In short: one choke point serves both testing and runtime, outcomes are graded by the world state, faults are injected after commit, data is tracked through encodings, and every incident becomes a validated regression test.
+- **How do you know AgentShield doesn't just get in the way?** GuardBench's task gate requires every reference solution to pass with the shield on, and never be blocked. The `bench sweep` report compares each model with the shield off and on.
 - **How do you know the numbers are right?** Every number comes from a command in this repository, and reruns are deterministic. CI runs the tests, the scenario validation, the demo and the audit verification on every push.
