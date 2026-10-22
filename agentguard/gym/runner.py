@@ -169,6 +169,7 @@ def run_scenario(
     agent_version: str | None = None,
     bus: EventBus | None = None,
     shield: bool = True,
+    run_set: str | None = None,
 ) -> RunResult:
     """`shield=False` runs the scenario without AgentShield, to measure the agent on its own."""
     faults = None
@@ -190,7 +191,7 @@ def run_scenario(
         model=model,
         agent_version=agent_version,
         scenario_id=scenario.id,
-        extra_config={"scenario": scenario.model_dump(mode="json")},
+        extra_config={"scenario": scenario.model_dump(mode="json"), "run_set": run_set, "shield_enabled": shield},
         faults=faults,
         shield=scenario.shield if shield else None,
     )
@@ -256,7 +257,9 @@ def run_matrix(
     parallel: int = 4,
     agent_version: str | None = None,
     shield: bool = True,
+    run_set: str | None = None,
 ) -> MatrixResult:
+    """`run_set` labels every run so groups of runs (e.g. "v1", "v2-shield") can be compared later."""
     cells = [Cell(s.id, h, m) for s in scenarios for h in harnesses for m in models]
     by_id = {s.id: s for s in scenarios}
     jobs = [(c, attempt) for c in cells for attempt in range(attempts)]
@@ -276,6 +279,7 @@ def run_matrix(
                     agent_version=agent_version,
                     bus=bus,
                     shield=shield,
+                    run_set=run_set,
                 )
             cell.runs.append(result)
 

@@ -100,6 +100,9 @@ class ToolSpec(BaseModel):
     irreversible: bool = False
     returns_labels: tuple[DataLabel, ...] = ()
     propagates_taint: bool = False
+    # Arguments whose values the agent picks freely (nonces, idempotency keys). They are
+    # ignored when comparing runs and when generating regression patterns.
+    volatile_args: tuple[str, ...] = ()
 
 
 class ToolCall(BaseModel):

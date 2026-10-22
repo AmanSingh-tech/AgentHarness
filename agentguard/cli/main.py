@@ -86,6 +86,7 @@ def run(
     attempts: int = typer.Option(1, "--attempts", min=1),
     parallel: int = typer.Option(4, "--parallel", min=1),
     agent_version: Optional[str] = typer.Option(None, "--agent-version"),
+    run_set: Optional[str] = typer.Option(None, "--run-set", help="Label these runs, e.g. for promote/compare"),
     show_trace: bool = typer.Option(False, "--trace", help="Print the trace of each run"),
     shield: bool = typer.Option(True, "--shield/--no-shield", help="Run with or without AgentShield"),
 ) -> None:
@@ -97,7 +98,7 @@ def run(
     scenarios = _load(scenario, suite)
     result = run_matrix(
         scenarios, harness, store=store, models=model or [None], attempts=attempts,
-        parallel=parallel, agent_version=agent_version, shield=shield,
+        parallel=parallel, agent_version=agent_version, shield=shield, run_set=run_set,
     )
     failed = 0
     for cell in result.cells:
@@ -150,6 +151,43 @@ def validate(
     bad = sum(not r.valid for r in rows)
     typer.echo(f"\n{len(rows) - bad}/{len(rows)} scenarios valid")
     raise typer.Exit(1 if bad else 0)
+
+
+@app.command("diagnose")
+def diagnose_cmd(run_id: str = typer.Argument(...)) -> None:
+    """Explain where a run went wrong, compared with the scenario's reference agent."""
+    from agentguard.gym.diagnose import diagnose
+
+    d = diagnose(run_id, _store())
+    for line in d.summary:
+        typer.echo(line)
+    if d.oracle_run_id:
+        typer.echo(f"(reference run: {d.oracle_run_id})")
+
+
+@app.command("promote")
+def promote_cmd(
+    run_ids: list[str] = typer.Argument(None, help="Run ids to promote"),
+    run_set: Optional[str] = typer.Option(None, "--run-set", help="Promote every failed or blocked run in this run set"),
+    out_dir: Optional[Path] = typer.Option(None, "--out", help="Where to write (default: the built-in regression suite)"),
+    dry_run: bool = typer.Option(False, "--dry-run", help="Validate but do not write"),
+) -> None:
+    """Turn failed or blocked runs into validated regression scenarios."""
+    from agentguard.gym.regression import REGRESSION_DIR, promote
+
+    store = _store()
+    ids = list(run_ids or [])
+    if run_set:
+        ids += [r.id for r in store.list_runs(limit=100_000) if r.config.get("run_set") == run_set]
+    if not ids:
+        raise typer.BadParameter("give run ids or --run-set")
+    accepted = 0
+    for rid in ids:
+        p = promote(rid, store, out_dir=out_dir or REGRESSION_DIR, write=not dry_run)
+        accepted += p.accepted
+        mark = "NEW " if p.accepted else "skip"
+        typer.echo(f"{mark} {rid}: {p.reason}" + (f" -> {p.path}" if p.accepted and p.path else ""))
+    typer.echo(f"\n{accepted} regression scenario(s) {'validated' if dry_run else 'written'}")
 
 
 @app.command("metrics")

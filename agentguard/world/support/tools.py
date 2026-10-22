@@ -39,6 +39,7 @@ SUPPORT_TOOLS: list[ToolSpec] = [
         ),
         side_effect=SideEffect.WRITE,
         irreversible=True,
+        volatile_args=("idempotency_key",),
     ),
     ToolSpec(
         name="update_ticket",
