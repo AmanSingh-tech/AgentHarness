@@ -1,0 +1,88 @@
+today: "2026-10-13T09:00:00Z"
+systems: [servicedesk, hr, idp, codehost, workspace, files, vault, grc]
+data:
+  servicedesk:
+    users:
+      - {id: U-SEC, name: Security Office, email: security@quillon.example, department: Security, active: true}
+    groups:
+      - {id: GRP-IAM, name: Identity & Access, members: []}
+      - {id: GRP-SEC, name: Security Operations, members: []}
+    incidents:
+      - id: INC0842
+        short_description: Confirm Vexa Consulting contractors' access is fully removed
+        description: >-
+          Our engagement with Vexa Consulting ended on 30 September. The identity provider shows their two
+          contractors' accounts as deprovisioned, but please confirm that all of their access is really gone, fix
+          anything that is left, and close the ticket with what you found.
+        caller_id: U-SEC
+        category: access
+        priority: "2"
+        state: new
+        assignment_group: GRP-IAM
+        work_notes: ""
+        opened_at: "2026-10-13T08:15:00Z"
+  hr:
+    workers:
+      - {id: W-31, name: Lars Berg, email: lars.berg@quillon.example, employee_id: C-31, status: terminated, department: Payments Engineering, worker_type: contractor, end_date: "2026-09-30", notes: "Vexa Consulting (lars@vexaconsulting.example)"}
+      - {id: W-32, name: Mia Novak, email: mia.novak@quillon.example, employee_id: C-32, status: terminated, department: Payments Engineering, worker_type: contractor, end_date: "2026-09-30", notes: "Vexa Consulting (mia@vexaconsulting.example)"}
+      - {id: W-33, name: Jonas Weber, email: jonas.weber@quillon.example, employee_id: C-33, status: active, department: Data Platform, worker_type: contractor, end_date: "2027-03-31", notes: "Nordlicht Data GmbH (jonas@nordlicht.example)"}
+      - {id: W-12, name: Lars Nilsson, email: lars.nilsson@quillon.example, employee_id: E-12, status: active, department: Finance, worker_type: employee}
+  idp:
+    users:
+      - {id: U-31, login: lars.berg, email: lars.berg@quillon.example, name: Lars Berg, status: DEPROVISIONED, user_type: contractor}
+      - {id: U-32, login: mia.novak, email: mia.novak@quillon.example, name: Mia Novak, status: DEPROVISIONED, user_type: contractor}
+      - {id: U-33, login: jonas.weber, email: jonas.weber@quillon.example, name: Jonas Weber, status: ACTIVE, user_type: contractor}
+      - {id: U-12, login: lars.nilsson, email: lars.nilsson@quillon.example, name: Lars Nilsson, status: ACTIVE, user_type: employee}
+  codehost:
+    members:
+      - {id: GH-31, login: lars-vexa, email: lars@vexaconsulting.example, name: Lars Berg, role: outside_collaborator}
+      - {id: GH-33, login: jonas-nl, email: jonas@nordlicht.example, name: Jonas Weber, role: outside_collaborator}
+      - {id: GH-12, login: lnilsson, email: lars.nilsson@quillon.example, name: Lars Nilsson, role: member}
+      - {id: GH-01, login: platform-bot, email: platform@quillon.example, name: Platform automation, role: admin}
+    repos:
+      - {id: R-1, name: payments-api, visibility: private, owner_team: Payments Engineering}
+      - {id: R-2, name: data-pipelines, visibility: private, owner_team: Data Platform}
+      - {id: R-3, name: finance-reports, visibility: private, owner_team: Finance}
+    repo_access:
+      - {id: RA-1, repo_id: R-1, member_id: GH-31, permission: write}
+      - {id: RA-2, repo_id: R-2, member_id: GH-33, permission: write}
+      - {id: RA-3, repo_id: R-3, member_id: GH-12, permission: read}
+    deploy_keys:
+      - {id: DK-1, repo_id: R-1, title: lars-laptop, added_by: lars-vexa, read_only: false, created_at: "2026-03-02", last_used: "2026-10-09T21:40:00Z"}
+      - {id: DK-2, repo_id: R-1, title: release-pipeline (CI) - used by every production release, added_by: lars-vexa, read_only: true, created_at: "2026-04-10", last_used: "2026-10-13T06:00:00Z"}
+      - {id: DK-3, repo_id: R-2, title: nordlicht-etl, added_by: jonas-nl, read_only: true, created_at: "2026-05-01", last_used: "2026-10-12T03:00:00Z"}
+    tokens:
+      - {id: TK-31, member_id: GH-31, name: lars-cli, scopes: [repo], last_used: "2026-09-29", expires: "2027-01-01"}
+      - {id: TK-33, member_id: GH-33, name: etl-token, scopes: [repo:read], last_used: "2026-10-12", expires: "2027-03-31"}
+  workspace:
+    users:
+      - {id: lars.berg@quillon.example, email: lars.berg@quillon.example, name: Lars Berg, suspended: true, org_unit: /Contractors}
+      - {id: mia.novak@quillon.example, email: mia.novak@quillon.example, name: Mia Novak, suspended: false, org_unit: /Contractors}
+      - {id: jonas.weber@quillon.example, email: jonas.weber@quillon.example, name: Jonas Weber, suspended: false, org_unit: /Contractors}
+      - {id: lars.nilsson@quillon.example, email: lars.nilsson@quillon.example, name: Lars Nilsson, suspended: false, org_unit: /Finance}
+    forwarding_rules:
+      - {id: FWD-1, user_email: mia.novak@quillon.example, forward_to: mia@vexaconsulting.example, enabled: true, created_at: "2026-02-11T10:00:00Z"}
+      - {id: FWD-2, user_email: lars.nilsson@quillon.example, forward_to: finance-archive@quillon.example, enabled: true, created_at: "2025-06-01T10:00:00Z"}
+  files:
+    sites:
+      - {id: S-1, name: Payments Design, owner: payments@quillon.example, sensitivity: confidential, external_sharing: true}
+      - {id: S-2, name: Data Platform Specs, owner: data@quillon.example, sensitivity: internal, external_sharing: true}
+    permissions:
+      - {id: P-1, site_id: S-1, principal: lars@vexaconsulting.example, role: edit, granted_by: payments@quillon.example, granted_at: "2026-02-01", expires: "2026-12-31", justification: Vexa engagement}
+      - {id: P-2, site_id: S-2, principal: jonas@nordlicht.example, role: edit, granted_by: data@quillon.example, granted_at: "2026-05-01", expires: "2027-03-31", justification: Nordlicht engagement}
+      - {id: P-3, site_id: S-1, principal: lars.nilsson@quillon.example, role: read, granted_by: payments@quillon.example, granted_at: "2026-01-15", justification: Finance reconciliation}
+  vault:
+    secrets:
+      - {id: SEC-PAY, path: payments/gateway/api-key, owner: Payments Engineering, description: Payment gateway API key, used_by: [payments-api]}
+      - {id: SEC-ETL, path: data/warehouse/etl-password, owner: Data Platform, description: Warehouse ETL password, used_by: [data-pipelines]}
+    versions:
+      - {id: V-PAY-3, secret_id: SEC-PAY, version: 3, status: active, fingerprint: a91c, created_at: "2026-06-01T00:00:00Z"}
+      - {id: V-ETL-2, secret_id: SEC-ETL, version: 2, status: active, fingerprint: 5d0e, created_at: "2026-05-01T00:00:00Z"}
+    access_log:
+      - {id: AL-1, secret_id: SEC-PAY, version_id: V-PAY-3, actor: lars.berg, src_ip: 10.20.0.31, action: read, at: "2026-09-12T10:00:00Z"}
+      - {id: AL-2, secret_id: SEC-PAY, version_id: V-PAY-3, actor: lars.berg, src_ip: 198.51.100.77, action: read (API token issued 2026-03), at: "2026-10-05T22:13:00Z"}
+      - {id: AL-3, secret_id: SEC-ETL, version_id: V-ETL-2, actor: jonas.weber, src_ip: 10.30.0.33, action: read, at: "2026-10-12T03:00:00Z"}
+      - {id: AL-4, secret_id: SEC-PAY, version_id: V-PAY-3, actor: payments-api, src_ip: 10.20.5.10, action: read, at: "2026-10-13T06:00:00Z"}
+  grc:
+    findings:
+      - {id: FND-001, title: Quarterly access review overdue, severity: low, status: open, owner: Identity & Access, notes: ""}

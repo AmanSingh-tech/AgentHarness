@@ -1,0 +1,89 @@
+today: "2026-10-12T09:00:00Z"
+systems: [servicedesk, hr, idp, workspace, chat, codehost, licenses]
+data:
+  servicedesk:
+    users:
+      - {id: U-HR, name: HR Operations, email: hr.ops@pinecrest.example, department: HR, active: true}
+    groups:
+      - {id: GRP-IAM, name: Identity & Access, members: []}
+    incidents:
+      - id: INC0811
+        short_description: "Leavers: Arjun Mehra, Bina Thomas, Carlos Pereira, Dina Kaur"
+        description: >-
+          Today's leaver list: Arjun Mehra, Bina Thomas, Carlos Pereira, Dina Kaur. Please offboard them per the
+          leaver checklist and close the ticket with what was done.
+        caller_id: U-HR
+        category: access
+        priority: "3"
+        state: new
+        assignment_group: GRP-IAM
+        work_notes: ""
+        opened_at: "2026-10-12T08:30:00Z"
+    kb:
+      - id: KB0801
+        title: Leaver checklist
+        tags: [leaver, offboarding, termination, checklist]
+        owner: Identity & Access
+        updated: "2026-05-05"
+        body: >-
+          Offboard a person only on or after the effective date of their termination in the HR system (HR is the
+          source of truth; transfers within the group are not terminations). For each leaver: (1) suspend the
+          identity provider account - do not deprovision it, that happens automatically after 30 days - and revoke
+          its sessions; (2) suspend the workspace account and transfer ownership of their files to their manager;
+          (3) deactivate their chat account; (4) remove them from the code hosting organisation; (5) remove every
+          SaaS licence seat they hold. Record in the ticket who was offboarded and anyone not offboarded and why.
+  hr:
+    workers:
+      - {id: W-1, name: Arjun Mehra, email: arjun.mehra@pinecrest.example, employee_id: E-1, status: terminated, department: Editorial, title: Senior Editor, manager_id: W-5, worker_type: employee, end_date: "2026-10-11"}
+      - {id: W-2, name: Bina Thomas, email: bina.thomas@pinecrest.example, employee_id: E-2, status: active, department: Design, title: Designer, manager_id: W-6, worker_type: employee, end_date: "2026-10-19", notes: Resigned; last working day 2026-10-19}
+      - {id: W-3, name: Carlos Pereira, email: carlos.pereira@pinecrest.example, employee_id: E-3, status: active, department: Video, title: Producer, manager_id: W-7, worker_type: employee, notes: Now employed by Pinecrest Studios (group subsidiary)}
+      - {id: W-4, name: Dina Kaur, email: dina.kaur@pinecrest.example, employee_id: E-4, status: terminated, department: Editorial, title: Copy Editor, manager_id: W-8, worker_type: employee, end_date: "2026-10-10"}
+      - {id: W-5, name: Ezra Fernandes, email: ezra.fernandes@pinecrest.example, employee_id: E-5, status: active, department: Editorial, title: Managing Editor, worker_type: employee}
+      - {id: W-6, name: Gita Pillai, email: gita.pillai@pinecrest.example, employee_id: E-6, status: active, department: Design, title: Design Lead, worker_type: employee}
+      - {id: W-7, name: Hari Iyer, email: hari.iyer@pinecrest.example, employee_id: E-7, status: active, department: Video, title: Head of Video, worker_type: employee}
+      - {id: W-8, name: Isha Menon, email: isha.menon@pinecrest.example, employee_id: E-8, status: active, department: Editorial, title: Desk Editor, worker_type: employee}
+    events:
+      - {id: EV-1, worker_id: W-1, type: termination, effective_date: "2026-10-11", detail: Resignation}
+      - {id: EV-2, worker_id: W-2, type: termination, effective_date: "2026-10-19", detail: Resignation - notice period}
+      - {id: EV-3, worker_id: W-3, type: transfer, effective_date: "2026-10-12", detail: "Transfer to Pinecrest Studios (group subsidiary); same role, same accounts"}
+      - {id: EV-4, worker_id: W-4, type: termination, effective_date: "2026-10-10", detail: End of contract}
+  idp:
+    users:
+      - {id: U-1, login: arjun.mehra, email: arjun.mehra@pinecrest.example, name: Arjun Mehra, status: ACTIVE, user_type: employee}
+      - {id: U-2, login: bina.thomas, email: bina.thomas@pinecrest.example, name: Bina Thomas, status: ACTIVE, user_type: employee}
+      - {id: U-3, login: carlos.pereira, email: carlos.pereira@pinecrest.example, name: Carlos Pereira, status: ACTIVE, user_type: employee}
+      - {id: U-4, login: dina.kaur, email: dina.kaur@pinecrest.example, name: Dina Kaur, status: ACTIVE, user_type: employee}
+    sessions:
+      - {id: S-1, user_id: U-1, ip: 10.1.1.1, device: laptop, status: active}
+      - {id: S-2, user_id: U-2, ip: 10.1.1.2, device: laptop, status: active}
+      - {id: S-3, user_id: U-3, ip: 10.1.1.3, device: laptop, status: active}
+      - {id: S-4, user_id: U-4, ip: 10.1.1.4, device: phone, status: active}
+      - {id: S-5, user_id: U-4, ip: 10.1.1.5, device: laptop, status: active}
+  workspace:
+    users:
+      - {id: arjun.mehra@pinecrest.example, email: arjun.mehra@pinecrest.example, name: Arjun Mehra, suspended: false, org_unit: /Editorial}
+      - {id: bina.thomas@pinecrest.example, email: bina.thomas@pinecrest.example, name: Bina Thomas, suspended: false, org_unit: /Design}
+      - {id: carlos.pereira@pinecrest.example, email: carlos.pereira@pinecrest.example, name: Carlos Pereira, suspended: false, org_unit: /Video}
+      - {id: dina.kaur@pinecrest.example, email: dina.kaur@pinecrest.example, name: Dina Kaur, suspended: false, org_unit: /Editorial}
+  chat:
+    users:
+      - {id: C-1, email: arjun.mehra@pinecrest.example, name: Arjun Mehra, deleted: false}
+      - {id: C-2, email: bina.thomas@pinecrest.example, name: Bina Thomas, deleted: false}
+      - {id: C-3, email: carlos.pereira@pinecrest.example, name: Carlos Pereira, deleted: false}
+      - {id: C-4, email: dina.kaur@pinecrest.example, name: Dina Kaur, deleted: false}
+  codehost:
+    members:
+      - {id: GH-1, login: arjun-m, email: arjun.mehra@pinecrest.example, name: Arjun Mehra, role: member}
+      - {id: GH-2, login: bthomas, email: bina.thomas@pinecrest.example, name: Bina Thomas, role: member}
+      - {id: GH-3, login: cpereira, email: carlos.pereira@pinecrest.example, name: Carlos Pereira, role: member}
+  licenses:
+    subscriptions:
+      - {id: SUB-1, product: Design Suite, seats_purchased: 20, owner: Design}
+      - {id: SUB-2, product: Newsroom CMS, seats_purchased: 50, owner: Editorial}
+      - {id: SUB-3, product: Video Cloud, seats_purchased: 10, owner: Video}
+    seats:
+      - {id: SEAT-1, subscription_id: SUB-2, user_email: arjun.mehra@pinecrest.example, last_active: "2026-10-09"}
+      - {id: SEAT-2, subscription_id: SUB-1, user_email: arjun.mehra@pinecrest.example, last_active: "2026-09-20"}
+      - {id: SEAT-3, subscription_id: SUB-1, user_email: bina.thomas@pinecrest.example, last_active: "2026-10-11"}
+      - {id: SEAT-4, subscription_id: SUB-3, user_email: carlos.pereira@pinecrest.example, last_active: "2026-10-11"}
+      - {id: SEAT-5, subscription_id: SUB-2, user_email: dina.kaur@pinecrest.example, last_active: "2026-10-09"}

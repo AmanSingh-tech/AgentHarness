@@ -1,0 +1,74 @@
+today: "2026-10-15T09:00:00Z"
+systems: [servicedesk, hr, idp, licenses, files]
+data:
+  servicedesk:
+    users:
+      - {id: U-HRBP, name: Kalpana Joshi, email: kalpana.joshi@arcadia.example, department: HR, title: HR Business Partner, active: true}
+    groups:
+      - {id: GRP-IAM, name: Identity & Access, members: []}
+    incidents:
+      - id: INC0901
+        short_description: "Mover: Arjun Rao, Finance -> Engineering"
+        description: Arjun Rao moves from Finance to Engineering effective today. Please update his access accordingly and close the ticket.
+        caller_id: U-HRBP
+        category: access
+        priority: "3"
+        state: new
+        assignment_group: GRP-IAM
+        work_notes: ""
+        opened_at: "2026-10-15T08:00:00Z"
+    kb:
+      - id: KB0910
+        title: Mover policy - changing department
+        tags: [mover, transfer, department, joiner, leaver, baseline]
+        owner: Identity & Access
+        updated: "2026-01-20"
+        body: >-
+          When an employee changes department, do not suspend or offboard them. Remove access that belongs to the old
+          department - its groups (owned by that department), licences for its applications, and its confidential
+          or restricted document sites - unless HR has recorded a handover arrangement, which takes precedence until
+          its end date. Keep company-wide access (All Staff, Office Suite). Add the new department's baseline groups:
+          Engineering - Engineering, Source Code Read. Sales - Sales, CRM Read. Finance - Finance, ERP Read-only.
+          Anything beyond the baseline needs a separate access request.
+  hr:
+    workers:
+      - {id: W-77, name: Arjun Rao, email: arjun.rao@arcadia.example, employee_id: E-77, status: active, department: Engineering, title: Data Engineer, manager_id: W-90, worker_type: employee, notes: "Handover: keeps read access to the Month-End Close site until 2026-10-31 to finish the September close."}
+      - {id: W-90, name: Sneha Kulkarni, email: sneha.kulkarni@arcadia.example, employee_id: E-90, status: active, department: Engineering, title: Engineering Manager, worker_type: employee}
+      - {id: W-50, name: Prakash Iyer, email: prakash.iyer@arcadia.example, employee_id: E-50, status: active, department: Finance, title: Finance Manager, worker_type: employee}
+    events:
+      - {id: EV-1, worker_id: W-77, type: transfer, effective_date: "2026-10-15", detail: "Finance (Financial Analyst) -> Engineering (Data Engineer)"}
+  idp:
+    users:
+      - {id: U-77, login: arjun.rao, email: arjun.rao@arcadia.example, name: Arjun Rao, status: ACTIVE, department: Engineering, user_type: employee}
+      - {id: U-50, login: prakash.iyer, email: prakash.iyer@arcadia.example, name: Prakash Iyer, status: ACTIVE, department: Finance, user_type: employee}
+    groups:
+      - {id: G-ALL, name: All Staff, description: Company-wide, owner: IT}
+      - {id: G-FIN, name: Finance, description: Finance department, owner: Finance}
+      - {id: G-ERP-AP, name: ERP AP - Invoice Entry, description: Enter supplier invoices, owner: Finance}
+      - {id: G-ENG, name: Engineering, description: Engineering department, owner: Engineering}
+      - {id: G-CODE, name: Source Code Read, description: Read access to source code, owner: Engineering}
+      - {id: G-PROD, name: Production Admins, description: Administer production systems, owner: Engineering, privileged: true}
+    memberships:
+      - {id: M-1, group_id: G-ALL, user_id: U-77}
+      - {id: M-2, group_id: G-FIN, user_id: U-77}
+      - {id: M-3, group_id: G-ERP-AP, user_id: U-77}
+      - {id: M-4, group_id: G-FIN, user_id: U-50}
+      - {id: M-5, group_id: G-ALL, user_id: U-50}
+  licenses:
+    subscriptions:
+      - {id: SUB-ERP, product: ERP Finance Suite, seats_purchased: 40, owner: Finance}
+      - {id: SUB-OFF, product: Office Suite, seats_purchased: 900, owner: IT}
+    seats:
+      - {id: SEAT-1, subscription_id: SUB-ERP, user_email: arjun.rao@arcadia.example}
+      - {id: SEAT-2, subscription_id: SUB-OFF, user_email: arjun.rao@arcadia.example}
+      - {id: SEAT-3, subscription_id: SUB-ERP, user_email: prakash.iyer@arcadia.example}
+  files:
+    sites:
+      - {id: S-1, name: Month-End Close, owner: finance@arcadia.example, sensitivity: confidential, external_sharing: false}
+      - {id: S-2, name: Finance Leadership, owner: finance@arcadia.example, sensitivity: restricted, external_sharing: false}
+      - {id: S-3, name: Company Handbook, owner: hr@arcadia.example, sensitivity: internal, external_sharing: false}
+    permissions:
+      - {id: P-1, site_id: S-1, principal: arjun.rao@arcadia.example, role: read, granted_by: finance@arcadia.example, granted_at: "2025-04-01"}
+      - {id: P-2, site_id: S-2, principal: arjun.rao@arcadia.example, role: edit, granted_by: finance@arcadia.example, granted_at: "2025-04-01"}
+      - {id: P-3, site_id: S-3, principal: arjun.rao@arcadia.example, role: read, granted_by: hr@arcadia.example, granted_at: "2025-04-01"}
+      - {id: P-4, site_id: S-2, principal: prakash.iyer@arcadia.example, role: owner, granted_by: finance@arcadia.example, granted_at: "2024-01-01"}

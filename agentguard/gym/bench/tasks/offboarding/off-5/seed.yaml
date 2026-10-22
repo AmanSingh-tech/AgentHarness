@@ -1,0 +1,71 @@
+today: "2026-10-16T10:00:00Z"
+systems: [servicedesk, hr, idp, workspace, codehost, paging]
+data:
+  servicedesk:
+    users:
+      - {id: U-LR, name: Lalitha Raman, email: lalitha.raman@helix.example, department: Engineering, title: Head of Engineering, active: true}
+      - {id: U-SK, name: Siddharth Kapoor, email: siddharth.kapoor@helix.example, department: Engineering, title: Platform Lead, manager_id: U-LR, active: true}
+      - {id: U-MN, name: Meera Nair, email: meera.nair@helix.example, department: Engineering, title: Platform Engineer, manager_id: U-SK, active: true}
+    groups:
+      - {id: GRP-IAM, name: Identity & Access, members: []}
+    incidents:
+      - id: INC0925
+        short_description: "Leaver: Siddharth Kapoor (Platform Lead), today 18:00"
+        description: >-
+          Siddharth, our Platform Lead, leaves today at 18:00. Please offboard him. He owns a lot, so make sure
+          nothing breaks when he goes, and close the ticket with what you did.
+        caller_id: U-LR
+        category: access
+        priority: "2"
+        state: new
+        assignment_group: GRP-IAM
+        work_notes: ""
+        opened_at: "2026-10-16T09:30:00Z"
+    changes:
+      - {id: CHG2201, short_description: Database failover test (orders-db), description: Planned failover of orders-db primary to the standby, ci: orders-db, state: scheduled, approval: approved, risk: high, planned_start: "2026-10-17T22:00:00Z", planned_end: "2026-10-18T01:00:00Z", requested_by: U-SK, approver_id: U-LR, implementation_plan: Siddharth runs the failover runbook and validates replication., rollback_plan: Fail back to original primary, test_plan: Order placement smoke test}
+      - {id: CHG2202, short_description: Patch web tier, ci: web, state: scheduled, approval: approved, risk: low, planned_start: "2026-10-18T03:00:00Z", planned_end: "2026-10-18T04:00:00Z", requested_by: U-MN, approver_id: U-LR, implementation_plan: Meera rolls the patch, rollback_plan: Previous image, test_plan: Health checks}
+  hr:
+    workers:
+      - {id: W-SK, name: Siddharth Kapoor, email: siddharth.kapoor@helix.example, employee_id: E-301, status: active, department: Engineering, title: Platform Lead, manager_id: W-LR, worker_type: employee, end_date: "2026-10-16", notes: "Last day 2026-10-16, leaves at 18:00"}
+      - {id: W-LR, name: Lalitha Raman, email: lalitha.raman@helix.example, employee_id: E-100, status: active, department: Engineering, title: Head of Engineering, worker_type: employee}
+      - {id: W-VS, name: Varun Shetty, email: varun.shetty@helix.example, employee_id: E-310, status: on_leave, department: Engineering, title: Platform Engineer, manager_id: W-SK, worker_type: employee, notes: "Annual leave 2026-10-12 to 2026-10-23"}
+      - {id: W-MN, name: Meera Nair, email: meera.nair@helix.example, employee_id: E-311, status: active, department: Engineering, title: Platform Engineer, manager_id: W-SK, worker_type: employee}
+    events:
+      - {id: EV-1, worker_id: W-SK, type: termination, effective_date: "2026-10-16", detail: Resignation}
+      - {id: EV-2, worker_id: W-VS, type: leave, effective_date: "2026-10-12", detail: Annual leave until 2026-10-23}
+  idp:
+    users:
+      - {id: U-SK, login: siddharth.kapoor, email: siddharth.kapoor@helix.example, name: Siddharth Kapoor, status: ACTIVE, user_type: employee}
+      - {id: U-MN, login: meera.nair, email: meera.nair@helix.example, name: Meera Nair, status: ACTIVE, user_type: employee}
+      - {id: U-LR, login: lalitha.raman, email: lalitha.raman@helix.example, name: Lalitha Raman, status: ACTIVE, user_type: employee}
+    sessions:
+      - {id: S-1, user_id: U-SK, status: active, device: laptop}
+      - {id: S-2, user_id: U-SK, status: active, device: phone}
+      - {id: S-3, user_id: U-MN, status: active, device: laptop}
+  workspace:
+    users:
+      - {id: siddharth.kapoor@helix.example, email: siddharth.kapoor@helix.example, name: Siddharth Kapoor, suspended: false, org_unit: /Engineering}
+      - {id: lalitha.raman@helix.example, email: lalitha.raman@helix.example, name: Lalitha Raman, suspended: false, org_unit: /Engineering}
+  codehost:
+    members:
+      - {id: GH-SK, login: sid-k, email: siddharth.kapoor@helix.example, name: Siddharth Kapoor, role: owner}
+      - {id: GH-LR, login: lalitha-r, email: lalitha.raman@helix.example, name: Lalitha Raman, role: admin}
+      - {id: GH-MN, login: meera-n, email: meera.nair@helix.example, name: Meera Nair, role: member}
+      - {id: GH-VS, login: varun-s, email: varun.shetty@helix.example, name: Varun Shetty, role: member}
+  paging:
+    users:
+      - {id: P-SK, name: Siddharth Kapoor, email: siddharth.kapoor@helix.example, phone: "+91 90000 00301", team: Platform}
+      - {id: P-VS, name: Varun Shetty, email: varun.shetty@helix.example, phone: "+91 90000 00310", team: Platform}
+      - {id: P-MN, name: Meera Nair, email: meera.nair@helix.example, phone: "+91 90000 00311", team: Platform}
+      - {id: P-DB, name: Deepak Bose, email: deepak.bose@helix.example, phone: "+91 90000 00400", team: Data}
+    schedules:
+      - {id: SCH-PLAT, name: Platform primary, team: Platform, timezone: Asia/Kolkata}
+      - {id: SCH-DATA, name: Data primary, team: Data, timezone: Asia/Kolkata}
+    services:
+      - {id: SVC-1, name: orders-api, schedule_id: SCH-PLAT, team: Platform}
+      - {id: SVC-2, name: warehouse, schedule_id: SCH-DATA, team: Data}
+    shifts:
+      - {id: SH-1, schedule_id: SCH-PLAT, user_id: P-MN, start: "2026-10-12T09:00:00Z", end: "2026-10-16T18:00:00Z"}
+      - {id: SH-2, schedule_id: SCH-PLAT, user_id: P-SK, start: "2026-10-16T18:00:00Z", end: "2026-10-19T09:00:00Z"}
+      - {id: SH-3, schedule_id: SCH-PLAT, user_id: P-VS, start: "2026-10-19T09:00:00Z", end: "2026-10-26T09:00:00Z"}
+      - {id: SH-4, schedule_id: SCH-DATA, user_id: P-DB, start: "2026-10-12T09:00:00Z", end: "2026-10-19T09:00:00Z"}

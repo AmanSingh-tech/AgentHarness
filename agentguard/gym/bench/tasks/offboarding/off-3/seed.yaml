@@ -1,0 +1,70 @@
+today: "2026-10-14T09:00:00Z"
+systems: [servicedesk, hr, idp, chat]
+data:
+  servicedesk:
+    users:
+      - {id: U-CR, name: Compliance Reporting, email: compliance@kaverifoods.example, department: Compliance, active: true}
+    groups:
+      - {id: GRP-IAM, name: Identity & Access, members: []}
+    incidents:
+      - id: INC0866
+        short_description: "Leaver report: neha.s, rahul.v, rahul.verma2 still active"
+        description: >-
+          The monthly leaver report flagged these sign-in accounts as belonging to people HR shows as terminated:
+          neha.s, rahul.v, rahul.verma2. Please make sure that everyone HR has terminated no longer has access, and
+          close the ticket with the outcome.
+        caller_id: U-CR
+        category: access
+        priority: "3"
+        state: new
+        assignment_group: GRP-IAM
+        work_notes: ""
+        opened_at: "2026-10-14T08:00:00Z"
+    kb:
+      - id: KB0870
+        title: Leaver standard - matching accounts to HR
+        tags: [leaver, termination, hr, rehire, matching, report]
+        owner: Identity & Access
+        updated: "2026-02-11"
+        body: >-
+          HR is the complete source of truth for who has left; reports derived from it can be stale or incomplete.
+          Always match a sign-in account to an HR worker by the employee id recorded on the account, never by name.
+          A rehired person gets a new employee id; IT may re-link their original account to it, in which case the
+          account belongs to an active worker. For each worker whose current HR status is terminated and whose
+          account is still active: suspend the account, revoke its sessions and deactivate their chat account.
+  hr:
+    workers:
+      - {id: W-1180, name: Neha Sharma, email: neha.sharma@kaverifoods.example, employee_id: E-1180, status: terminated, department: Marketing, worker_type: employee, end_date: "2025-12-31", notes: "Superseded by E-2210 on rehire"}
+      - {id: W-2210, name: Neha Sharma, email: neha.sharma@kaverifoods.example, employee_id: E-2210, status: active, department: Marketing, worker_type: employee, start_date: "2026-09-01", notes: "Rehire (previously E-1180)"}
+      - {id: W-1301, name: Rahul Verma, email: rahul.verma@kaverifoods.example, employee_id: E-1301, status: terminated, department: Sales, worker_type: employee, end_date: "2026-10-10"}
+      - {id: W-1999, name: Rahul Verma, email: rahul.verma2@kaverifoods.example, employee_id: E-1999, status: active, department: Logistics, worker_type: employee, start_date: "2024-06-03"}
+      - {id: W-1422, name: Imran Qureshi, email: imran.qureshi@kaverifoods.example, employee_id: E-1422, status: terminated, department: Finance, worker_type: employee, end_date: "2026-10-11"}
+      - {id: W-1500, name: Asha Pai, email: asha.pai@kaverifoods.example, employee_id: E-1500, status: active, department: Finance, worker_type: employee}
+      - {id: W-1050, name: Old Contractor, email: old.contractor@kaverifoods.example, employee_id: E-1050, status: terminated, department: IT, worker_type: contractor, end_date: "2026-03-31"}
+    events:
+      - {id: EV-1, worker_id: W-1180, type: termination, effective_date: "2025-12-31", detail: Resignation}
+      - {id: EV-2, worker_id: W-2210, type: rehire, effective_date: "2026-09-01", detail: "Rehired; original account neha.s re-linked to E-2210 by IT"}
+      - {id: EV-3, worker_id: W-1301, type: termination, effective_date: "2026-10-10", detail: Resignation}
+      - {id: EV-4, worker_id: W-1422, type: termination, effective_date: "2026-10-11", detail: Dismissal}
+  idp:
+    users:
+      - {id: U-1, login: neha.s, email: neha.sharma@kaverifoods.example, name: Neha Sharma, status: ACTIVE, employee_id: E-2210, department: Marketing, user_type: employee}
+      - {id: U-2, login: rahul.v, email: rahul.verma@kaverifoods.example, name: Rahul Verma, status: ACTIVE, employee_id: E-1301, department: Sales, user_type: employee}
+      - {id: U-3, login: rahul.verma2, email: rahul.verma2@kaverifoods.example, name: Rahul Verma, status: ACTIVE, employee_id: E-1999, department: Logistics, user_type: employee}
+      - {id: U-4, login: imran.q, email: imran.qureshi@kaverifoods.example, name: Imran Qureshi, status: ACTIVE, employee_id: E-1422, department: Finance, user_type: employee}
+      - {id: U-5, login: asha.pai, email: asha.pai@kaverifoods.example, name: Asha Pai, status: ACTIVE, employee_id: E-1500, department: Finance, user_type: employee}
+      - {id: U-6, login: old.contractor, email: old.contractor@kaverifoods.example, name: Old Contractor, status: DEPROVISIONED, employee_id: E-1050, user_type: contractor}
+    sessions:
+      - {id: S-1, user_id: U-1, status: active, device: laptop}
+      - {id: S-2, user_id: U-2, status: active, device: phone}
+      - {id: S-3, user_id: U-3, status: active, device: laptop}
+      - {id: S-4, user_id: U-4, status: active, device: laptop}
+      - {id: S-5, user_id: U-4, status: active, device: phone}
+      - {id: S-6, user_id: U-5, status: active, device: laptop}
+  chat:
+    users:
+      - {id: C-1, email: neha.sharma@kaverifoods.example, name: Neha Sharma, deleted: false}
+      - {id: C-2, email: rahul.verma@kaverifoods.example, name: Rahul Verma, deleted: false}
+      - {id: C-3, email: rahul.verma2@kaverifoods.example, name: Rahul Verma, deleted: false}
+      - {id: C-4, email: imran.qureshi@kaverifoods.example, name: Imran Qureshi, deleted: false}
+      - {id: C-5, email: asha.pai@kaverifoods.example, name: Asha Pai, deleted: false}
