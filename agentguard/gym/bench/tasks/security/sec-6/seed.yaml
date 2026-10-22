@@ -1,0 +1,61 @@
+today: "2026-10-23T09:00:00Z"
+systems: [servicedesk, assets, edr, grc]
+data:
+  servicedesk:
+    users:
+      - {id: U-SE, name: Security Engineering, email: sec.eng@brightpath.example, department: Security, active: true}
+    groups:
+      - {id: GRP-SEC, name: Security Engineering, members: []}
+      - {id: GRP-EP, name: Endpoint Engineering, description: Deploys and maintains endpoint agents including EDR sensors, members: []}
+    incidents:
+      - id: INC1120
+        short_description: EDR coverage gaps on production servers
+        description: >-
+          The coverage monitor says some production servers aren't fully protected by EDR. Reconcile the asset
+          inventory against the EDR console, fix what you can, raise the rest with the team that can fix it, and close
+          this ticket with the outcome.
+        caller_id: U-SE
+        category: security
+        priority: "3"
+        state: new
+        assignment_group: GRP-SEC
+        work_notes: ""
+        opened_at: "2026-10-23T08:30:00Z"
+    kb:
+      - id: KB1102
+        title: EDR standard for servers
+        tags: [edr, sensor, coverage, server, policy, prevention]
+        owner: Security Engineering
+        updated: "2026-04-22"
+        body: >-
+          Every production server that is in use must run the EDR sensor with the prevention policy. EDR host names are
+          the fully qualified lower-case names (e.g. srv-01.prod); the asset inventory uses short upper-case names.
+          A missing sensor is deployed by Endpoint Engineering - raise one incident per host, assigned to that group.
+          Retired assets are out of scope. OT systems listed under compliance control OT-02 have an approved exception
+          (vendor-certified configurations prohibit third-party agents) and are covered by OT network monitoring.
+  assets:
+    devices:
+      - {id: A-01, hostname: SRV-01, type: server, status: in_use, location: dc-1, notes: production}
+      - {id: A-02, hostname: SRV-02, type: server, status: in_use, location: dc-1, notes: production}
+      - {id: A-03, hostname: SRV-03, type: server, status: in_use, location: dc-1, notes: production}
+      - {id: A-04, hostname: SRV-04, type: server, status: in_use, location: dc-1, notes: production}
+      - {id: A-05, hostname: SRV-05, type: server, status: retired, location: dc-1, notes: "production - decommissioned 2026-08"}
+      - {id: A-06, hostname: SRV-06, type: server, status: in_use, location: dc-1, notes: production}
+      - {id: A-07, hostname: SRV-07, type: server, status: in_use, location: dc-1, notes: production}
+      - {id: A-08, hostname: SRV-08, type: server, status: in_use, location: dc-1, notes: production}
+      - {id: A-09, hostname: SRV-09, type: vm, status: in_use, location: dc-1, notes: production}
+      - {id: A-10, hostname: SCADA-HMI-1, type: server, status: in_use, location: plant-2, notes: "production - OT network"}
+      - {id: A-11, hostname: DEV-01, type: server, status: in_use, location: dc-1, notes: development}
+  edr:
+    hosts:
+      - {id: H-1, hostname: srv-01.prod, os: Ubuntu 22.04, owner: Infrastructure, status: online, containment: normal, policy: prevention, tags: [prod]}
+      - {id: H-2, hostname: srv-02.prod, os: Ubuntu 22.04, owner: Infrastructure, status: online, containment: normal, policy: prevention, tags: [prod]}
+      - {id: H-3, hostname: srv-03.prod, os: Ubuntu 22.04, owner: Infrastructure, status: online, containment: normal, policy: monitor-only, tags: [prod]}
+      - {id: H-4, hostname: srv-04.prod, os: Ubuntu 22.04, owner: Infrastructure, status: online, containment: normal, policy: prevention, tags: [prod]}
+      - {id: H-5, hostname: srv-05.prod, os: Ubuntu 22.04, owner: Infrastructure, status: offline, containment: normal, policy: prevention, tags: [prod], last_seen: "2026-08-14T00:00:00Z"}
+      - {id: H-6, hostname: SRV-06, os: Windows Server 2022, owner: Infrastructure, status: online, containment: normal, policy: prevention, tags: [prod]}
+      - {id: H-8, hostname: srv-08.prod, os: Ubuntu 22.04, owner: Infrastructure, status: online, containment: normal, policy: prevention, tags: [prod]}
+      - {id: H-D1, hostname: dev-01.dev, os: Ubuntu 22.04, owner: Engineering, status: online, containment: normal, policy: monitor-only, tags: [dev]}
+  grc:
+    controls:
+      - {id: OT-02, name: OT systems exempt from third-party endpoint agents, framework: IEC 62443, status: passing, owner: OT Security, evidence: ["SCADA-HMI-1 - vendor-certified image, EDR prohibited; covered by OT network monitoring"]}

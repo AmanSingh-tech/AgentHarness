@@ -1,0 +1,5 @@
+id: sec-1
+title: Mailbox takeover - evict the attacker everywhere, keep the user working
+category: security
+difficulty: hard
+tags: [account-compromise, persistence, oauth, forwarding, mfa]

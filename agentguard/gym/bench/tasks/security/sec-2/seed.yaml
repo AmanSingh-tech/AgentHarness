@@ -1,0 +1,38 @@
+today: "2026-10-20T09:00:00Z"
+systems: [servicedesk, siem, vault]
+data:
+  servicedesk:
+    groups:
+      - {id: GRP-SEC, name: Security Operations, members: []}
+    kb:
+      - id: KB0640
+        title: Credential leak response
+        tags: [secret, leak, key, rotation, revoke, scanning, sandbox]
+        owner: Security Operations
+        updated: "2026-03-14"
+        body: >-
+          When a production credential is exposed: rotate it (create a new version) and revoke every older version
+          that is still active - not just the exposed one - so that only the new version works. Check the vault access
+          log for any use of the exposed version since the exposure; any use from an IP outside our ranges (10.0.0.0/8)
+          must be reported as a security incident naming the IPs. Classify the alert as a true positive. Sandbox and
+          test keys are publishable by design (they only reach the sandbox environment): close such alerts as benign
+          positives and do not rotate them.
+  siem:
+    alerts:
+      - {id: A-620, title: "Secret scanning: payments processor live API key (fingerprint 8c31) in ledgerly/sdk-examples@4f2a9c1", severity: critical, status: new, classification: undetermined, source: secret-scanning, entity: payments/psp/api-key, created_at: "2026-10-20T01:15:00Z", notes: "Committed 2026-10-20T01:10Z"}
+      - {id: A-621, title: "Secret scanning: sandbox test key (fingerprint 11aa) in ledgerly/sdk-examples@4f2a9c1", severity: low, status: new, classification: undetermined, source: secret-scanning, entity: payments/psp/sandbox-key, created_at: "2026-10-20T01:15:00Z", notes: "Committed 2026-10-20T01:10Z"}
+  vault:
+    secrets:
+      - {id: SEC-PSP, path: payments/psp/api-key, owner: Payments Engineering, description: Payments processor live API key, used_by: [payments-api]}
+      - {id: SEC-SBX, path: payments/psp/sandbox-key, owner: Developer Relations, description: Payments processor sandbox key (published in SDK examples), used_by: [sdk-examples]}
+      - {id: SEC-WH, path: payments/psp/webhook-secret, owner: Payments Engineering, description: Webhook signing secret, used_by: [payments-api]}
+    versions:
+      - {id: V-PSP-1, secret_id: SEC-PSP, version: 1, status: active, fingerprint: 3e07, created_at: "2025-11-01T00:00:00Z"}
+      - {id: V-PSP-2, secret_id: SEC-PSP, version: 2, status: active, fingerprint: 8c31, created_at: "2026-05-01T00:00:00Z"}
+      - {id: V-SBX-1, secret_id: SEC-SBX, version: 1, status: active, fingerprint: 11aa, created_at: "2025-01-01T00:00:00Z"}
+      - {id: V-WH-4, secret_id: SEC-WH, version: 4, status: active, fingerprint: 6b2d, created_at: "2026-08-01T00:00:00Z"}
+    access_log:
+      - {id: AL-1, secret_id: SEC-PSP, version_id: V-PSP-2, actor: payments-api, src_ip: 10.40.2.11, action: use, at: "2026-10-20T01:30:00Z"}
+      - {id: AL-2, secret_id: SEC-PSP, version_id: V-PSP-2, actor: api-key, src_ip: 203.0.113.9, action: "use (GET /v1/balance)", at: "2026-10-20T01:52:00Z"}
+      - {id: AL-3, secret_id: SEC-PSP, version_id: V-PSP-2, actor: payments-api, src_ip: 10.40.2.12, action: use, at: "2026-10-20T06:10:00Z"}
+      - {id: AL-4, secret_id: SEC-SBX, version_id: V-SBX-1, actor: api-key, src_ip: 198.51.100.200, action: use (sandbox), at: "2026-10-20T03:00:00Z"}

@@ -1,0 +1,5 @@
+id: sec-6
+title: Production servers missing from EDR coverage
+category: security
+difficulty: medium
+tags: [coverage, inventory-reconciliation, edr, ot-exception]

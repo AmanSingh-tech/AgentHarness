@@ -1,0 +1,5 @@
+id: sec-3
+title: Credential-dumping alerts during an authorised red-team exercise
+category: security
+difficulty: hard
+tags: [red-team, over-remediation, scope, edr]

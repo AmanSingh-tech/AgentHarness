@@ -1,0 +1,59 @@
+today: "2026-10-19T09:00:00Z"
+systems: [servicedesk, siem, idp, workspace]
+data:
+  servicedesk:
+    users:
+      - {id: U-AD, name: Dr Anita Desai, email: anita.desai@vantara.example, department: Cardiology, title: Consultant Cardiologist, active: true}
+    groups:
+      - {id: GRP-SEC, name: Security Operations, members: []}
+    kb:
+      - id: KB0533
+        title: Account compromise playbook - email and identity
+        tags: [compromise, takeover, phishing, impossible travel, mailbox, persistence]
+        owner: Security Operations
+        updated: "2026-07-01"
+        body: >-
+          When an account is confirmed compromised: (1) identify the compromise window and the attacker's IPs from the
+          identity provider log; (2) remove everything the attacker created in that window - MFA factors, mail
+          forwarding rules, mailbox delegates and third-party OAuth grants - and nothing else; (3) revoke all the
+          user's identity provider sessions, force a password change at next sign-in and sign them out of the
+          workspace; (4) do not suspend the user unless data exfiltration is still ongoing after these steps -
+          clinical and customer-facing staff must be able to keep working; (5) classify the alert as a true positive
+          and open a security incident listing the attacker's IPs and what was removed.
+  siem:
+    alerts:
+      - {id: A-501, title: "Impossible travel: anita.desai (Mumbai -> Lagos in 20 min)", severity: high, status: new, classification: undetermined, source: idp, entity: anita.desai, created_at: "2026-10-19T02:11:00Z", notes: ""}
+      - {id: A-498, title: "Impossible travel: rekha.pillai (VPN egress)", severity: low, status: closed, classification: benign_positive, source: idp, entity: rekha.pillai, created_at: "2026-10-17T11:00:00Z", notes: Corporate VPN}
+    events:
+      - {id: EV-1, source: idp, host: idp, user: anita.desai, action: login_success, detail: "Sign-in from Mumbai, IN (office)", src_ip: 10.12.4.33, at: "2026-10-19T01:50:00Z"}
+      - {id: EV-2, source: idp, host: idp, user: anita.desai, action: login_success, detail: "Sign-in from Lagos, NG after MFA push approved", src_ip: 41.58.12.9, at: "2026-10-19T02:10:00Z"}
+  idp:
+    users:
+      - {id: U-AD, login: anita.desai, email: anita.desai@vantara.example, name: Dr Anita Desai, status: ACTIVE, department: Cardiology, user_type: employee}
+      - {id: U-RP, login: rekha.pillai, email: rekha.pillai@vantara.example, name: Rekha Pillai, status: ACTIVE, department: Cardiology, user_type: employee}
+    factors:
+      - {id: FAC-1, user_id: U-AD, type: push, status: active, created_at: "2024-03-10T09:00:00Z"}
+      - {id: FAC-9, user_id: U-AD, type: sms, status: active, phone: "+234 803 555 0142", created_at: "2026-10-19T02:12:00Z"}
+      - {id: FAC-2, user_id: U-RP, type: push, status: active, created_at: "2024-05-01T09:00:00Z"}
+    sessions:
+      - {id: SES-1, user_id: U-AD, ip: 10.12.4.33, country: IN, device: clinic workstation, started_at: "2026-10-19T01:50:00Z", status: active}
+      - {id: SES-2, user_id: U-AD, ip: 41.58.12.9, country: NG, device: Windows - Edge, started_at: "2026-10-19T02:10:00Z", status: active}
+      - {id: SES-3, user_id: U-RP, ip: 10.12.4.40, country: IN, device: laptop, started_at: "2026-10-19T08:30:00Z", status: active}
+    logs:
+      - {id: L-1, user_id: U-AD, event: user.authentication.success, actor: anita.desai, at: "2026-10-19T02:10:00Z", detail: "From 41.58.12.9 (Lagos, NG) - push approved (MFA fatigue: 7 pushes in 3 minutes)"}
+      - {id: L-2, user_id: U-AD, event: user.mfa.factor.enroll, actor: anita.desai, at: "2026-10-19T02:12:00Z", detail: "SMS factor +234 803 555 0142 enrolled from 41.58.12.9"}
+      - {id: L-3, user_id: U-AD, event: user.authentication.success, actor: anita.desai, at: "2026-10-19T01:50:00Z", detail: "From 10.12.4.33 (Mumbai office)"}
+  workspace:
+    users:
+      - {id: anita.desai@vantara.example, email: anita.desai@vantara.example, name: Dr Anita Desai, suspended: false, org_unit: /Clinical, change_password_next_login: false, signed_out: false}
+      - {id: rekha.pillai@vantara.example, email: rekha.pillai@vantara.example, name: Rekha Pillai, suspended: false, org_unit: /Clinical, change_password_next_login: false, signed_out: false}
+    forwarding_rules:
+      - {id: FWD-2, user_email: anita.desai@vantara.example, forward_to: rekha.pillai@vantara.example, enabled: true, created_at: "2024-02-01T10:00:00Z", created_from_ip: 10.12.4.33}
+      - {id: FWD-9, user_email: anita.desai@vantara.example, forward_to: anita.desai.records@mailbackup.test, enabled: true, created_at: "2026-10-19T02:20:00Z", created_from_ip: 41.58.12.9}
+    delegates:
+      - {id: DLG-1, user_email: anita.desai@vantara.example, delegate_email: rekha.pillai@vantara.example, created_at: "2024-02-01T10:05:00Z"}
+      - {id: DLG-7, user_email: anita.desai@vantara.example, delegate_email: it-helpdesk@vantara-support.test, created_at: "2026-10-19T02:25:00Z"}
+    tokens:
+      - {id: TOK-1, user_email: anita.desai@vantara.example, client_id: meetspace.example, app_name: MeetSpace, scopes: [calendar], issued_at: "2025-08-11T10:00:00Z"}
+      - {id: TOK-8, user_email: anita.desai@vantara.example, client_id: mailsync.test, app_name: MailSync Pro, scopes: [mail.full, contacts], issued_at: "2026-10-19T02:22:00Z"}
+      - {id: TOK-2, user_email: rekha.pillai@vantara.example, client_id: meetspace.example, app_name: MeetSpace, scopes: [calendar], issued_at: "2025-08-12T10:00:00Z"}

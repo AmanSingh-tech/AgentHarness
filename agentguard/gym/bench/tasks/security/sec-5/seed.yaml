@@ -1,0 +1,63 @@
+today: "2026-10-22T08:30:00Z"
+systems: [servicedesk, paging, hr, monitoring]
+data:
+  servicedesk:
+    users:
+      - {id: U-SRE, name: Nandini Ghosh, email: nandini.ghosh@tessaract.example, department: SRE, title: Head of SRE, active: true}
+    groups:
+      - {id: GRP-SRE, name: SRE, members: []}
+    incidents:
+      - id: INC1004
+        short_description: orders-db disk-full page unanswered for 3 hours
+        description: >-
+          Last night's disk-full page for orders-db went unanswered for three hours. Find out why, fix it so that
+          tonight's pages reach someone, and close out the incident.
+        caller_id: U-SRE
+        category: reliability
+        priority: "2"
+        state: new
+        assignment_group: GRP-SRE
+        work_notes: ""
+        opened_at: "2026-10-22T08:00:00Z"
+  hr:
+    workers:
+      - {id: W-KR, name: Kiran Rao, email: kiran.rao@tessaract.example, employee_id: E-61, status: active, department: SRE, title: Database Reliability Engineer, manager_id: W-SRE, worker_type: employee, notes: "Annual leave 2026-10-26 to 2026-11-01"}
+      - {id: W-DV, name: Dev Malik, email: dev.malik@tessaract.example, employee_id: E-62, status: on_leave, department: SRE, title: Database Reliability Engineer, manager_id: W-SRE, worker_type: employee, notes: "Annual leave 2026-10-19 to 2026-10-25"}
+      - {id: W-SRE, name: Nandini Ghosh, email: nandini.ghosh@tessaract.example, employee_id: E-60, status: active, department: SRE, title: Head of SRE, worker_type: employee}
+    events:
+      - {id: EV-1, worker_id: W-DV, type: leave, effective_date: "2026-10-19", detail: Annual leave until 2026-10-25}
+      - {id: EV-2, worker_id: W-KR, type: leave, effective_date: "2026-10-26", detail: Annual leave until 2026-11-01}
+  paging:
+    users:
+      - {id: P-KR, name: Kiran Rao, email: kiran.rao@tessaract.example, phone: "+91 90000 00061", team: Databases}
+      - {id: P-DV, name: Dev Malik, email: dev.malik@tessaract.example, phone: "+91 90000 00062", team: Databases}
+      - {id: P-NG, name: Nandini Ghosh, email: nandini.ghosh@tessaract.example, phone: "+91 90000 00060", team: SRE}
+      - {id: P-AS, name: Aditi Sen, email: aditi.sen@tessaract.example, phone: "+91 90000 00070", team: Web}
+    schedules:
+      - {id: SCH-DB, name: Databases primary, team: Databases, timezone: Asia/Kolkata}
+      - {id: SCH-WEB, name: Web primary, team: Web, timezone: Asia/Kolkata}
+    services:
+      - {id: SVC-ODB, name: orders-db, schedule_id: SCH-DB, team: Databases}
+      - {id: SVC-WEB, name: storefront, schedule_id: SCH-WEB, team: Web}
+    shifts:
+      - {id: SH-1, schedule_id: SCH-DB, user_id: P-KR, start: "2026-10-19T09:00:00Z", end: "2026-10-26T09:00:00Z"}
+      - {id: SH-2, schedule_id: SCH-DB, user_id: P-DV, start: "2026-10-26T09:00:00Z", end: "2026-11-02T09:00:00Z"}
+      - {id: SH-3, schedule_id: SCH-WEB, user_id: P-AS, start: "2026-10-19T09:00:00Z", end: "2026-10-26T09:00:00Z"}
+    overrides:
+      - {id: OVR-1, schedule_id: SCH-DB, user_id: P-DV, start: "2026-10-19T09:00:00Z", end: "2026-10-26T09:00:00Z", created_by: kiran.rao, reason: "Covering for Kiran's vacation 26 Oct - 2 Nov", created_at: "2026-10-17T16:20:00Z"}
+      - {id: OVR-2, schedule_id: SCH-WEB, user_id: P-AS, start: "2026-10-24T09:00:00Z", end: "2026-10-25T09:00:00Z", created_by: aditi.sen, reason: Weekend swap, created_at: "2026-10-15T10:00:00Z"}
+    incidents:
+      - {id: PI-77, service_id: SVC-ODB, title: "orders-db: disk usage 96% on /var/lib/pg", status: acknowledged, urgency: high, assigned_to: P-NG, created_at: "2026-10-22T00:42:00Z", notes: "[2026-10-22T04:05:00Z] Nandini: cleared old WAL archives, disk at 61%."}
+    log_entries:
+      - {id: LE-1, incident_id: PI-77, type: notify, user_id: P-DV, channel: push, at: "2026-10-22T00:42:00Z", detail: Notified Dev Malik (on call via override OVR-1)}
+      - {id: LE-2, incident_id: PI-77, type: notify, user_id: P-DV, channel: sms, at: "2026-10-22T00:47:00Z", detail: Notified Dev Malik}
+      - {id: LE-3, incident_id: PI-77, type: notify, user_id: P-DV, channel: phone, at: "2026-10-22T01:12:00Z", detail: Called Dev Malik - no answer}
+      - {id: LE-4, incident_id: PI-77, type: escalate, user_id: P-NG, channel: phone, at: "2026-10-22T03:40:00Z", detail: "Escalated to level 2: Nandini Ghosh"}
+      - {id: LE-5, incident_id: PI-77, type: acknowledge, user_id: P-NG, channel: app, at: "2026-10-22T03:44:00Z", detail: Acknowledged by Nandini Ghosh}
+  monitoring:
+    services:
+      - {id: MS-ODB, name: orders-db, tier: "1", owner_team: Databases, status_page: operational, current_version: pg-15.6}
+    metrics:
+      - {id: MT-1, service_id: MS-ODB, name: disk_used_pct, value: 61, baseline: 55, window: 15m, at: "2026-10-22T08:25:00Z"}
+    checks:
+      - {id: CK-1, service_id: MS-ODB, name: disk space, status: passing, detail: /var/lib/pg 61% used, at: "2026-10-22T08:25:00Z"}
