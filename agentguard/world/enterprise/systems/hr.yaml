@@ -1,0 +1,28 @@
+system: hr
+title: HR system
+description: The HR system of record (read-only for IT) - workers, employment status, manager, department, worker type, and employment events such as hires, terminations, transfers and rehires.
+collections:
+  workers:
+    fields:
+      name: string
+      email: string
+      employee_id: string
+      status: string            # active | terminated | on_leave | pre_hire
+      department: string
+      title: string
+      manager_id: string
+      worker_type: string       # employee | contractor
+      start_date: string
+      end_date: string
+      notes: string
+  events:
+    fields:
+      worker_id: string
+      type: string              # hire | termination | transfer | rehire | leave | return
+      effective_date: string
+      detail: string
+operations:
+  list_workers: {kind: list, collection: workers, filters: [status, department, manager_id, worker_type], labels: [PII]}
+  get_worker: {kind: get, collection: workers, labels: [PII]}
+  search_workers: {kind: search, collection: workers, fields: [name, email, employee_id], labels: [PII]}
+  list_events: {kind: list, collection: events, filters: [worker_id, type]}

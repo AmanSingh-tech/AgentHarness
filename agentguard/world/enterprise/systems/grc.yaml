@@ -1,0 +1,60 @@
+system: grc
+title: Governance, risk and compliance
+description: Compliance platform - controls and their status, the vendor register (contracts, DPAs, security reports), legal holds and their custodians, and findings (issues to remediate).
+collections:
+  controls:
+    fields:
+      name: string
+      framework: string
+      status: string            # passing | failing | not_tested
+      owner: string
+      evidence: array
+      last_tested: string
+      updated_at: string
+  vendors:
+    fields:
+      name: string
+      tier: string              # critical | high | low
+      status: string            # approved | under_review | blocked
+      dpa_expires: string
+      security_report_expires: string
+      data_types: array
+      owner: string
+      notes: string
+      updated_at: string
+  legal_holds:
+    fields:
+      matter: string
+      custodians: array
+      systems: array
+      status: string
+      created_at: string
+  findings:
+    id_prefix: FND
+    fields:
+      title: string
+      severity: string
+      status: string            # open | closed
+      control_id: string
+      vendor_id: string
+      owner: string
+      notes: string
+      created_at: string
+      updated_at: string
+operations:
+  list_controls: {kind: list, collection: controls, filters: [status, framework, owner]}
+  get_control: {kind: get, collection: controls}
+  update_control: {kind: update, collection: controls, fields: [status], description: "Set a control's status: passing, failing or not_tested."}
+  list_vendors: {kind: list, collection: vendors, filters: [status, tier]}
+  get_vendor: {kind: get, collection: vendors}
+  update_vendor: {kind: update, collection: vendors, fields: [status, notes], description: "Set a vendor's status (approved, under_review, blocked) and notes."}
+  list_legal_holds: {kind: list, collection: legal_holds, filters: [status]}
+  get_legal_hold: {kind: get, collection: legal_holds}
+  list_findings: {kind: list, collection: findings, filters: [status, severity, control_id, vendor_id]}
+  create_finding:
+    kind: create
+    collection: findings
+    fields: [title, severity, control_id, vendor_id, owner, notes]
+    required: [title, severity]
+    defaults: {status: open}
+  update_finding: {kind: update, collection: findings, fields: [status, notes]}

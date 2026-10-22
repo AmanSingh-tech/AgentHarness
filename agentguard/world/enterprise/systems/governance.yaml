@@ -1,0 +1,31 @@
+system: governance
+title: Access governance
+description: Access certification - review campaigns and each reviewer decision (approve or revoke an entitlement), and whether a revoke decision has been applied in the target system.
+collections:
+  campaigns:
+    fields:
+      name: string
+      status: string            # open | completed
+      due: string
+      owner: string
+  decisions:
+    fields:
+      campaign_id: string
+      user_id: string
+      system: string
+      entitlement: string
+      decision: string          # approve | revoke | pending
+      reviewer: string
+      applied: boolean
+      notes: string
+      updated_at: string
+operations:
+  list_campaigns: {kind: list, collection: campaigns, filters: [status]}
+  get_campaign: {kind: get, collection: campaigns}
+  list_decisions: {kind: list, collection: decisions, filters: [campaign_id, decision, applied, user_id, system]}
+  get_decision: {kind: get, collection: decisions}
+  mark_applied:
+    kind: transition
+    collection: decisions
+    set: {applied: true}
+    description: Record that a decision has been carried out in the target system.

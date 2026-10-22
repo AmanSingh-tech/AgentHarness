@@ -1,0 +1,35 @@
+system: files
+title: File sharing
+description: Document sites and sharing - sites with their sensitivity and external-sharing setting, per-person permissions (including external guests), and sharing links.
+collections:
+  sites:
+    fields:
+      name: string
+      owner: string
+      sensitivity: string       # public | internal | confidential | restricted
+      external_sharing: boolean
+      updated_at: string
+  permissions:
+    fields:
+      site_id: string
+      principal: string
+      role: string              # read | edit | owner
+      granted_by: string
+      granted_at: string
+      expires: string
+      justification: string
+  links:
+    fields:
+      site_id: string
+      scope: string             # anyone | organization | specific
+      role: string
+      created_by: string
+      created_at: string
+operations:
+  list_sites: {kind: list, collection: sites, filters: [sensitivity, external_sharing, owner]}
+  get_site: {kind: get, collection: sites}
+  update_site: {kind: update, collection: sites, fields: [external_sharing]}
+  list_permissions: {kind: list, collection: permissions, filters: [site_id, principal, role]}
+  remove_permission: {kind: delete, collection: permissions}
+  list_links: {kind: list, collection: links, filters: [site_id, scope]}
+  delete_link: {kind: delete, collection: links}

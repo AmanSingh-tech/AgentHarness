@@ -1,0 +1,50 @@
+system: codehost
+title: Code hosting
+description: Source code organisation - members and outside collaborators, repositories and per-repository access, deploy keys, and personal access tokens.
+collections:
+  members:
+    fields:
+      login: string
+      email: string
+      name: string
+      role: string              # member | admin | owner | outside_collaborator
+      updated_at: string
+  repos:
+    fields:
+      name: string
+      visibility: string
+      owner_team: string
+  repo_access:
+    id_prefix: RA
+    fields:
+      repo_id: string
+      member_id: string
+      permission: string        # read | write | admin
+  deploy_keys:
+    fields:
+      repo_id: string
+      title: string
+      added_by: string
+      read_only: boolean
+      created_at: string
+      last_used: string
+  tokens:
+    fields:
+      member_id: string
+      name: string
+      scopes: array
+      last_used: string
+      expires: string
+operations:
+  list_members: {kind: list, collection: members, filters: [role]}
+  get_member: {kind: get, collection: members}
+  search_members: {kind: search, collection: members, fields: [login, email, name]}
+  update_member: {kind: update, collection: members, fields: [role]}
+  remove_member: {kind: delete, collection: members, description: "Remove a member or collaborator from the organisation."}
+  list_repos: {kind: list, collection: repos, filters: [visibility, owner_team]}
+  list_repo_access: {kind: list, collection: repo_access, filters: [repo_id, member_id]}
+  remove_repo_access: {kind: delete_where, collection: repo_access, keys: [repo_id, member_id]}
+  list_deploy_keys: {kind: list, collection: deploy_keys, filters: [repo_id, added_by]}
+  delete_deploy_key: {kind: delete, collection: deploy_keys}
+  list_tokens: {kind: list, collection: tokens, filters: [member_id]}
+  revoke_token: {kind: delete, collection: tokens}

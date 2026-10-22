@@ -1,0 +1,95 @@
+system: edr
+title: Endpoint detection and response
+description: Endpoint security console - managed hosts and their sensors, network containment, detections, detected files and quarantine, exclusions, and the hash blocklist.
+collections:
+  hosts:
+    fields:
+      hostname: string
+      os: string
+      owner: string
+      status: string            # online | offline
+      containment: string       # normal | contained
+      sensor_version: string
+      last_seen: string
+      policy: string
+      tags: array
+      updated_at: string
+  detections:
+    fields:
+      host_id: string
+      severity: string
+      name: string
+      sha256: string
+      process: string
+      status: string            # new | in_progress | closed
+      verdict: string           # unknown | true_positive | false_positive | authorized_test
+      first_seen: string
+      notes: string
+      updated_at: string
+  files:
+    fields:
+      host_id: string
+      sha256: string
+      path: string
+      status: string            # detected | quarantined | released
+      updated_at: string
+  exclusions:
+    id_prefix: EXC
+    fields:
+      type: string              # path | hash | process
+      value: string
+      scope: string
+      created_by: string
+      created_at: string
+      comment: string
+  blocklist:
+    id_prefix: BLK
+    fields:
+      sha256: string
+      description: string
+      created_at: string
+operations:
+  list_hosts: {kind: list, collection: hosts, filters: [status, containment, policy, tags, owner]}
+  get_host: {kind: get, collection: hosts}
+  search_hosts: {kind: search, collection: hosts, fields: [hostname, owner, tags, os]}
+  contain_host:
+    kind: transition
+    collection: hosts
+    set: {containment: contained}
+    description: Network-contain a host - it can only talk to the security console until containment is lifted.
+  lift_containment:
+    kind: transition
+    collection: hosts
+    set: {containment: normal}
+    description: Lift network containment and reconnect the host.
+  assign_policy:
+    kind: update
+    collection: hosts
+    fields: [policy]
+    description: Assign a sensor policy to a host - prevention (blocks threats) or monitor-only (detects but does not block).
+  list_detections: {kind: list, collection: detections, filters: [host_id, status, verdict, sha256, severity]}
+  get_detection: {kind: get, collection: detections}
+  update_detection:
+    kind: update
+    collection: detections
+    fields: [status, verdict]
+    description: Update a detection - status (new, in_progress, closed), verdict (unknown, true_positive, false_positive, authorized_test).
+  add_detection_note: {kind: append, collection: detections, field: notes}
+  list_files: {kind: list, collection: files, filters: [host_id, sha256, status]}
+  quarantine_file: {kind: transition, collection: files, set: {status: quarantined}, when: {status: [detected, released]}}
+  release_file: {kind: transition, collection: files, set: {status: released}, when: {status: [quarantined]}}
+  list_exclusions: {kind: list, collection: exclusions, filters: [type, created_by]}
+  create_exclusion:
+    kind: create
+    collection: exclusions
+    fields: [type, value, scope, comment]
+    required: [type, value]
+  delete_exclusion: {kind: delete, collection: exclusions}
+  list_blocklist: {kind: list, collection: blocklist}
+  add_to_blocklist:
+    kind: create
+    collection: blocklist
+    fields: [sha256, description]
+    required: [sha256]
+    unique: [sha256]
+    description: Block a file hash on every managed host.

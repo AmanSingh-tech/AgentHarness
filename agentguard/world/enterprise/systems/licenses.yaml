@@ -1,0 +1,31 @@
+system: licenses
+title: SaaS licences
+description: SaaS subscription management - subscriptions and seat counts, and which user holds each seat and when they were last active.
+collections:
+  subscriptions:
+    fields:
+      product: string
+      seats_purchased: integer
+      renewal_date: string
+      owner: string
+      entity: string
+  seats:
+    id_prefix: SEAT
+    fields:
+      subscription_id: string
+      user_email: string
+      assigned_at: string
+      last_active: string
+      entity: string
+      created_at: string
+operations:
+  list_subscriptions: {kind: list, collection: subscriptions}
+  get_subscription: {kind: get, collection: subscriptions}
+  list_seats: {kind: list, collection: seats, filters: [subscription_id, user_email, entity]}
+  remove_seat: {kind: delete, collection: seats}
+  assign_seat:
+    kind: create
+    collection: seats
+    fields: [subscription_id, user_email, entity]
+    required: [subscription_id, user_email]
+    unique: [subscription_id, user_email]

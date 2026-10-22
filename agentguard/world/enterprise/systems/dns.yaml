@@ -1,0 +1,31 @@
+system: dns
+title: DNS
+description: Authoritative DNS - zones and their records (A, AAAA, CNAME, TXT, MX).
+collections:
+  zones:
+    fields:
+      name: string
+      owner: string
+  records:
+    id_prefix: REC
+    fields:
+      zone: string
+      name: string
+      type: string
+      value: string
+      ttl: integer
+      comment: string
+      created_at: string
+      updated_at: string
+operations:
+  list_zones: {kind: list, collection: zones}
+  list_records: {kind: list, collection: records, filters: [zone, type, name]}
+  search_records: {kind: search, collection: records, fields: [name, value, comment]}
+  get_record: {kind: get, collection: records}
+  create_record:
+    kind: create
+    collection: records
+    fields: [zone, name, type, value, ttl, comment]
+    required: [zone, name, type, value]
+  update_record: {kind: update, collection: records, fields: [value, ttl, comment]}
+  delete_record: {kind: delete, collection: records}

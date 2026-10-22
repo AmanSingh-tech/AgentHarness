@@ -1,0 +1,53 @@
+system: monitoring
+title: Service monitoring and deploys
+description: Production services - their public status, deploy history (version, result, linked change), metrics such as error rate and latency, and synthetic checks.
+collections:
+  services:
+    fields:
+      name: string
+      tier: string
+      owner_team: string
+      status_page: string       # operational | degraded | outage
+      current_version: string
+      updated_at: string
+  deploys:
+    id_prefix: DEP
+    fields:
+      service_id: string
+      version: string
+      status: string            # succeeded | failed | rolled_back
+      deployed_at: string
+      deployed_by: string
+      change_id: string
+      notes: string
+      created_at: string
+  metrics:
+    fields:
+      service_id: string
+      name: string              # error_rate_pct | p95_latency_ms | requests_per_min | orders_per_min
+      value: number
+      baseline: number
+      window: string
+      at: string
+  checks:
+    fields:
+      service_id: string
+      name: string
+      status: string            # passing | failing
+      detail: string
+      at: string
+operations:
+  list_services: {kind: list, collection: services, filters: [tier, owner_team, status_page]}
+  get_service: {kind: get, collection: services}
+  update_service: {kind: update, collection: services, fields: [status_page], description: "Set the public status of a service: operational, degraded or outage."}
+  list_deploys: {kind: list, collection: deploys, filters: [service_id, status, change_id]}
+  get_deploy: {kind: get, collection: deploys}
+  deploy_version:
+    kind: create
+    collection: deploys
+    fields: [service_id, version, change_id, notes]
+    required: [service_id, version]
+    defaults: {status: succeeded}
+    description: Deploy a version of a service (use a previous good version to roll back).
+  list_metrics: {kind: list, collection: metrics, filters: [service_id, name]}
+  list_checks: {kind: list, collection: checks, filters: [service_id, status]}

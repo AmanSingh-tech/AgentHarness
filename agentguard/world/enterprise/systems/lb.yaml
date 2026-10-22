@@ -1,0 +1,38 @@
+system: lb
+title: Load balancer
+description: Application delivery - virtual servers (VIPs), the pools behind them, and pool members with their state (enabled, drained, disabled).
+collections:
+  virtual_servers:
+    fields:
+      name: string
+      vip: string
+      port: integer
+      pool_id: string
+      public: boolean
+      status: string            # enabled | disabled
+      updated_at: string
+  pools:
+    fields:
+      name: string
+      service: string
+      health_check: string
+  members:
+    fields:
+      pool_id: string
+      host: string
+      port: integer
+      state: string             # enabled | drained | disabled
+      weight: integer
+      datacenter: string
+      updated_at: string
+operations:
+  list_virtual_servers: {kind: list, collection: virtual_servers, filters: [pool_id, public, status]}
+  get_virtual_server: {kind: get, collection: virtual_servers}
+  update_virtual_server: {kind: update, collection: virtual_servers, fields: [pool_id, status]}
+  list_pools: {kind: list, collection: pools, filters: [service]}
+  get_pool: {kind: get, collection: pools}
+  list_members: {kind: list, collection: members, filters: [pool_id, host, state, datacenter]}
+  drain_member: {kind: transition, collection: members, set: {state: drained}, description: "Stop sending new connections to a pool member; existing ones finish."}
+  disable_member: {kind: transition, collection: members, set: {state: disabled}}
+  enable_member: {kind: transition, collection: members, set: {state: enabled}}
+  update_member: {kind: update, collection: members, fields: [weight]}

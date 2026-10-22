@@ -1,0 +1,32 @@
+system: certs
+title: Certificate manager
+description: TLS certificates - issued and staged certificates with their validity, and which certificate each endpoint (host and port) serves.
+collections:
+  certificates:
+    fields:
+      common_name: string
+      sans: array
+      issuer: string
+      not_before: string
+      not_after: string
+      status: string            # issued | staged | revoked
+      serial: string
+      updated_at: string
+  bindings:
+    fields:
+      endpoint: string
+      port: integer
+      certificate_id: string
+      owner: string
+      updated_at: string
+operations:
+  list_certificates: {kind: list, collection: certificates, filters: [status, common_name, issuer]}
+  get_certificate: {kind: get, collection: certificates}
+  search_certificates: {kind: search, collection: certificates, fields: [common_name, sans, serial]}
+  list_bindings: {kind: list, collection: bindings, filters: [certificate_id, endpoint, owner]}
+  bind_certificate:
+    kind: update
+    collection: bindings
+    fields: [certificate_id]
+    description: Change which certificate an endpoint serves.
+  revoke_certificate: {kind: transition, collection: certificates, set: {status: revoked}, irreversible: true}

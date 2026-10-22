@@ -1,0 +1,78 @@
+system: paging
+title: On-call paging
+description: On-call scheduling and incident paging - services, schedules, shifts, schedule overrides, responders, paging incidents and their notification timelines.
+collections:
+  services:
+    fields:
+      name: string
+      schedule_id: string
+      team: string
+  schedules:
+    fields:
+      name: string
+      team: string
+      timezone: string
+  shifts:
+    fields:
+      schedule_id: string
+      user_id: string
+      start: string
+      end: string
+  overrides:
+    id_prefix: OVR
+    fields:
+      schedule_id: string
+      user_id: string
+      start: string
+      end: string
+      created_by: string
+      reason: string
+      created_at: string
+  users:
+    fields:
+      name: string
+      email: string
+      phone: string
+      team: string
+  incidents:
+    fields:
+      service_id: string
+      title: string
+      status: string            # triggered | acknowledged | resolved
+      urgency: string
+      assigned_to: string
+      created_at: string
+      notes: string
+      updated_at: string
+  log_entries:
+    fields:
+      incident_id: string
+      type: string              # notify | escalate | acknowledge | resolve
+      user_id: string
+      channel: string
+      at: string
+      detail: string
+operations:
+  list_services: {kind: list, collection: services, filters: [team]}
+  get_service: {kind: get, collection: services}
+  list_schedules: {kind: list, collection: schedules, filters: [team]}
+  get_schedule: {kind: get, collection: schedules}
+  list_shifts: {kind: list, collection: shifts, filters: [schedule_id, user_id], description: "List the regular rotation shifts of a schedule (overrides take precedence over these)."}
+  list_overrides: {kind: list, collection: overrides, filters: [schedule_id, user_id], description: "List schedule overrides - temporary replacements that take precedence over the regular rotation."}
+  create_override:
+    kind: create
+    collection: overrides
+    fields: [schedule_id, user_id, start, end, reason]
+    required: [schedule_id, user_id, start, end]
+  delete_override: {kind: delete, collection: overrides}
+  list_users: {kind: list, collection: users, filters: [team], labels: [PII]}
+  get_user: {kind: get, collection: users, labels: [PII]}
+  list_incidents: {kind: list, collection: incidents, filters: [status, service_id, assigned_to]}
+  get_incident: {kind: get, collection: incidents}
+  update_incident:
+    kind: update
+    collection: incidents
+    fields: [status, assigned_to, urgency]
+    description: Update a paging incident - status (triggered, acknowledged, resolved), assignee, urgency.
+  add_incident_note: {kind: append, collection: incidents, field: notes}
+  list_log_entries: {kind: list, collection: log_entries, filters: [incident_id, user_id, type], description: "The notification and escalation timeline of a paging incident - who was paged, when, how, and who acknowledged."}

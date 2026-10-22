@@ -1,0 +1,42 @@
+system: cloudnet
+title: Cloud network
+description: Cloud account networking - compute instances with their public IPs and tags, security groups, and security-group ingress rules.
+collections:
+  instances:
+    fields:
+      name: string
+      public_ip: string
+      private_ip: string
+      security_groups: array
+      tags: object
+      state: string
+  security_groups:
+    fields:
+      name: string
+      vpc: string
+      description: string
+      tags: object
+  sg_rules:
+    id_prefix: SGR
+    fields:
+      group_id: string
+      direction: string
+      protocol: string
+      port: string
+      cidr: string
+      description: string
+      created_at: string
+      updated_at: string
+operations:
+  list_instances: {kind: list, collection: instances, filters: [state, security_groups]}
+  get_instance: {kind: get, collection: instances}
+  list_security_groups: {kind: list, collection: security_groups, filters: [vpc]}
+  get_security_group: {kind: get, collection: security_groups}
+  list_sg_rules: {kind: list, collection: sg_rules, filters: [group_id, cidr, port, direction]}
+  create_sg_rule:
+    kind: create
+    collection: sg_rules
+    fields: [group_id, direction, protocol, port, cidr, description]
+    required: [group_id, direction, protocol, port, cidr]
+  update_sg_rule: {kind: update, collection: sg_rules, fields: [cidr, port, description]}
+  delete_sg_rule: {kind: delete, collection: sg_rules}

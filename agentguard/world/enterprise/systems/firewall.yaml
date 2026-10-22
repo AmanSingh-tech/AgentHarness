@@ -1,0 +1,48 @@
+system: firewall
+title: Perimeter firewall
+description: Network firewall policy - ordered rules (lower position is evaluated first; the first matching rule wins), address objects, and staged rules that only take effect once activated.
+collections:
+  rules:
+    id_prefix: FR
+    fields:
+      name: string
+      position: integer
+      action: string            # allow | deny
+      source: string
+      destination: string
+      port: string
+      enabled: boolean
+      state: string             # active | staged (staged rules are not enforced)
+      comment: string
+      created_by: string
+      created_at: string
+      updated_at: string
+  address_objects:
+    fields:
+      name: string
+      value: string
+      comment: string
+      updated_at: string
+operations:
+  list_rules: {kind: list, collection: rules, filters: [action, enabled, state, destination, source]}
+  get_rule: {kind: get, collection: rules}
+  create_rule:
+    kind: create
+    collection: rules
+    fields: [name, position, action, source, destination, port, comment]
+    required: [name, position, action, source, destination]
+    defaults: {enabled: true, state: staged}
+    description: Create a rule. New rules are staged and are not enforced until activated.
+  update_rule:
+    kind: update
+    collection: rules
+    fields: [name, position, action, source, destination, port, enabled, comment]
+  activate_rule:
+    kind: transition
+    collection: rules
+    set: {state: active}
+    when: {state: [staged]}
+    description: Activate a staged rule so it is enforced.
+  delete_rule: {kind: delete, collection: rules}
+  list_address_objects: {kind: list, collection: address_objects}
+  update_address_object: {kind: update, collection: address_objects, fields: [value, comment]}

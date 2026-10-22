@@ -1,0 +1,43 @@
+system: backup
+title: Backup
+description: Backup and recovery - backup jobs and their last status, snapshots, and restore tests (a job is only proven when a restore from it has passed).
+collections:
+  jobs:
+    fields:
+      name: string
+      target: string
+      schedule: string
+      last_status: string       # success | warning | failed
+      last_run: string
+      retention_days: integer
+      enabled: boolean
+      owner: string
+      updated_at: string
+  snapshots:
+    fields:
+      job_id: string
+      taken_at: string
+      status: string            # complete | partial | corrupt
+      size_gb: number
+  restore_tests:
+    id_prefix: RT
+    fields:
+      job_id: string
+      snapshot_id: string
+      run_at: string
+      result: string            # passed | failed | requested
+      detail: string
+      created_at: string
+operations:
+  list_jobs: {kind: list, collection: jobs, filters: [last_status, enabled, owner]}
+  get_job: {kind: get, collection: jobs}
+  update_job: {kind: update, collection: jobs, fields: [enabled, retention_days, schedule]}
+  list_snapshots: {kind: list, collection: snapshots, filters: [job_id, status]}
+  list_restore_tests: {kind: list, collection: restore_tests, filters: [job_id, result]}
+  request_restore_test:
+    kind: create
+    collection: restore_tests
+    fields: [job_id, snapshot_id, detail]
+    required: [job_id, snapshot_id]
+    defaults: {result: requested}
+    description: Schedule a restore test from a snapshot (the backup team runs it).

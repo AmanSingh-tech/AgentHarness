@@ -1,0 +1,46 @@
+system: vault
+title: Secrets vault
+description: Secrets management - secrets and their versions (rotation creates a new version; old versions stay valid until revoked), and the access log of who read which secret.
+collections:
+  secrets:
+    fields:
+      path: string
+      owner: string
+      description: string
+      used_by: array
+  versions:
+    id_prefix: VER
+    fields:
+      secret_id: string
+      version: integer
+      status: string            # active | revoked
+      fingerprint: string
+      created_at: string
+      updated_at: string
+  access_log:
+    fields:
+      secret_id: string
+      version_id: string
+      actor: string
+      src_ip: string
+      action: string
+      at: string
+operations:
+  list_secrets: {kind: list, collection: secrets, filters: [owner, used_by]}
+  get_secret: {kind: get, collection: secrets, description: "Read a secret's metadata (never its value)."}
+  search_secrets: {kind: search, collection: secrets, fields: [path, description, used_by]}
+  list_versions: {kind: list, collection: versions, filters: [secret_id, status]}
+  rotate_secret:
+    kind: create
+    collection: versions
+    fields: [secret_id, version]
+    required: [secret_id, version]
+    defaults: {status: active}
+    description: Rotate a secret - create a new active version (give the next version number). Older versions stay valid until revoked.
+  revoke_version:
+    kind: transition
+    collection: versions
+    set: {status: revoked}
+    when: {status: [active]}
+    description: Revoke one version of a secret so it stops working.
+  list_access_log: {kind: list, collection: access_log, filters: [secret_id, actor, version_id, src_ip]}

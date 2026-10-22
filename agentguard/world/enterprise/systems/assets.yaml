@@ -1,0 +1,28 @@
+system: assets
+title: Asset inventory
+description: IT asset inventory and device management - laptops, servers, VMs and GPU nodes, who they are assigned to, their status, compliance and last check-in.
+collections:
+  devices:
+    fields:
+      hostname: string
+      serial: string
+      type: string              # laptop | server | vm | gpu_node | phone
+      model: string
+      status: string            # in_use | spare | repair | retired | lost
+      assigned_to: string
+      location: string
+      compliance: string        # compliant | noncompliant | unknown
+      os_version: string
+      last_checkin: string
+      reserved_for: string
+      notes: string
+      updated_at: string
+operations:
+  list_devices: {kind: list, collection: devices, filters: [status, type, assigned_to, location, compliance, reserved_for]}
+  get_device: {kind: get, collection: devices}
+  search_devices: {kind: search, collection: devices, fields: [hostname, serial, assigned_to, notes, model]}
+  update_device:
+    kind: update
+    collection: devices
+    fields: [status, assigned_to, location, reserved_for, notes]
+    description: Update a device - status (in_use, spare, repair, retired, lost), assignee, location, reservation, notes.

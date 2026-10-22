@@ -1,0 +1,44 @@
+system: siem
+title: SIEM
+description: Security information and event management - alerts, the event log across sources (sign-ins, endpoints, network, cloud) and detection rules.
+collections:
+  alerts:
+    fields:
+      title: string
+      severity: string
+      status: string            # new | investigating | closed
+      classification: string    # undetermined | true_positive | benign_positive | false_positive
+      source: string
+      entity: string
+      created_at: string
+      notes: string
+      updated_at: string
+  events:
+    fields:
+      source: string
+      host: string
+      user: string
+      action: string
+      detail: string
+      src_ip: string
+      at: string
+  rules:
+    fields:
+      name: string
+      query: string
+      enabled: boolean
+      severity: string
+      updated_at: string
+operations:
+  list_alerts: {kind: list, collection: alerts, filters: [status, severity, entity, source]}
+  get_alert: {kind: get, collection: alerts}
+  update_alert:
+    kind: update
+    collection: alerts
+    fields: [status, classification]
+    description: Update an alert - status (new, investigating, closed), classification (undetermined, true_positive, benign_positive, false_positive).
+  add_alert_note: {kind: append, collection: alerts, field: notes}
+  list_events: {kind: list, collection: events, filters: [source, host, user, action, src_ip]}
+  search_events: {kind: search, collection: events, fields: [source, host, user, action, detail, src_ip], labels: [UNTRUSTED]}
+  list_rules: {kind: list, collection: rules, filters: [enabled]}
+  update_rule: {kind: update, collection: rules, fields: [enabled, severity]}
