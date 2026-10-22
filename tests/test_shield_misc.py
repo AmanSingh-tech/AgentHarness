@@ -144,3 +144,11 @@ def test_gateway_approval_paths(world):
 
     gw, events = _gateway(world, ApprovalQueue(auto=AutoApprover()))
     assert gw.call("get_order", {"order_id": "O-9001"}).ok
+
+
+def test_every_injection_scenario_is_detected_by_the_heuristics():
+    """Each injected text in the injection suite is caught by at least one pattern."""
+    texts = [f.params["text"] for s in load_scenarios() if "injection" in s.tags for f in s.faults if f.params.get("text")]
+    assert len(texts) >= 5
+    for t in texts:
+        assert injection.scan_text(t), t
