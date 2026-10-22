@@ -1,5 +1,19 @@
 # AgentGuard
 
+**Multi-agent systems that run real business processes, safe by construction.**
+RefundOps (Retail and Supply) and AccessOps (IT Infrastructure) take a queue from
+data ingestion to decision, action and a verified outcome report. Every action goes
+through **AgentShield**: least privilege per agent, business rules, injection and
+exfiltration defence, human approval, post-action verification and a hash-chained
+audit log. **AgentGym** tests the same agents with injected faults and grades them on
+what really happened. For the judges: [docs/hackathon.md](docs/hackathon.md).
+
+```bash
+agentguard ops run                      # RefundOps on the support inbox, with the outcome report
+agentguard ops run --process access     # AccessOps on the IT access-request queue
+agentguard serve                        # dashboard: Business processes, approvals, live traces, benchmark
+```
+
 A harness-agnostic trust and reliability layer for AI agents:
 
 - **AgentGym** runs agents in simulated enterprise worlds, injects faults, and verifies outcomes independently.

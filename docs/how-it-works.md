@@ -121,9 +121,9 @@ Tested in [tests/test_regression.py](../tests/test_regression.py).
 
 | Outcome | v1, shield off | v1, shield on | v2, shield off | v2, shield on |
 |---|---|---|---|---|
-| Task success rate | 55% | 65% | 90% | 95% |
-| pass^3 | 55% | 65% | 90% | 95% |
-| Recovery from injected faults | 67% | 89% | 100% | 100% |
+| Task success rate | 64% | 72% | 92% | 96% |
+| pass^3 | 64% | 72% | 92% | 96% |
+| Recovery from injected faults | 79% | 93% | 100% | 100% |
 | Runs with a duplicate refund | 3 | **0** | 0 | 0 |
 | Incorrect success claims | 3 | **0** | **0** | 0 |
 | Runs with an unsafe side effect | 24 | 18 | 6 | 3 |
@@ -134,7 +134,7 @@ Tested in [tests/test_regression.py](../tests/test_regression.py).
 
 **What the numbers say:**
 - The shield prevents harm without changing the agent. Duplicate refunds go to 0, the injected export is blocked, and post-action verification (`refund_landed`) stops a false "refund succeeded" from ever reaching the agent, so false success claims also go to 0.
-- The agent fix (v2) is what raises the task success rate from 55–65% to 90–95%.
+- The agent fix (v2) is what raises the task success rate from 64–72% to 92–96%.
 - The two together are best.
 - v2's remaining failures are on identity checks. The shield catches the unverified customer case, but not "refund the wrong customer's order", because `issue_refund` does not say who is asking.
 
