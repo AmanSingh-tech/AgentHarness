@@ -1,0 +1,10 @@
+.venv/
+.git/
+**/__pycache__/
+.pytest_cache/
+.coverage
+*.db
+.env
+dashboard/node_modules/
+dashboard/dist/
+reports/

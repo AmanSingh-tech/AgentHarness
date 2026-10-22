@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import os
 import threading
 from pathlib import Path
 from typing import Any
@@ -28,7 +29,8 @@ from agentguard.core.store import Store
 from agentguard.harnesses.base import make_harness
 from agentguard.shield.approvals import ApprovalQueue, AutoApprover
 
-DASHBOARD_DIST = Path(__file__).resolve().parents[2] / "dashboard" / "dist"
+DASHBOARD_DIST = Path(os.environ.get("AGENTGUARD_DASHBOARD_DIST")
+                      or Path(__file__).resolve().parents[2] / "dashboard" / "dist")
 SUGGESTED_HARNESSES = [
     "scripted:oracle", "scripted:naive", "scripted:naive_v2", "scripted:adversarial", "scripted:refuser",
     "scripted:null", "mcp_client:claude-code", "native:anthropic", "langgraph:anthropic",

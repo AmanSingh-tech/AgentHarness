@@ -146,6 +146,18 @@ they cost money: `AGENTGUARD_LIVE=1 pytest tests/test_live_models.py -s`.
 Without that flag, the harnesses are tested with fake clients that replay a
 fixed conversation through the real loop, gateway, shield and verifier.
 
+## Docker
+
+```bash
+docker compose up --build        # or docker-compose; dashboard + API on http://localhost:8000
+```
+
+One image holds the API, the dashboard and the gateway. Runs are stored in the
+`agentguard-data` volume and benchmark reports in `./reports`. Keys in `.env`
+are passed through if the file exists. CI (`.github/workflows/ci.yml`) runs the
+tests, `validate-scenarios`, the demo and audit verification on Python 3.11 and
+3.13, builds the dashboard, and builds the image.
+
 ## Dashboard
 
 ```bash

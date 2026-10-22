@@ -1,0 +1,16 @@
+# docker compose up  ->  dashboard and API on http://localhost:8000
+services:
+  agentguard:
+    build: .
+    image: agentguard:local
+    ports:
+      - "8000:8000"
+    env_file:
+      - path: .env
+        required: false
+    volumes:
+      - agentguard-data:/data
+      - ./reports:/app/reports
+
+volumes:
+  agentguard-data:

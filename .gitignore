@@ -7,3 +7,4 @@ htmlcov/
 *.db
 .env
 .claude/settings.local.json
+reports/
