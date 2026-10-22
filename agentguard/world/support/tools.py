@@ -24,6 +24,20 @@ SUPPORT_TOOLS: list[ToolSpec] = [
         side_effect=SideEffect.READ,
     ),
     ToolSpec(
+        name="get_ticket",
+        description="Read one support ticket, including the customer's message history.",
+        input_schema=_obj({"ticket_id": {"type": "string", "description": "e.g. T-77"}}, ["ticket_id"]),
+        side_effect=SideEffect.READ,
+    ),
+    ToolSpec(
+        name="list_tickets",
+        description="List support tickets (id, customer, status) with a given status, oldest first.",
+        input_schema=_obj(
+            {"status": {"type": "string", "enum": ["open", "pending", "resolved", "escalated"]}}, ["status"]
+        ),
+        side_effect=SideEffect.READ,
+    ),
+    ToolSpec(
         name="issue_refund",
         description=(
             "Refund an order (fully or partially). Irreversible. Reusing the same idempotency_key "

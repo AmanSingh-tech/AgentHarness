@@ -91,13 +91,17 @@ class Gateway:
     def tools(self) -> list[ToolSpec]:
         return self.backend.tools()
 
-    def call(self, tool: str, args: dict[str, Any] | None = None) -> ToolResult:
+    def call(self, tool: str, args: dict[str, Any] | None = None, agent_id: str | None = None) -> ToolResult:
+        """`agent_id` overrides the gateway's default identity: several agents of one
+        multi-agent system share a run (and its trace and shield session) but are each
+        held to their own permissions in the policy."""
         args = dict(args or {})
+        agent_id = agent_id or self.agent_id
         with self._lock:
             self._seq += 1
             seq = self._seq
-        call = ToolCall(run_id=self.run_id, agent_id=self.agent_id, tool=tool, args=args, seq=seq)
-        self.tracer.emit(TraceKind.TOOL_CALL, call_id=call.id, tool=tool, args=args, seq=seq, agent_id=self.agent_id)
+        call = ToolCall(run_id=self.run_id, agent_id=agent_id, tool=tool, args=args, seq=seq)
+        self.tracer.emit(TraceKind.TOOL_CALL, call_id=call.id, tool=tool, args=args, seq=seq, agent_id=agent_id)
 
         spec = self.backend.tool(tool)
         decision = self._decide(call, spec)

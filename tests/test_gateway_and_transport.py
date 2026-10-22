@@ -66,9 +66,24 @@ def test_stages_most_restrictive_wins(world, bus):
 
 
 def test_endpoint_exports_and_functions(endpoint, gateway):
-    assert len(endpoint.schemas("anthropic")) == len(gateway.tools()) == 8
+    assert len(endpoint.schemas("anthropic")) == len(gateway.tools()) == 10
     fns = endpoint.functions()
     assert fns["get_order"].__doc__.startswith("Look up an order")
     assert fns["get_order"](order_id="O-9001").ok
     assert endpoint.calls_made == 1
     assert isinstance(endpoint, InProcessEndpoint) and endpoint.kind == "inprocess"
+
+
+def test_per_agent_identity_on_one_run(world, bus):
+    from agentguard.core.events import Tracer
+    from agentguard.shield.gateway import Gateway
+
+    events = []
+    bus.subscribe(events.append)
+    gw = Gateway(world, Tracer(bus, "multi"), "default_agent")
+    ep = InProcessEndpoint(gw)
+    ep.as_agent("intake_agent").call("list_tickets", {"status": "open"})
+    ep.call("get_ticket", {"ticket_id": "T-77"})
+    calls = [e.payload for e in events if e.kind.value == "tool_call"]
+    assert [(c["agent_id"], c["seq"]) for c in calls] == [("intake_agent", 1), ("default_agent", 2)]
+    assert ep.as_agent("x").calls_made == 2  # one run, one call counter

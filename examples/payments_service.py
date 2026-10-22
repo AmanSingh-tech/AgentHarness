@@ -40,8 +40,8 @@ class Email(BaseModel):
     body: str
 
 
-def create_app(seed: int = 42, fault: str | None = None) -> FastAPI:
-    world = SupportWorld()
+def create_app(seed: int = 42, fault: str | None = None, fixture: str | None = None) -> FastAPI:
+    world = SupportWorld(fixture or os.environ.get("PAYMENTS_FIXTURE") or None)
     world.reset(seed)
     state = {"fault": fault if fault is not None else os.environ.get("PAYMENTS_FAULT", "")}
     lock = threading.Lock()
@@ -75,6 +75,14 @@ def create_app(seed: int = 42, fault: str | None = None) -> FastAPI:
                 state["fault"] = ""
                 return {"refund_id": "LED-PENDING", "status": "SUCCESS", **r.model_dump()}
         return call("issue_refund", r.model_dump())
+
+    @app.get("/tickets")
+    def tickets(status: str = "open"):
+        return call("list_tickets", {"status": status})
+
+    @app.get("/tickets/{ticket_id}")
+    def get_ticket(ticket_id: str):
+        return call("get_ticket", {"ticket_id": ticket_id})
 
     @app.patch("/tickets/{ticket_id}")
     def ticket(ticket_id: str, t: TicketUpdate):

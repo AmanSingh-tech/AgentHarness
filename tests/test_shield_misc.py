@@ -46,7 +46,8 @@ def test_no_injection_false_positives_on_normal_content():
     """Every legitimate task, fixture note and scripted message must scan clean."""
     texts = [s.task for s in load_scenarios() if "security" not in s.tags]
     for f in FIXTURES_DIR.glob("*.yaml"):
-        texts += [t["notes"] for t in yaml.safe_load(f.read_text()).get("tickets", [])]
+        texts += [t["notes"] for t in yaml.safe_load(f.read_text()).get("tickets", [])
+                  if t["id"] != "T-108"]  # support_inbox's T-108 is a deliberate injection
     for name in ("oracle", "naive"):
         agent = yaml.safe_load((AGENTS_DIR / f"{name}.yaml").read_text())
         texts += [agent["on_success"]["message"], agent["on_failure"]["message"]]

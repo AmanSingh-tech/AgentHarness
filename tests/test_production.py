@@ -36,7 +36,8 @@ def _session(store, backend, approve="approve"):
 
 def test_http_backend_maps_tools_queries_and_errors():
     b = _backend()
-    assert [t.name for t in b.tools()] == ["get_customer", "get_order", "issue_refund", "update_ticket", "send_email"]
+    assert [t.name for t in b.tools()] == ["get_customer", "get_order", "issue_refund", "get_ticket", "list_tickets",
+                                           "update_ticket", "send_email"]
     assert b.execute("get_order", {"order_id": "O-9001"})["amount_inr"] == 5000
     r = b.execute("issue_refund", {"order_id": "O-9001", "amount_inr": 5000, "idempotency_key": "x"})
     assert r["status"] == "SUCCESS"

@@ -12,6 +12,8 @@ routes:
   get_customer:  {method: GET,   path: "/customers/{customer_id}"}
   get_order:     {method: GET,   path: "/orders/{order_id}"}
   issue_refund:  {method: POST,  path: "/refunds"}
+  get_ticket:    {method: GET,   path: "/tickets/{ticket_id}"}
+  list_tickets:  {method: GET,   path: "/tickets"}
   update_ticket: {method: PATCH, path: "/tickets/{ticket_id}"}
   send_email:    {method: POST,  path: "/emails"}
 

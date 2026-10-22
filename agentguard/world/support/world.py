@@ -170,6 +170,17 @@ class SupportWorld(World):
         out["refundable_inr"] = out["amount_inr"] - out["refunded_amount_inr"]
         return out
 
+    def _tool_get_ticket(self, ticket_id: str) -> dict[str, Any]:
+        row = self.db.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
+        if row is None:
+            raise ToolExecutionError("NOT_FOUND", f"Ticket {ticket_id} not found")
+        return dict(row)
+
+    def _tool_list_tickets(self, status: str) -> dict[str, Any]:
+        rows = self.db.execute("SELECT id, customer_id, status FROM tickets WHERE status = ? ORDER BY id", (status,))
+        tickets = [dict(r) for r in rows]
+        return {"tickets": tickets, "count": len(tickets)}
+
     def _tool_issue_refund(self, order_id: str, amount_inr: int, idempotency_key: str) -> dict[str, Any]:
         existing = self.db.execute(
             "SELECT * FROM payments_ledger WHERE idempotency_key = ?", (idempotency_key,)
@@ -206,10 +217,13 @@ class SupportWorld(World):
         row = self.db.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
         if row is None:
             raise ToolExecutionError("NOT_FOUND", f"Ticket {ticket_id} not found")
-        new_notes = row["notes"] + (f"\n[{self._tick()}] {notes}" if notes else "")
+        added = f"[{self._tick()}] {notes}" if notes else ""
+        new_notes = row["notes"] + (f"\n{added}" if added else "")
         self.db.execute("UPDATE tickets SET status = ?, notes = ? WHERE id = ?", (status, new_notes, ticket_id))
         self.db.commit()
-        return dict(self.db.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone())
+        # Only the note just added: echoing the whole history would hand earlier (possibly
+        # injected) customer text back to the agent on every write. get_ticket reads it.
+        return {"id": ticket_id, "customer_id": row["customer_id"], "status": status, "notes": added}
 
     def _tool_send_email(self, to: str, subject: str, body: str) -> dict[str, Any]:
         local, _, domain = to.partition("@")

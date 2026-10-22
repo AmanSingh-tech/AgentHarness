@@ -14,14 +14,19 @@ from agentguard.transports.base import ToolEndpoint
 class InProcessEndpoint(ToolEndpoint):
     kind = "inprocess"
 
-    def __init__(self, gateway: Gateway) -> None:
+    def __init__(self, gateway: Gateway, agent_id: str | None = None) -> None:
         self._gateway = gateway
+        self.agent_id = agent_id  # None: the gateway's default identity
+
+    def as_agent(self, agent_id: str) -> "InProcessEndpoint":
+        """The same run, acting as another agent (its own permissions in the policy)."""
+        return InProcessEndpoint(self._gateway, agent_id)
 
     def specs(self) -> list[ToolSpec]:
         return self._gateway.tools()
 
     def call(self, tool: str, args: dict[str, Any] | None = None) -> ToolResult:
-        return self._gateway.call(tool, args or {})
+        return self._gateway.call(tool, args or {}, agent_id=self.agent_id)
 
     @property
     def calls_made(self) -> int:

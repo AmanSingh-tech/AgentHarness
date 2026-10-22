@@ -237,6 +237,7 @@ class AgentOutput(BaseModel):
     claimed_outcome: dict[str, Any] | None = None
     exit_reason: ExitReason
     usage: Usage = Field(default_factory=Usage)
+    artifacts: dict[str, Any] = Field(default_factory=dict)  # e.g. a business process's outcome report
 
 
 class HarnessCapabilities(BaseModel):

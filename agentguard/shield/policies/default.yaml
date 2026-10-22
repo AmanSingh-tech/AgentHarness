@@ -8,6 +8,7 @@ agents:
     tools:
       get_customer:   {allow: true, scope: single_record}
       get_order:      {allow: true}
+      get_ticket:     {allow: true}
       issue_refund:   {allow: true, max_amount_inr: 5000, approval_above_inr: 2000}
       update_ticket:  {allow: true}
       send_email:     {allow: true, allowed_domains: [customer-domain, company.com]}
@@ -35,6 +36,34 @@ agents:
       query_database: {allow: true, deny_patterns: ["(?i)SELECT\\s+\\*", "(?i)\\bLIMIT\\s+\\d{3,}"], max_rows: 10}
       read_secret:    {allow: true}
       encode:         {allow: true}
+
+  # RefundOps (agentguard/ops/refunds.py): one identity per agent, least privilege each.
+  intake_agent:
+    description: RefundOps intake. Reads the support inbox and changes nothing.
+    tools:
+      list_tickets:   {allow: true}
+      get_ticket:     {allow: true}
+
+  decision_agent:
+    description: RefundOps eligibility checks. Read-only.
+    tools:
+      get_ticket:     {allow: true}
+      get_customer:   {allow: true, scope: single_record}
+      get_order:      {allow: true}
+
+  action_agent:
+    description: RefundOps execution. Refunds within limits, ticket updates, email to customers only.
+    tools:
+      get_order:      {allow: true}
+      issue_refund:   {allow: true, max_amount_inr: 5000, approval_above_inr: 2000}
+      update_ticket:  {allow: true}
+      send_email:     {allow: true, allowed_domains: [customer-domain]}
+
+  reporting_agent:
+    description: RefundOps outcome reporting. Read-only.
+    tools:
+      get_order:      {allow: true}
+      get_ticket:     {allow: true}
 
 rules:
   - id: no_duplicate_refund

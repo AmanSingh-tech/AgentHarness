@@ -78,9 +78,12 @@ def test_idempotency_conflict(world):
 
 def test_update_ticket_appends_notes(world):
     t = world.execute("update_ticket", {"ticket_id": "T-77", "status": "pending", "notes": "hello"})
-    assert t["status"] == "pending" and t["notes"].endswith("hello")
+    assert t["status"] == "pending" and t["notes"].endswith("hello")  # only the note just added comes back
+    assert world.ticket("T-77")["notes"].startswith("Customer requests")  # the history is kept
     t2 = world.execute("update_ticket", {"ticket_id": "T-77", "status": "resolved"})
-    assert t2["notes"] == t["notes"]
+    assert t2["notes"] == "" and world.ticket("T-77")["notes"].endswith("hello")
+    assert world.execute("get_ticket", {"ticket_id": "T-77"})["status"] == "resolved"
+    assert world.execute("list_tickets", {"status": "resolved"})["tickets"][0]["id"] == "T-77"
     assert world.ticket("T-77")["status"] == "resolved"
     assert world.ticket("T-999") is None
     with pytest.raises(ToolExecutionError):
