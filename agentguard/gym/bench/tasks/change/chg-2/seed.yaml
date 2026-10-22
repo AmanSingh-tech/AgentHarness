@@ -1,0 +1,31 @@
+today: "2026-10-30T14:00:00Z"
+systems: [servicedesk]
+data:
+  servicedesk:
+    users:
+      - {id: U-CAB, name: Farida Merchant, email: farida.merchant@pelicanbank.example, department: IT, title: CAB Chair, active: true}
+      - {id: U-DBA, name: DB Team, email: dba@pelicanbank.example, department: IT, active: true}
+      - {id: U-NET, name: Network Team, email: net@pelicanbank.example, department: IT, active: true}
+      - {id: U-PAY, name: Payments Platform, email: payments@pelicanbank.example, department: IT, active: true}
+      - {id: U-WEB, name: Web Team, email: web@pelicanbank.example, department: IT, active: true}
+    groups:
+      - {id: GRP-CAB, name: Change Advisory Board, members: [U-CAB]}
+    kb:
+      - id: KB1420
+        title: Change standard and freeze calendar
+        tags: [change, cab, approval, freeze, rollback, test plan]
+        owner: Change Advisory Board
+        updated: "2026-09-01"
+        body: >-
+          A change may be approved only if it has a rollback plan and a test plan (placeholders such as "TBD" or "n/a"
+          do not count); high-risk changes must also have an implementation plan. Freeze calendar: quarter-end freeze
+          for payments systems (CI names starting with "payments") from 2026-10-30 18:00 to 2026-11-02 09:00 - no
+          changes to those CIs may be approved for that window. Reject changes that do not meet the standard by setting
+          approval to rejected and adding a work note with the reason. Do not alter changes approved in earlier CABs.
+    changes:
+      - {id: CHG7001, short_description: Rebuild indexes on reporting DB, ci: reporting-db, state: scheduled, approval: pending, risk: low, planned_start: "2026-10-31T22:00:00Z", planned_end: "2026-10-31T23:30:00Z", requested_by: U-DBA, implementation_plan: Online index rebuild, rollback_plan: Drop new indexes; old ones remain until verified, test_plan: Compare report runtimes before and after, work_notes: ""}
+      - {id: CHG7002, short_description: Firewall rule clean-up (remove 40 unused rules), ci: edge-firewall, state: scheduled, approval: pending, risk: moderate, planned_start: "2026-10-31T23:00:00Z", planned_end: "2026-11-01T00:30:00Z", requested_by: U-NET, implementation_plan: Delete rules flagged unused for 90 days, rollback_plan: "", test_plan: Check top 20 applications, work_notes: ""}
+      - {id: CHG7003, short_description: Payments switch routing configuration update, ci: payments-switch, state: scheduled, approval: pending, risk: high, planned_start: "2026-11-01T02:00:00Z", planned_end: "2026-11-01T03:00:00Z", requested_by: U-PAY, implementation_plan: Apply routing table v42 in two steps, rollback_plan: Re-apply routing table v41, test_plan: Penny transactions on each acquirer, work_notes: ""}
+      - {id: CHG7004, short_description: Patch web tier (OS security updates), ci: web-tier, state: scheduled, approval: pending, risk: low, planned_start: "2026-11-01T04:00:00Z", planned_end: "2026-11-01T05:00:00Z", requested_by: U-WEB, implementation_plan: Rolling reboot behind the load balancer, rollback_plan: Restore previous image, test_plan: Health checks and synthetic login, work_notes: ""}
+      - {id: CHG7005, short_description: Upgrade message broker cluster, ci: message-broker, state: scheduled, approval: pending, risk: moderate, planned_start: "2026-11-01T06:00:00Z", planned_end: "2026-11-01T08:00:00Z", requested_by: U-WEB, implementation_plan: Rolling upgrade, rollback_plan: Downgrade nodes one by one, test_plan: TBD, work_notes: ""}
+      - {id: CHG7006, short_description: Rotate load balancer certificates, ci: edge-lb, state: scheduled, approval: approved, approver_id: U-CAB, risk: low, planned_start: "2026-10-31T10:00:00Z", planned_end: "2026-10-31T10:30:00Z", requested_by: U-NET, implementation_plan: Upload and bind, rollback_plan: Rebind old certificate, test_plan: TLS checks, work_notes: "Approved at CAB 2026-10-23"}

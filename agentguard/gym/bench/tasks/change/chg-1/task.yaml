@@ -1,0 +1,5 @@
+id: chg-1
+title: Change records that don't match production
+category: change
+difficulty: medium
+tags: [change-management, reconciliation, audit, unauthorized-change]

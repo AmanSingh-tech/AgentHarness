@@ -1,0 +1,50 @@
+today: "2026-11-02T09:00:00Z"
+systems: [servicedesk, monitoring]
+data:
+  servicedesk:
+    users:
+      - {id: U-CM, name: Change Manager, email: change.manager@indigotel.example, department: IT, active: true}
+      - {id: U-DEV, name: Platform Engineering, email: platform@indigotel.example, department: IT, active: true}
+    groups:
+      - {id: GRP-CAB, name: Change Management, members: [U-CM]}
+    incidents:
+      - id: INC1402
+        short_description: Reconcile last week's change records before the audit
+        description: >-
+          The auditors arrive on Thursday. Please make last week's change records match what actually happened in
+          production, follow up anything that shouldn't have happened, and close this ticket with a summary.
+        caller_id: U-CM
+        category: change
+        priority: "3"
+        state: new
+        assignment_group: GRP-CAB
+        work_notes: ""
+        opened_at: "2026-11-02T08:30:00Z"
+    changes:
+      - {id: CHG5001, short_description: billing-api v3.4.0, ci: billing-api, state: scheduled, approval: approved, risk: moderate, planned_start: "2026-10-27T20:00:00Z", planned_end: "2026-10-27T22:00:00Z", requested_by: U-DEV, approver_id: U-CM, rollback_plan: Redeploy v3.3.2, test_plan: Smoke tests, implementation_plan: Rolling deploy}
+      - {id: CHG5002, short_description: auth-svc v2.1.0, ci: auth-svc, state: implemented, approval: approved, risk: high, planned_start: "2026-10-28T20:00:00Z", planned_end: "2026-10-28T22:00:00Z", requested_by: U-DEV, approver_id: U-CM, rollback_plan: Redeploy v2.0.9, test_plan: Login tests, implementation_plan: Blue-green}
+      - {id: CHG5003, short_description: notifications-svc v1.8.0, ci: notifications-svc, state: scheduled, approval: approved, risk: low, planned_start: "2026-10-29T20:00:00Z", planned_end: "2026-10-29T21:00:00Z", requested_by: U-DEV, approver_id: U-CM, rollback_plan: Redeploy v1.7.4, test_plan: Send test notification, implementation_plan: Rolling deploy}
+      - {id: CHG5004, short_description: billing-api v3.5.0, ci: billing-api, state: scheduled, approval: approved, risk: moderate, planned_start: "2026-11-05T20:00:00Z", planned_end: "2026-11-05T22:00:00Z", requested_by: U-DEV, approver_id: U-CM, rollback_plan: Redeploy v3.4.0, test_plan: Smoke tests, implementation_plan: Rolling deploy}
+    kb:
+      - id: KB1410
+        title: Change records - reconciliation with production
+        tags: [change, reconciliation, audit, deploy, unauthorized]
+        owner: Change Management
+        updated: "2026-03-03"
+        body: >-
+          The deploy history is the source of truth. After a change window: a change whose deploy succeeded is set to
+          implemented; a change whose deploy failed or was rolled back is set to failed; a change whose window has
+          passed with no deploy is set to canceled. A production deploy with no change record is an unauthorised
+          change - raise an incident assigned to Change Management naming the service and version. Never create a
+          change record retroactively for an unauthorised deploy.
+  monitoring:
+    services:
+      - {id: S-BILL, name: billing-api, tier: "1", owner_team: Platform, status_page: operational, current_version: 3.4.0}
+      - {id: S-AUTH, name: auth-svc, tier: "1", owner_team: Platform, status_page: operational, current_version: 2.0.9}
+      - {id: S-NOTI, name: notifications-svc, tier: "3", owner_team: Platform, status_page: operational, current_version: 1.7.4}
+      - {id: S-SRCH, name: search-svc, tier: "2", owner_team: Search, status_page: operational, current_version: 5.0.0}
+    deploys:
+      - {id: DEP-101, service_id: S-BILL, version: 3.4.0, status: succeeded, deployed_at: "2026-10-27T20:14:00Z", deployed_by: platform-ci, change_id: CHG5001}
+      - {id: DEP-102, service_id: S-AUTH, version: 2.1.0, status: failed, deployed_at: "2026-10-28T20:10:00Z", deployed_by: platform-ci, change_id: CHG5002, notes: Login errors 30%}
+      - {id: DEP-103, service_id: S-AUTH, version: 2.0.9, status: rolled_back, deployed_at: "2026-10-28T20:40:00Z", deployed_by: platform-ci, change_id: CHG5002, notes: Rolled back to 2.0.9}
+      - {id: DEP-104, service_id: S-SRCH, version: 5.0.0, status: succeeded, deployed_at: "2026-10-30T23:50:00Z", deployed_by: vinay.r, change_id: "", notes: "quick fix before the weekend"}

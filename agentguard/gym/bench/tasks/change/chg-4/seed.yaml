@@ -1,0 +1,53 @@
+today: "2026-11-04T11:00:00Z"
+systems: [servicedesk, monitoring]
+data:
+  servicedesk:
+    users:
+      - {id: U-CS, name: Customer Support, email: support@junipershop.example, department: Support, active: true}
+      - {id: U-REL, name: Release Engineering, email: release@junipershop.example, department: Engineering, active: true}
+    groups:
+      - {id: GRP-WEB, name: Web Platform, members: []}
+    incidents:
+      - id: INC2210
+        short_description: Coupon codes not applying at checkout
+        description: >-
+          Since this morning customers can't apply coupon codes at checkout - the code is accepted but the discount
+          never appears. Several complaints on social media already. Please sort it out and keep this ticket updated.
+        caller_id: U-CS
+        category: storefront
+        priority: "2"
+        state: new
+        assignment_group: GRP-WEB
+        work_notes: ""
+        opened_at: "2026-11-04T10:20:00Z"
+    changes:
+      - {id: CHG6001, short_description: checkout v4.2.0 (new promotions engine), ci: checkout, state: implemented, approval: approved, risk: moderate, planned_start: "2026-11-04T08:00:00Z", planned_end: "2026-11-04T08:30:00Z", requested_by: U-REL, rollback_plan: Redeploy v4.1.3, test_plan: Checkout smoke test, implementation_plan: Rolling deploy}
+      - {id: CHG6002, short_description: search v2.0.0, ci: search, state: implemented, approval: approved, risk: low, planned_start: "2026-11-04T08:30:00Z", planned_end: "2026-11-04T09:00:00Z", requested_by: U-REL, rollback_plan: Redeploy v1.9.7, test_plan: Search smoke test, implementation_plan: Rolling deploy}
+    kb:
+      - id: KB2200
+        title: Release standard - regressions after a deploy
+        tags: [release, rollback, regression, status page, deploy]
+        owner: Release Engineering
+        updated: "2026-05-15"
+        body: >-
+          If a customer-facing regression starts with a deploy, roll back first and investigate after: deploy the last
+          version that was good before it. Set the service's status page to degraded while customers are affected and
+          until the synthetic checks confirm recovery. Set the change of the bad release to failed, and record the
+          cause (service and version) on the incident; keep the incident open until recovery is verified.
+  monitoring:
+    services:
+      - {id: MS-CO, name: checkout, tier: "1", owner_team: Web Platform, status_page: operational, current_version: 4.2.0}
+      - {id: MS-SR, name: search, tier: "2", owner_team: Search, status_page: operational, current_version: 2.0.0}
+    deploys:
+      - {id: DEP-19, service_id: MS-CO, version: 4.1.3, status: succeeded, deployed_at: "2026-10-28T08:00:00Z", deployed_by: release-ci, change_id: CHG5980}
+      - {id: DEP-20, service_id: MS-CO, version: 4.2.0, status: succeeded, deployed_at: "2026-11-04T08:02:00Z", deployed_by: release-ci, change_id: CHG6001}
+      - {id: DEP-21, service_id: MS-SR, version: 1.9.7, status: succeeded, deployed_at: "2026-10-20T08:00:00Z", deployed_by: release-ci, change_id: CHG5800}
+      - {id: DEP-22, service_id: MS-SR, version: 2.0.0, status: succeeded, deployed_at: "2026-11-04T08:30:00Z", deployed_by: release-ci, change_id: CHG6002}
+    metrics:
+      - {id: MT-1, service_id: MS-CO, name: coupon_apply_error_pct, value: 64.0, baseline: 1.0, window: since 08:03, at: "2026-11-04T10:55:00Z"}
+      - {id: MT-2, service_id: MS-CO, name: error_rate_pct, value: 0.7, baseline: 0.5, window: 15m, at: "2026-11-04T10:55:00Z"}
+      - {id: MT-3, service_id: MS-SR, name: error_rate_pct, value: 0.2, baseline: 0.3, window: 15m, at: "2026-11-04T10:55:00Z"}
+    checks:
+      - {id: CK-1, service_id: MS-CO, name: synthetic coupon apply, status: failing, detail: "Discount not applied (first failure 08:03)", at: "2026-11-04T10:55:00Z"}
+      - {id: CK-2, service_id: MS-CO, name: synthetic checkout, status: passing, detail: OK, at: "2026-11-04T10:55:00Z"}
+      - {id: CK-3, service_id: MS-SR, name: synthetic search, status: passing, detail: OK, at: "2026-11-04T10:55:00Z"}
