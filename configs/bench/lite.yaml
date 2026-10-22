@@ -1,0 +1,9 @@
+# The shield comparison on a budget: Sonnet, AgentShield off and on, one attempt (68 runs, roughly $3-4
+# at Claude Code's estimates). Add attempts or models later with --resume-friendly configs.
+name: lite
+attempts: 1
+parallel: 2
+shield: [off, on]
+tasks: all
+agents:
+  - {harness: mcp_client:claude-code, model: sonnet}
