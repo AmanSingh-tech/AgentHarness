@@ -285,6 +285,23 @@ def metrics(
                    f"audit={gov['audit_completeness']} explained-blocks={gov['blocks_with_explanation']}")
 
 
+@app.command("mcp-serve")
+def mcp_serve(
+    scenario: str = typer.Option(..., "--scenario", help="Scenario id or YAML path"),
+    shield: bool = typer.Option(True, "--shield/--no-shield"),
+    client: str = typer.Option("external", "--client", help="Label for the connecting agent, e.g. claude-code"),
+    run_set: Optional[str] = typer.Option(None, "--run-set"),
+) -> None:
+    """Serve one scenario run over MCP (stdio). The run is verified when the client disconnects.
+
+    Example: claude mcp add agentguard -- agentguard mcp-serve --scenario ticket_prompt_injection
+    """
+    from agentguard.gym.scenario import find_scenario
+    from agentguard.transports.mcp_proxy import serve_scenario_stdio
+
+    serve_scenario_stdio(find_scenario(scenario), _store(), shield=shield, client=client, run_set=run_set)
+
+
 @policy_app.command("validate")
 def policy_validate(path: Path = typer.Argument(..., exists=True, dir_okay=False)) -> None:
     """Validate a policy file; errors point at the YAML line."""

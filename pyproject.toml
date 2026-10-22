@@ -9,7 +9,7 @@ description = "Harness-agnostic trust & reliability layer for AI agents: AgentGy
 readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
-  "pydantic==2.11.7",
+  "pydantic==2.14.1",
   "sqlmodel==0.0.22",
   "pyyaml==6.0.2",
   "typer==0.16.0",
@@ -24,6 +24,15 @@ dev = [
 llm = [
   "anthropic==1.17.0",
   "openai==3.36.1",
+]
+mcp = [
+  "mcp==2.3.0",
+  "uvicorn==0.54.0",
+]
+server = [
+  "fastapi==0.159.1",
+  "uvicorn==0.54.0",
+  "sse-starlette==3.5.0",
 ]
 langgraph = [
   "langchain==1.4.7",
@@ -41,6 +50,7 @@ agentguard = "agentguard.cli.main:app"
 scripted = "agentguard.harnesses.scripted:ScriptedHarness"
 native = "agentguard.harnesses.llm.native:NativeHarness"
 langgraph = "agentguard.harnesses.llm.langgraph_harness:LangGraphHarness"
+mcp_client = "agentguard.harnesses.mcp_client:ClaudeCodeHarness"
 
 [tool.setuptools.packages.find]
 include = ["agentguard*"]

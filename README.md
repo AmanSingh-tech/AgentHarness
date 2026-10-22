@@ -14,12 +14,14 @@ A harness-agnostic trust and reliability layer for AI agents:
 | 3. Fault injector (all 11 types) + naive agent | done |
 | 4. AgentShield: policy DSL, risk, injection, taint, approvals | done |
 | 5. LLM harnesses (native Anthropic/OpenAI, LangGraph) + metrics | done (offline; live run needs API keys) |
-| 6. MCP proxy, Docker CLI sandbox, remote HTTP harnesses | next |
+| MVP: regression loop, sequence patterns, agent v2 + benchmark + demo, MCP / Claude Code harness | done |
+| MVP: API server + dashboard, novelty comparison | next |
+| Post-MVP: Docker CLI sandbox, remote HTTP harness, second domain, audit hash chain | later |
 
 ## Quickstart
 
 ```bash
-python3 -m venv .venv && .venv/bin/pip install -e ".[dev,llm,langgraph]"   # llm/langgraph extras are optional
+python3 -m venv .venv && .venv/bin/pip install -e ".[dev,llm,langgraph,mcp,server]"   # extras are optional
 .venv/bin/pytest --cov=agentguard
 
 .venv/bin/agentguard demo                               # the end-to-end demo script, steps 1-6
@@ -36,6 +38,8 @@ python3 -m venv .venv && .venv/bin/pip install -e ".[dev,llm,langgraph]"   # llm
 .venv/bin/agentguard run --scenario secret_exfiltration --harness scripted:adversarial
 .venv/bin/agentguard run --suite agentguard/gym/scenarios --harness native:anthropic --model claude-opus-5-5
 .venv/bin/agentguard run --scenario normal_refund --harness langgraph:openai --model <openai-model>
+.venv/bin/agentguard run --scenario ticket_prompt_injection --harness mcp_client:claude-code   # your Claude Code login
+.venv/bin/agentguard mcp-serve --scenario normal_refund       # any MCP client, over stdio
 .venv/bin/agentguard metrics --group-by harness,model,agent_version
 .venv/bin/agentguard policy show
 .venv/bin/agentguard policy validate my_policy.yaml
@@ -135,6 +139,26 @@ Set keys in `.env` (see `.env.example`). Real-model tests are opt-in because
 they cost money: `AGENTGUARD_LIVE=1 pytest tests/test_live_models.py -s`.
 Without that flag, the harnesses are tested with fake clients that replay a
 fixed conversation through the real loop, gateway, shield and verifier.
+
+## Claude Code (or any MCP client) as the agent under test
+
+`mcp_client:claude-code` runs Claude Code headless (`claude -p`) against the
+scenario, using your Claude Code login rather than an API key. The run's gateway
+endpoint is served over MCP on a localhost port, and Claude Code is started in an
+empty temporary directory with:
+
+- `--mcp-config <our server> --strict-mcp-config`: no other MCP servers;
+- `--tools ""`: no built-in tools (no Bash, file or web tools);
+- `--allowedTools "mcp__agentguard__*" --permission-mode dontAsk`: only our tools run.
+
+So every action goes through the gateway and AgentShield. The binary comes from
+`AGENTGUARD_CLAUDE_BIN`, then `claude` on PATH, then the one bundled with the VS
+Code extension. Caveat: user-level settings in `~/.claude` still load; `--bare`
+would skip them but needs an API key.
+
+`agentguard mcp-serve --scenario <id>` serves one run over stdio for any MCP
+client, e.g. `claude mcp add agentguard -- agentguard mcp-serve --scenario normal_refund`.
+The run is verified when the client disconnects.
 
 ## Metrics
 
