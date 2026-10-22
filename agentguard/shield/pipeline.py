@@ -1,7 +1,7 @@
 """AgentShield: the decision stages the Gateway runs for every tool call.
 
     ToolCall -> injection scan (input) -> policy (identity, permission, limits, rules)
-             -> risk score -> taint/sequence check -> decision
+             -> risk score -> taint/sequence check -> ordered patterns -> decision
              -> [approval wait] -> [fault injector, gym only] -> execute
              -> injection scan (output) -> redaction -> taint labelling -> result
 
@@ -32,7 +32,7 @@ from agentguard.core.models import (
 )
 from agentguard.shield import injection, risk
 from agentguard.shield.approvals import AutoApprover
-from agentguard.shield.policy import Policy, ToolPermission
+from agentguard.shield.policy import Pattern, Policy, ToolPermission
 from agentguard.shield.policy.expr import ExprError
 from agentguard.shield.taint import TaintMatch, TaintTracker
 from agentguard.world.base import ToolBackend
@@ -54,10 +54,23 @@ class ShieldConfig(BaseModel):
 
 
 @dataclass
+class CallRecord:
+    seq: int
+    tool: str
+    args: dict[str, Any]
+    ok: bool
+    labels: list[str]
+
+    def to_dict(self) -> dict[str, Any]:
+        return {"seq": self.seq, "tool": self.tool, "ok": self.ok, **({"labels": self.labels} if self.labels else {})}
+
+
+@dataclass
 class ShieldSession:
     """State shared by the stages for one run."""
 
     taint: TaintTracker = field(default_factory=TaintTracker)
+    calls: list[CallRecord] = field(default_factory=list)  # executed calls, in order
     untrusted_calls: list[int] = field(default_factory=list)  # call seqs whose output was flagged
     untrusted_task: bool = False
 
@@ -82,6 +95,7 @@ class Shield:
             PolicyStage(policy, backend, self.session),
             RiskStage(self.session),
             TaintStage(policy, self.session),
+            PatternStage(policy, self.session),
         ]
 
     def scan_task(self, text: str) -> list[injection.Finding]:
@@ -320,3 +334,80 @@ def _domain_allowed(domain: str, allowed: list[str]) -> bool:
         elif entry in domain.split("."):  # a bare label such as "customer-domain"
             return True
     return False
+
+
+class PatternStage:
+    """Ordered action-sequence rules (`patterns:` in the policy) over the calls executed so far."""
+
+    name = "pattern"
+
+    def __init__(self, policy: Policy, session: ShieldSession) -> None:
+        self.patterns = policy.patterns
+        self.session = session
+
+    def evaluate(self, call: ToolCall, spec: ToolSpec) -> Decision | None:
+        hits = [d for p in self.patterns if _applies(p, call, spec) and (d := self._check(p, call))]
+        return max(hits, key=decision_rank) if hits else None
+
+    def observe(self, call: ToolCall, spec: ToolSpec, result: ToolResult) -> Events:
+        self.session.calls.append(CallRecord(call.seq, call.tool, call.args, result.ok, [l.value for l in result.labels]))
+        return []
+
+    def _check(self, p: Pattern, call: ToolCall) -> Decision | None:
+        history = self.session.calls
+        if p.requires_prior:
+            missing = [req for req in p.requires_prior if not any(_satisfies(c, req, call) for c in history)]
+            if not missing:
+                return None
+            names = ", ".join(_describe(req, call) for req in missing)
+            reason = p.message or f"'{call.tool}' was called without first {names}."
+            return self._vote(p, reason, call, missing=[m.model_dump() for m in missing],
+                              sequence=[c.to_dict() for c in history[-10:]])
+        if p.after_label is not None:
+            window = [c for c in history if c.seq > call.seq - 1 - p.after_label.within_calls]
+            tainted = next((c for c in reversed(window) if p.after_label.label.value in c.labels), None)
+            if tainted is None:
+                return None
+            reason = p.message or (f"'{call.tool}' comes {call.seq - tainted.seq} call(s) after {tainted.tool} "
+                                   f"(#{tainted.seq}) returned {p.after_label.label.value} content.")
+            return self._vote(p, reason, call, sequence=[c.to_dict() for c in window if c.seq >= tainted.seq])
+        assert p.rate is not None
+        window = [c for c in history if c.seq > call.seq - 1 - p.rate.within_calls and _same_target(p, c)]
+        if len(window) < p.rate.max:
+            return None
+        reason = p.message or (f"'{call.tool}' would be call {len(window) + 1} of this kind within "
+                               f"{p.rate.within_calls} calls (limit {p.rate.max}).")
+        return self._vote(p, reason, call, sequence=[c.to_dict() for c in window])
+
+    def _vote(self, p: Pattern, reason: str, call: ToolCall, **evidence: Any) -> Decision:
+        full = f"{reason} {p.description}".strip() if p.description and not p.message else reason
+        evidence["sequence"] = evidence.get("sequence", []) + [{"seq": call.seq, "tool": call.tool, "pending": True}]
+        return _d(p.on_match, full, p.id, p.risk, self.name, **evidence)
+
+
+def _applies(p: Pattern, call: ToolCall, spec: ToolSpec) -> bool:
+    if p.when.tool is not None and p.when.tool != call.tool:
+        return False
+    return not p.when.side_effect or spec.side_effect in p.when.side_effect
+
+
+def _same_target(p: Pattern, c: CallRecord) -> bool:
+    return p.when.tool is None or c.tool == p.when.tool  # side-effect-only patterns count every executed call
+
+
+def _satisfies(c: CallRecord, req: Any, call: ToolCall) -> bool:
+    if c.tool != req.tool or (req.ok is not None and c.ok != req.ok):
+        return False
+    for key, want in req.args.items():
+        if isinstance(want, str) and want.startswith("$"):
+            want = call.args.get(want[1:])
+        if c.args.get(key) != want:
+            return False
+    return True
+
+
+def _describe(req: Any, call: ToolCall) -> str:
+    bound = {k: (call.args.get(v[1:]) if isinstance(v, str) and v.startswith("$") else v) for k, v in req.args.items()}
+    args = ", ".join(f"{k}={v}" for k, v in bound.items())
+    return f"a successful {req.tool}({args})" if req.ok else f"calling {req.tool}({args})"
+

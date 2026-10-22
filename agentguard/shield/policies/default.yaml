@@ -62,3 +62,28 @@ sequences:
     through_transforms: [encode]
     on_match: REQUIRE_APPROVAL
     risk: HIGH
+
+# Ordered action-sequence rules over the calls executed so far in the session.
+patterns:
+  - id: refund_without_verification
+    description: Refunds must follow a successful lookup of the customer and of the same order.
+    when: {tool: issue_refund}
+    requires_prior:
+      - {tool: get_customer, ok: true}
+      - {tool: get_order, ok: true, args: {order_id: "$order_id"}}
+    on_match: REQUIRE_APPROVAL
+    risk: HIGH
+
+  - id: act_after_untrusted
+    description: A write or external action right after untrusted (possibly injected) content needs a human.
+    when: {side_effect: [write, external]}
+    after_label: {label: UNTRUSTED, within_calls: 3}
+    on_match: REQUIRE_APPROVAL
+    risk: HIGH
+
+  - id: irreversible_burst
+    description: More than two refunds in a short span is never part of a normal support task.
+    when: {tool: issue_refund}
+    rate: {max: 2, within_calls: 10}
+    on_match: BLOCK
+    risk: CRITICAL

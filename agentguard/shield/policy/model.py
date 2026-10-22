@@ -3,11 +3,11 @@
 from __future__ import annotations
 
 import re
-from typing import Literal
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, field_validator, model_validator
 
-from agentguard.core.models import DataLabel, DecisionType, RiskLevel
+from agentguard.core.models import DataLabel, DecisionType, RiskLevel, SideEffect
 from agentguard.shield.policy.expr import Expr
 
 OnFail = Literal[DecisionType.BLOCK, DecisionType.REQUIRE_APPROVAL]
@@ -92,15 +92,69 @@ class Sequence(_Strict):
     risk: RiskLevel = RiskLevel.CRITICAL
 
 
+class PatternWhen(_Strict):
+    tool: str | None = None
+    side_effect: list[SideEffect] | None = None
+
+    @model_validator(mode="after")
+    def _one(self) -> "PatternWhen":
+        if self.tool is None and not self.side_effect:
+            raise ValueError("when: needs a tool or a side_effect list")
+        return self
+
+
+class PriorCall(_Strict):
+    """An earlier call that must exist. Argument values starting with `$` are bound to
+    the current call's argument of that name, e.g. {order_id: "$order_id"}."""
+
+    tool: str
+    ok: bool | None = True  # None: any result
+    args: dict[str, Any] = Field(default_factory=dict)
+
+
+class AfterLabel(_Strict):
+    label: DataLabel
+    within_calls: int = Field(5, ge=1)
+
+
+class Rate(_Strict):
+    max: int = Field(..., ge=0)
+    within_calls: int = Field(..., ge=1)
+
+
+class Pattern(_Strict):
+    """An ordered action-sequence rule over the session's call history. Exactly one of
+    `requires_prior`, `after_label` or `rate` must be set."""
+
+    id: str
+    description: str = ""
+    when: PatternWhen
+    requires_prior: list[PriorCall] = Field(default_factory=list)
+    after_label: AfterLabel | None = None
+    rate: Rate | None = None
+    on_match: OnFail = DecisionType.REQUIRE_APPROVAL
+    risk: RiskLevel = RiskLevel.HIGH
+    message: str | None = None
+
+    @model_validator(mode="after")
+    def _exactly_one(self) -> "Pattern":
+        set_ = [n for n, v in (("requires_prior", self.requires_prior), ("after_label", self.after_label),
+                               ("rate", self.rate)) if v]
+        if len(set_) != 1:
+            raise ValueError(f"a pattern needs exactly one of requires_prior, after_label, rate (got {set_ or 'none'})")
+        return self
+
+
 class Policy(_Strict):
     version: int = 1
     agents: dict[str, AgentPolicy] = Field(default_factory=dict)
     rules: list[Rule] = Field(default_factory=list)
     sequences: list[Sequence] = Field(default_factory=list)
+    patterns: list[Pattern] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def _unique_ids(self) -> "Policy":
-        ids = [r.id for r in self.rules] + [s.id for s in self.sequences]
+        ids = [r.id for r in self.rules] + [s.id for s in self.sequences] + [p.id for p in self.patterns]
         dupes = sorted({i for i in ids if ids.count(i) > 1})
         if dupes:
             raise ValueError(f"duplicate rule/sequence ids: {dupes}")

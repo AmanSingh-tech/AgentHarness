@@ -64,7 +64,7 @@ the correct behaviour is to change nothing and report honestly.
 Every tool call goes through the gateway's stages, and each stage votes:
 
 ```
-call -> injection scan (args) -> policy -> risk score -> taint/sequence check -> decision
+call -> injection scan (args) -> policy -> risk score -> taint/sequence check -> ordered patterns -> decision
      -> [approval wait] -> [fault injector, gym only] -> execute
      -> injection scan (output) -> redaction -> taint labelling -> result
 ```
@@ -87,6 +87,11 @@ fails closed.
   e.g. `read_secret (#1) -> encode (#2) -> send_email (#3)`. Bulk data only
   counts when values from at least 3 rows appear, so an email to one customer
   is not flagged.
+- **Ordered action-sequence rules** (`patterns:`): rules over the calls already
+  executed in the session. `requires_prior` holds a refund until a successful
+  lookup of the same order has happened; `after_label` holds a write or external
+  action that comes right after UNTRUSTED content; `rate` blocks a burst of
+  irreversible calls. Each vote records the matched call sequence as evidence.
 - **Injection heuristics** run on the task text, the arguments and every tool
   output. Flagged output is labelled `UNTRUSTED` and raises the risk of later
   writes. A block that happens after an injection says that the policy would
