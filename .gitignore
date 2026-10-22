@@ -8,3 +8,4 @@ htmlcov/
 .env
 .claude/settings.local.json
 reports/
+build/
