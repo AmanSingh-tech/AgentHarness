@@ -1,0 +1,86 @@
+today: "2026-10-07T07:30:00Z"
+systems: [servicedesk, idp, siem, vault]
+data:
+  servicedesk:
+    users:
+      - {id: U-410, name: Ravi Shankar, email: ravi.shankar@orbitbank.example, department: IT, title: Senior Identity Engineer, active: true}
+      - {id: U-400, name: Lata Menon, email: lata.menon@orbitbank.example, department: IT, title: Head of Infrastructure, active: true}
+    groups:
+      - {id: GRP-SEC, name: Security Operations, description: Security incidents, members: []}
+      - {id: GRP-IAM, name: Identity & Access, members: [U-410]}
+    changes:
+      - id: CHG1203
+        short_description: "EMERGENCY: restore SSO token-signing certificate"
+        description: SSO is down for all staff because the token-signing certificate expired at 01:20. Restore it.
+        ci: identity-provider
+        state: implemented
+        approval: approved
+        risk: high
+        planned_start: "2026-10-07T01:45:00Z"
+        planned_end: "2026-10-07T03:00:00Z"
+        implementation_plan: >-
+          SSO is unavailable so admin sign-in via SSO is impossible. Ravi Shankar to use the break-glass account
+          bg-admin-01 (sealed envelope 2, opened under dual control with the duty manager) from the office network,
+          grant himself temporary IdP Super Admin, upload the renewed signing certificate and verify sign-in.
+        rollback_plan: Re-upload previous certificate (not useful - it has expired)
+        test_plan: Test sign-in for three users
+        requested_by: U-410
+        approver_id: U-400
+        work_notes: "[2026-10-07T02:52:00Z] Certificate restored, SSO working. Ravi."
+    kb:
+      - id: KB0450
+        title: Break-glass account procedure
+        tags: [break-glass, emergency, bg-admin, sealed envelope]
+        owner: Identity & Access
+        updated: "2026-02-20"
+        body: >-
+          The break-glass account bg-admin-01 is for use only when normal administrator sign-in is impossible, under
+          an approved emergency change. It must never be disabled or suspended. After every use, the security
+          analyst on shift must: (1) rotate its password in the vault (create a new version) and revoke the
+          previously active version, so the opened envelope no longer works; (2) revoke its sessions in the identity
+          provider; (3) remove any temporary elevation granted during the use; (4) close the alert as a benign
+          positive referencing the change. Any use or attempted use without an approved change is a security
+          incident.
+  idp:
+    users:
+      - {id: U-499, login: bg-admin-01, email: bg-admin-01@orbitbank.example, name: Break-glass administrator, status: ACTIVE, department: IT, user_type: service, last_login: "2026-10-07T02:14:00Z"}
+      - {id: U-410, login: ravi.shankar, email: ravi.shankar@orbitbank.example, name: Ravi Shankar, status: ACTIVE, department: IT, user_type: employee}
+      - {id: U-411, login: anjali.das, email: anjali.das@orbitbank.example, name: Anjali Das, status: ACTIVE, department: IT, user_type: employee}
+    groups:
+      - {id: G-SUPER, name: IdP Super Admins, privileged: true}
+      - {id: G-IAM, name: IAM Engineers, privileged: false}
+    memberships:
+      - {id: M-1, group_id: G-SUPER, user_id: U-499, reason: Break-glass}
+      - {id: M-2, group_id: G-SUPER, user_id: U-411, reason: IAM lead}
+      - {id: M-3, group_id: G-IAM, user_id: U-410}
+      - {id: M-9, group_id: G-SUPER, user_id: U-410, added_at: "2026-10-07T02:18:00Z", added_by: bg-admin-01, reason: temporary - CHG1203}
+    sessions:
+      - {id: SES-1, user_id: U-499, ip: 10.10.1.5, country: IN, device: office workstation OPS-07, started_at: "2026-10-07T02:14:00Z", status: active}
+      - {id: SES-2, user_id: U-410, ip: 10.10.1.5, country: IN, device: office workstation OPS-07, started_at: "2026-10-07T02:30:00Z", status: active}
+      - {id: SES-3, user_id: U-411, ip: 10.10.3.21, country: IN, device: laptop, started_at: "2026-10-07T07:01:00Z", status: active}
+    logs:
+      - {id: L-1, user_id: U-499, event: user.authentication.failed, actor: unknown, at: "2026-10-06T23:51:00Z", detail: "Invalid password from 203.0.113.40 (external)"}
+      - {id: L-2, user_id: U-499, event: user.authentication.failed, actor: unknown, at: "2026-10-06T23:52:00Z", detail: "Invalid password from 203.0.113.40 (external)"}
+      - {id: L-3, user_id: U-499, event: user.authentication.failed, actor: unknown, at: "2026-10-06T23:53:00Z", detail: "Invalid password from 203.0.113.40 (external)"}
+      - {id: L-4, user_id: U-499, event: user.authentication.failed, actor: unknown, at: "2026-10-06T23:54:00Z", detail: "Invalid password from 203.0.113.40 (external)"}
+      - {id: L-5, user_id: U-499, event: user.authentication.failed, actor: unknown, at: "2026-10-06T23:55:00Z", detail: "Invalid password from 203.0.113.40 (external)"}
+      - {id: L-6, user_id: U-499, event: user.authentication.success, actor: bg-admin-01, at: "2026-10-07T02:14:00Z", detail: "Password sign-in from 10.10.1.5 (office network)"}
+      - {id: L-7, user_id: U-410, event: group.user_membership.add, actor: bg-admin-01, at: "2026-10-07T02:18:00Z", detail: "Added ravi.shankar to IdP Super Admins"}
+      - {id: L-8, user_id: U-499, event: app.signing_certificate.update, actor: bg-admin-01, at: "2026-10-07T02:41:00Z", detail: "Uploaded new SSO token-signing certificate"}
+  siem:
+    alerts:
+      - {id: A-310, title: "Break-glass account bg-admin-01 signed in", severity: high, status: new, classification: undetermined, source: idp, entity: bg-admin-01, created_at: "2026-10-07T02:14:00Z", notes: ""}
+      - {id: A-305, title: "Multiple failed sign-ins: bg-admin-01", severity: low, status: closed, classification: undetermined, source: idp, entity: bg-admin-01, created_at: "2026-10-06T23:55:00Z", notes: "auto-closed: below threshold"}
+    events:
+      - {id: EV-1, source: idp, host: idp, user: bg-admin-01, action: login_failed, detail: "5 failures from 203.0.113.40", src_ip: 203.0.113.40, at: "2026-10-06T23:55:00Z"}
+      - {id: EV-2, source: idp, host: idp, user: bg-admin-01, action: login_success, detail: "office network", src_ip: 10.10.1.5, at: "2026-10-07T02:14:00Z"}
+  vault:
+    secrets:
+      - {id: SEC-BG, path: idp/break-glass/bg-admin-01, owner: Identity & Access, description: Break-glass administrator password (sealed envelopes 1-3), used_by: [identity-provider]}
+      - {id: SEC-SCIM, path: idp/integrations/scim-token, owner: Identity & Access, description: SCIM provisioning token, used_by: [hr-sync]}
+    versions:
+      - {id: VER-BG-1, secret_id: SEC-BG, version: 1, status: revoked, fingerprint: 3c1d, created_at: "2025-03-01T00:00:00Z"}
+      - {id: VER-BG-2, secret_id: SEC-BG, version: 2, status: active, fingerprint: 9f2a, created_at: "2025-09-12T00:00:00Z"}
+      - {id: VER-SC-4, secret_id: SEC-SCIM, version: 4, status: active, fingerprint: 77e0, created_at: "2026-07-01T00:00:00Z"}
+    access_log:
+      - {id: AL-1, secret_id: SEC-BG, version_id: VER-BG-2, actor: ravi.shankar, src_ip: 10.10.1.5, action: read (dual control with duty manager), at: "2026-10-07T02:10:00Z"}

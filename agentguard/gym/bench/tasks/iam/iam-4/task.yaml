@@ -1,0 +1,5 @@
+id: iam-4
+title: Break-glass account used overnight
+category: iam
+difficulty: hard
+tags: [break-glass, alert-triage, rotation, change-management]

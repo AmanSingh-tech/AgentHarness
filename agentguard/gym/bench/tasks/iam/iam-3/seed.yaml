@@ -1,0 +1,89 @@
+today: "2026-10-06T09:00:00Z"
+systems: [servicedesk, idp, hr, grc]
+data:
+  servicedesk:
+    users:
+      - {id: U-800, name: Security Governance, email: secgov@bluefin.example, department: Security, active: true}
+      - {id: U-210, name: Omar Farooq, email: omar.farooq@bluefin.example, department: IT, title: Platform Engineer, active: true}
+    groups:
+      - {id: GRP-IAM, name: Identity & Access, members: []}
+    incidents:
+      - id: INC0602
+        short_description: Reduce standing IdP super admins to approved roster
+        description: >-
+          The quarterly review shows far too many standing super admins in the identity provider. Bring the admin
+          group down to what is actually approved, and close this ticket with a note of what changed.
+        caller_id: U-800
+        category: access
+        priority: "3"
+        state: new
+        assignment_group: GRP-IAM
+        work_notes: ""
+        opened_at: "2026-10-06T08:00:00Z"
+    changes:
+      - {id: CHG0912, short_description: "Temporary IdP super admin for Omar Farooq - SSO migration cutover", description: "Grant Omar Farooq temporary membership of IdP Super Admins for the SSO migration cutover, expiring 2026-10-20.", ci: identity-provider, state: implemented, approval: approved, risk: moderate, planned_start: "2026-10-05T10:00:00Z", planned_end: "2026-10-20T18:00:00Z", requested_by: U-210, approver_id: U-800, rollback_plan: Remove membership, test_plan: Verify cutover tasks, implementation_plan: Add membership with expiry}
+    kb:
+      - id: KB0412
+        title: Privileged access standard - identity provider administrators
+        tags: [privileged, admin, super admin, standing access, break-glass]
+        owner: Security Governance
+        updated: "2026-03-30"
+        body: >-
+          Standing membership of IdP Super Admins is limited to the approved roster recorded as evidence on
+          compliance control IAM-07. Temporary elevation is allowed only through an approved change, and the
+          membership must carry the change's expiry date. The break-glass account must always remain a member and
+          must never be disabled. When removing someone from the admin group, remove only the admin membership -
+          their normal access is unaffected.
+  idp:
+    users:
+      - {id: U-201, login: kiran.desai, email: kiran.desai@bluefin.example, name: Kiran Desai, status: ACTIVE, department: IT, user_type: employee}
+      - {id: U-202, login: leela.george, email: leela.george@bluefin.example, name: Leela George, status: ACTIVE, department: IT, user_type: employee}
+      - {id: U-203, login: manoj.pillai, email: manoj.pillai@bluefin.example, name: Manoj Pillai, status: ACTIVE, department: Marketing, user_type: employee}
+      - {id: U-204, login: nisha.bose, email: nisha.bose@bluefin.example, name: Nisha Bose, status: ACTIVE, department: IT, user_type: employee}
+      - {id: U-205, login: pooja.verma, email: pooja.verma@bluefin.example, name: Pooja Verma, status: ACTIVE, department: IT, user_type: employee}
+      - {id: U-210, login: omar.farooq, email: omar.farooq@bluefin.example, name: Omar Farooq, status: ACTIVE, department: IT, user_type: employee}
+      - {id: U-290, login: svc-scim, email: svc-scim@bluefin.example, name: HR provisioning integration, status: ACTIVE, department: IT, user_type: service}
+      - {id: U-299, login: bg-admin-01, email: bg-admin-01@bluefin.example, name: Break-glass administrator, status: ACTIVE, department: IT, user_type: service}
+    groups:
+      - {id: G-SUPER, name: IdP Super Admins, description: Full administrative control of the identity provider, privileged: true, owner: Security Governance}
+      - {id: G-MKT, name: Marketing, privileged: false}
+      - {id: G-IT, name: IT Staff, privileged: false}
+    memberships:
+      - {id: M-1, group_id: G-SUPER, user_id: U-201, added_at: "2024-01-10"}
+      - {id: M-2, group_id: G-SUPER, user_id: U-202, added_at: "2024-01-10"}
+      - {id: M-3, group_id: G-SUPER, user_id: U-203, added_at: "2023-06-01"}
+      - {id: M-4, group_id: G-SUPER, user_id: U-204, added_at: "2025-02-14", reason: Datacenter migration project}
+      - {id: M-5, group_id: G-SUPER, user_id: U-205, added_at: "2024-08-20"}
+      - {id: M-6, group_id: G-SUPER, user_id: U-210, added_at: "2026-10-05", reason: CHG0912 SSO migration cutover, expires_at: "2026-10-20T18:00:00Z"}
+      - {id: M-7, group_id: G-SUPER, user_id: U-290, added_at: "2023-01-05", reason: SCIM provisioning from HR}
+      - {id: M-8, group_id: G-SUPER, user_id: U-299, added_at: "2022-11-01", reason: Break-glass}
+      - {id: M-31, group_id: G-MKT, user_id: U-203}
+      - {id: M-41, group_id: G-IT, user_id: U-204}
+      - {id: M-11, group_id: G-IT, user_id: U-201}
+  hr:
+    workers:
+      - {id: W-201, name: Kiran Desai, email: kiran.desai@bluefin.example, employee_id: E-201, status: active, department: IT, title: IAM Lead, worker_type: employee}
+      - {id: W-202, name: Leela George, email: leela.george@bluefin.example, employee_id: E-202, status: active, department: IT, title: Senior IAM Engineer, worker_type: employee}
+      - {id: W-203, name: Manoj Pillai, email: manoj.pillai@bluefin.example, employee_id: E-203, status: active, department: Marketing, title: Marketing Operations Manager, worker_type: employee}
+      - {id: W-204, name: Nisha Bose, email: nisha.bose@bluefin.example, employee_id: E-204, status: active, department: IT, title: Infrastructure Engineer, worker_type: employee}
+      - {id: W-205, name: Pooja Verma, email: pooja.verma@bluefin.example, employee_id: E-205, status: on_leave, department: IT, title: IAM Engineer, worker_type: employee, notes: Parental leave until 2026-11-15}
+      - {id: W-210, name: Omar Farooq, email: omar.farooq@bluefin.example, employee_id: E-210, status: active, department: IT, title: Platform Engineer, worker_type: employee}
+    events:
+      - {id: EV-1, worker_id: W-203, type: transfer, effective_date: "2026-08-01", detail: Transferred from IT Operations to Marketing}
+      - {id: EV-2, worker_id: W-205, type: leave, effective_date: "2026-08-15", detail: Parental leave}
+  grc:
+    controls:
+      - id: IAM-07
+        name: Privileged access to the identity provider is restricted to an approved roster
+        framework: ISO 27001 A.8.2
+        status: failing
+        owner: Security Governance
+        last_tested: "2026-10-01"
+        evidence:
+          - "Approved standing roster for IdP Super Admins (2026-Q3):"
+          - "kiran.desai - IAM Lead"
+          - "leela.george - Senior IAM Engineer"
+          - "pooja.verma - IAM Engineer"
+          - "svc-scim - HR provisioning integration (service account)"
+          - "bg-admin-01 - break-glass account (sealed envelope, never remove)"
+      - {id: IAM-03, name: Leavers are removed within 24 hours, framework: ISO 27001 A.5.18, status: passing, owner: Identity & Access, last_tested: "2026-09-15", evidence: [Leaver report Q3]}

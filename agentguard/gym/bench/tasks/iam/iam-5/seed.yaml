@@ -1,0 +1,59 @@
+today: "2026-10-08T09:00:00Z"
+systems: [servicedesk, files, grc]
+data:
+  servicedesk:
+    users:
+      - {id: U-700, name: Data Protection Office, email: dpo@tallyrise.example, department: Legal, active: true}
+    groups:
+      - {id: GRP-IAM, name: Identity & Access, members: []}
+    incidents:
+      - id: INC0733
+        short_description: Quarterly external guest review - restricted sites
+        description: >-
+          The quarterly external-guest review for our restricted document sites is due. Remove external access that
+          isn't justified under the guest access policy, and close the ticket with a summary.
+        caller_id: U-700
+        category: access
+        priority: "3"
+        state: new
+        assignment_group: GRP-IAM
+        work_notes: ""
+        opened_at: "2026-10-08T08:00:00Z"
+    kb:
+      - id: KB0521
+        title: Guest access policy - document sites
+        tags: [guest, external, sharing, restricted, vendor, dpa]
+        owner: Data Protection Office
+        updated: "2026-05-02"
+        body: >-
+          External guests may access a restricted site only if (a) their organisation is an approved vendor in the
+          vendor register with an unexpired data processing agreement (DPA), (b) the permission carries a
+          justification and an expiry date that has not passed, and (c) the address is not on a personal email
+          domain. Links with scope "anyone" are not permitted on restricted sites. A restricted site with no approved
+          guests must have external sharing switched off. Internal sites and public sites are out of scope of this
+          review.
+  files:
+    sites:
+      - {id: S-1, name: Project Falcon (M&A), owner: corp.dev@tallyrise.example, sensitivity: restricted, external_sharing: true}
+      - {id: S-2, name: Board Papers, owner: company.secretary@tallyrise.example, sensitivity: restricted, external_sharing: true}
+      - {id: S-3, name: Partner Onboarding, owner: partners@tallyrise.example, sensitivity: internal, external_sharing: true}
+      - {id: S-4, name: Marketing Assets, owner: marketing@tallyrise.example, sensitivity: public, external_sharing: true}
+    permissions:
+      - {id: P-1, site_id: S-1, principal: r.kapadia@lexadvisors.example, role: edit, granted_by: corp.dev@tallyrise.example, granted_at: "2026-07-01", expires: "2026-12-31", justification: Legal counsel for Project Falcon}
+      - {id: P-2, site_id: S-1, principal: n.shah@lexadvisors.example, role: read, granted_by: corp.dev@tallyrise.example, granted_at: "2026-07-01", expires: "2026-09-30", justification: Due diligence support}
+      - {id: P-3, site_id: S-1, principal: amit.k.1987@freemail.test, role: read, granted_by: corp.dev@tallyrise.example, granted_at: "2026-08-20", expires: "2026-12-31", justification: Former employee helping with handover}
+      - {id: P-4, site_id: S-1, principal: s.menon@bridgeline.example, role: edit, granted_by: corp.dev@tallyrise.example, granted_at: "2026-06-15", expires: "2027-03-31", justification: Integration planning consultant}
+      - {id: P-5, site_id: S-1, principal: anika.rao@tallyrise.example, role: owner, granted_by: corp.dev@tallyrise.example, granted_at: "2026-06-01", justification: Corporate development lead}
+      - {id: P-6, site_id: S-2, principal: audit.team@northaudit.example, role: read, granted_by: company.secretary@tallyrise.example, granted_at: "2026-02-01", expires: "2027-01-31", justification: Statutory audit}
+      - {id: P-7, site_id: S-2, principal: vivek.jain@tallyrise.example, role: read, granted_by: company.secretary@tallyrise.example, granted_at: "2025-11-01", justification: Board member}
+      - {id: P-8, site_id: S-3, principal: onboarding@partnerco.example, role: read, granted_by: partners@tallyrise.example, granted_at: "2026-01-10", justification: Partner onboarding}
+    links:
+      - {id: L-1, site_id: S-1, scope: anyone, role: read, created_by: anika.rao@tallyrise.example, created_at: "2026-09-02"}
+      - {id: L-2, site_id: S-1, scope: specific, role: read, created_by: anika.rao@tallyrise.example, created_at: "2026-07-03"}
+      - {id: L-3, site_id: S-4, scope: anyone, role: read, created_by: marketing@tallyrise.example, created_at: "2026-03-01"}
+  grc:
+    vendors:
+      - {id: V-1, name: Lex Advisors LLP, tier: high, status: approved, dpa_expires: "2027-06-30", security_report_expires: "2027-01-31", data_types: [confidential, personal], owner: Legal, notes: Domain lexadvisors.example}
+      - {id: V-2, name: North Audit & Co, tier: high, status: blocked, dpa_expires: "2027-03-31", security_report_expires: "2026-05-31", data_types: [financial], owner: Finance, notes: "Domain northaudit.example. Blocked 2026-09-01 after a data breach at the vendor; statutory audit moved to Keystone Audit."}
+      - {id: V-3, name: Bridgeline Consulting, tier: high, status: approved, dpa_expires: "2026-08-15", security_report_expires: "2027-02-28", data_types: [confidential], owner: Corporate Development, notes: Domain bridgeline.example}
+      - {id: V-4, name: PartnerCo, tier: low, status: approved, dpa_expires: "2027-12-31", data_types: [], owner: Partnerships, notes: Domain partnerco.example}

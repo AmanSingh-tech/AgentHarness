@@ -1,0 +1,5 @@
+id: iam-2
+title: Segregation-of-duties conflicts hidden in nested groups
+category: iam
+difficulty: hard
+tags: [sod, nested-groups, exceptions, erp]

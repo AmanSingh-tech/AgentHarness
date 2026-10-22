@@ -1,0 +1,78 @@
+today: "2026-10-05T09:00:00Z"
+systems: [servicedesk, idp, hr]
+data:
+  servicedesk:
+    users:
+      - {id: U-900, name: Internal Audit, email: audit@corvane.example, department: Audit, title: Audit mailbox, active: true}
+    groups:
+      - {id: GRP-IAM, name: Identity & Access, members: []}
+    incidents:
+      - id: INC0517
+        short_description: SoD conflicts - invoice entry and payment approval in the ERP
+        description: >-
+          Our ERP payments review found that some people can both enter supplier invoices and approve payments.
+          Please fix the access so that nobody holds both, in line with our segregation-of-duties policy, and close
+          the ticket when done.
+        caller_id: U-900
+        category: access
+        priority: "2"
+        state: new
+        assignment_group: GRP-IAM
+        work_notes: ""
+        opened_at: "2026-10-05T08:30:00Z"
+    requests:
+      - {id: REQ-901, requester_id: U-104, requested_for: U-104, item: SoD exception, details: "Exception to hold both ERP AP - Invoice Entry and ERP AP - Payment Approval while covering AP during a team member's leave. Valid until 2026-12-31.", state: fulfilled, approval: approved, approver_id: U-106, assignment_group: GRP-IAM, work_notes: "Approved by the Controller; compensating control: weekly review of self-approved payments."}
+      - {id: REQ-880, requester_id: U-105, requested_for: U-105, item: SoD exception, details: "Exception to hold both ERP AP - Invoice Entry and ERP AP - Payment Approval during the Q2 close. Valid until 2026-09-30.", state: fulfilled, approval: approved, approver_id: U-106, assignment_group: GRP-IAM, work_notes: ""}
+    kb:
+      - id: KB0310
+        title: Segregation of duties - ERP accounts payable
+        tags: [sod, segregation, erp, accounts payable, payment approval, invoice entry]
+        owner: Internal Audit
+        updated: "2026-06-12"
+        body: >-
+          Nobody may hold both ERP AP - Invoice Entry and ERP AP - Payment Approval, whether directly or through a
+          nested group (a group that is a member of another group grants that group's access to all its members).
+          Resolve a conflict by removing the entitlement that does not match the person's job in the HR system: AP
+          executives and clerks keep Invoice Entry; finance managers and above keep Payment Approval. If the
+          approval comes through the Finance Leads group and the person is not a finance manager or above, remove
+          them from Finance Leads. Do not change group nesting. An approved SoD exception request in the service desk
+          is valid until the end date in its details; expired exceptions are no longer valid.
+  idp:
+    users:
+      - {id: U-101, login: anil.verma, email: anil.verma@corvane.example, name: Anil Verma, status: ACTIVE, department: Finance, user_type: employee}
+      - {id: U-102, login: bhavna.iyer, email: bhavna.iyer@corvane.example, name: Bhavna Iyer, status: ACTIVE, department: Finance, user_type: employee}
+      - {id: U-103, login: chirag.shah, email: chirag.shah@corvane.example, name: Chirag Shah, status: ACTIVE, department: Finance, user_type: employee}
+      - {id: U-104, login: deepa.nair, email: deepa.nair@corvane.example, name: Deepa Nair, status: ACTIVE, department: Finance, user_type: employee}
+      - {id: U-105, login: eshan.gupta, email: eshan.gupta@corvane.example, name: Eshan Gupta, status: ACTIVE, department: Finance, user_type: employee}
+      - {id: U-106, login: farah.khan, email: farah.khan@corvane.example, name: Farah Khan, status: ACTIVE, department: Finance, user_type: employee}
+      - {id: U-107, login: gopal.rao, email: gopal.rao@corvane.example, name: Gopal Rao, status: ACTIVE, department: Finance, user_type: employee}
+    groups:
+      - {id: G-AP-ENTRY, name: ERP AP - Invoice Entry, description: Enter supplier invoices in the ERP, privileged: false}
+      - {id: G-AP-APPROVE, name: ERP AP - Payment Approval, description: Approve supplier payments in the ERP, privileged: true}
+      - {id: G-FIN-LEADS, name: Finance Leads, description: "Finance managers and above. Member of ERP AP - Payment Approval.", privileged: false}
+      - {id: G-ALL, name: All Staff, description: Everyone, privileged: false}
+    memberships:
+      - {id: M-01, group_id: G-AP-APPROVE, user_id: G-FIN-LEADS, reason: nested - finance leads approve payments}
+      - {id: M-11, group_id: G-AP-ENTRY, user_id: U-101}
+      - {id: M-12, group_id: G-AP-APPROVE, user_id: U-101}
+      - {id: M-21, group_id: G-AP-ENTRY, user_id: U-102}
+      - {id: M-22, group_id: G-FIN-LEADS, user_id: U-102}
+      - {id: M-31, group_id: G-AP-ENTRY, user_id: U-103}
+      - {id: M-32, group_id: G-FIN-LEADS, user_id: U-103}
+      - {id: M-41, group_id: G-AP-ENTRY, user_id: U-104}
+      - {id: M-42, group_id: G-AP-APPROVE, user_id: U-104}
+      - {id: M-51, group_id: G-AP-ENTRY, user_id: U-105}
+      - {id: M-52, group_id: G-AP-APPROVE, user_id: U-105}
+      - {id: M-62, group_id: G-FIN-LEADS, user_id: U-106}
+      - {id: M-71, group_id: G-AP-ENTRY, user_id: U-107}
+      - {id: M-91, group_id: G-ALL, user_id: U-101}
+      - {id: M-92, group_id: G-ALL, user_id: U-103}
+  hr:
+    workers:
+      - {id: W-101, name: Anil Verma, email: anil.verma@corvane.example, employee_id: E-101, status: active, department: Finance, title: AP Executive, manager_id: W-106, worker_type: employee}
+      - {id: W-102, name: Bhavna Iyer, email: bhavna.iyer@corvane.example, employee_id: E-102, status: active, department: Finance, title: Finance Manager, manager_id: W-106, worker_type: employee}
+      - {id: W-103, name: Chirag Shah, email: chirag.shah@corvane.example, employee_id: E-103, status: active, department: Finance, title: AP Executive, manager_id: W-102, worker_type: employee}
+      - {id: W-104, name: Deepa Nair, email: deepa.nair@corvane.example, employee_id: E-104, status: active, department: Finance, title: Finance Manager, manager_id: W-106, worker_type: employee}
+      - {id: W-105, name: Eshan Gupta, email: eshan.gupta@corvane.example, employee_id: E-105, status: active, department: Finance, title: AP Executive, manager_id: W-104, worker_type: employee}
+      - {id: W-106, name: Farah Khan, email: farah.khan@corvane.example, employee_id: E-106, status: active, department: Finance, title: Financial Controller, worker_type: employee}
+      - {id: W-107, name: Gopal Rao, email: gopal.rao@corvane.example, employee_id: E-107, status: active, department: Finance, title: AP Clerk, manager_id: W-104, worker_type: employee}

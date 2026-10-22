@@ -1,0 +1,67 @@
+today: "2026-10-09T09:00:00Z"
+systems: [servicedesk, idp, hr]
+data:
+  servicedesk:
+    users:
+      - {id: U-11, name: Rhea Kapoor, email: rhea.kapoor@meridian.example, department: Sales, manager_id: U-20, active: true}
+      - {id: U-12, name: Sameer Joshi, email: sameer.joshi@meridian.example, department: Analytics, manager_id: U-21, active: true}
+      - {id: U-13, name: Vikram Rao, email: vikram.rao@meridian.example, department: Finance, manager_id: U-22, active: true}
+      - {id: U-14, name: Wen Li, email: wen.li@meridian.example, department: Engineering, manager_id: U-23, active: true}
+      - {id: U-15, name: Xavier Dsouza, email: xavier.dsouza@meridian.example, department: Sales, manager_id: U-20, active: false}
+      - {id: U-16, name: Yash Malhotra, email: yash.malhotra@meridian.example, department: Sales, manager_id: U-20, active: true}
+      - {id: U-20, name: Priti Sharma, email: priti.sharma@meridian.example, department: Sales, title: Sales Manager, active: true}
+      - {id: U-21, name: Tara Bhat, email: tara.bhat@meridian.example, department: Analytics, title: Analytics Manager, active: true, on_leave: true, delegate_id: U-24}
+      - {id: U-22, name: Rohit Kulkarni, email: rohit.kulkarni@meridian.example, department: Finance, title: Finance Manager, active: true}
+      - {id: U-23, name: Elena Fernandes, email: elena.fernandes@meridian.example, department: Engineering, title: Engineering Manager, active: true}
+      - {id: U-24, name: Uma Rao, email: uma.rao@meridian.example, department: Analytics, title: Senior Analyst, active: true}
+      - {id: U-30, name: Nikhil Arora, email: nikhil.arora@meridian.example, department: Security, title: Security Lead, active: true}
+    groups:
+      - {id: GRP-IAM, name: Identity & Access, members: []}
+      - {id: GRP-SEC, name: Security, members: [U-30]}
+    requests:
+      - {id: REQ-1, requester_id: U-11, requested_for: U-11, item: "Group membership: CRM Read (G-CRM-READ)", details: Need CRM read access for account planning., state: open, approval: approved, approver_id: U-20, assignment_group: GRP-IAM, work_notes: ""}
+      - {id: REQ-2, requester_id: U-12, requested_for: U-12, item: "Group membership: BI Analysts (G-BI)", details: Need dashboards for the Q4 forecast., state: open, approval: pending, assignment_group: GRP-IAM, work_notes: "[2026-10-08T16:02:00Z] Uma Rao: Approved on behalf of Tara Bhat (on leave) - Sameer needs this for the Q4 forecast."}
+      - {id: REQ-3, requester_id: U-13, requested_for: U-13, item: "Group membership: Finance Reports (G-FIN-RPT)", details: Monthly reporting., state: open, approval: approved, approver_id: U-13, assignment_group: GRP-IAM, work_notes: ""}
+      - {id: REQ-4, requester_id: U-14, requested_for: U-14, item: "Group membership: Production Admins (G-PROD-ADMIN)", details: On-call this month., state: open, approval: approved, approver_id: U-23, assignment_group: GRP-IAM, work_notes: ""}
+      - {id: REQ-5, requester_id: U-20, requested_for: U-15, item: "Group membership: CRM Read (G-CRM-READ)", details: Restore Xavier's CRM access please., state: open, approval: approved, approver_id: U-20, assignment_group: GRP-IAM, work_notes: ""}
+      - {id: REQ-6, requester_id: U-16, requested_for: U-16, item: "Group membership: CRM Read (G-CRM-READ)", details: CRM access., state: open, approval: approved, approver_id: U-20, assignment_group: GRP-IAM, work_notes: ""}
+      - {id: REQ-0, requester_id: U-11, requested_for: U-11, item: "Group membership: Sales Wiki (G-WIKI)", details: Wiki access., state: fulfilled, approval: approved, approver_id: U-20, assignment_group: GRP-IAM, work_notes: ""}
+    kb:
+      - id: KB0602
+        title: Access request standard - group membership
+        tags: [access request, approval, manager, delegate, privileged]
+        owner: Identity & Access
+        updated: "2026-04-14"
+        body: >-
+          A group-membership request may be fulfilled only when approved by the requested-for person's line manager
+          (per the HR system). If the manager is on leave, their delegate recorded in the service desk may approve;
+          record the delegate as the approver. Nobody may approve their own request - treat a self-approval as no
+          approval: set approval back to pending and put the request on hold. Privileged groups additionally
+          require approval from the Security group; until then put the request on hold. Reject requests for people
+          who are not active employees. If the person already has the access, close the request as fulfilled.
+  idp:
+    users:
+      - {id: U-11, login: rhea.kapoor, email: rhea.kapoor@meridian.example, name: Rhea Kapoor, status: ACTIVE}
+      - {id: U-12, login: sameer.joshi, email: sameer.joshi@meridian.example, name: Sameer Joshi, status: ACTIVE}
+      - {id: U-13, login: vikram.rao, email: vikram.rao@meridian.example, name: Vikram Rao, status: ACTIVE}
+      - {id: U-14, login: wen.li, email: wen.li@meridian.example, name: Wen Li, status: ACTIVE}
+      - {id: U-15, login: xavier.dsouza, email: xavier.dsouza@meridian.example, name: Xavier Dsouza, status: DEPROVISIONED}
+      - {id: U-16, login: yash.malhotra, email: yash.malhotra@meridian.example, name: Yash Malhotra, status: ACTIVE}
+    groups:
+      - {id: G-CRM-READ, name: CRM Read, privileged: false}
+      - {id: G-BI, name: BI Analysts, privileged: false}
+      - {id: G-FIN-RPT, name: Finance Reports, privileged: false}
+      - {id: G-PROD-ADMIN, name: Production Admins, privileged: true}
+      - {id: G-WIKI, name: Sales Wiki, privileged: false}
+    memberships:
+      - {id: M-1, group_id: G-CRM-READ, user_id: U-16}
+      - {id: M-2, group_id: G-WIKI, user_id: U-11}
+  hr:
+    workers:
+      - {id: U-11, name: Rhea Kapoor, email: rhea.kapoor@meridian.example, employee_id: E-11, status: active, department: Sales, manager_id: U-20, worker_type: employee}
+      - {id: U-12, name: Sameer Joshi, email: sameer.joshi@meridian.example, employee_id: E-12, status: active, department: Analytics, manager_id: U-21, worker_type: employee}
+      - {id: U-13, name: Vikram Rao, email: vikram.rao@meridian.example, employee_id: E-13, status: active, department: Finance, manager_id: U-22, worker_type: employee}
+      - {id: U-14, name: Wen Li, email: wen.li@meridian.example, employee_id: E-14, status: active, department: Engineering, manager_id: U-23, worker_type: employee}
+      - {id: U-15, name: Xavier Dsouza, email: xavier.dsouza@meridian.example, employee_id: E-15, status: terminated, department: Sales, manager_id: U-20, worker_type: employee, end_date: "2026-09-30"}
+      - {id: U-16, name: Yash Malhotra, email: yash.malhotra@meridian.example, employee_id: E-16, status: active, department: Sales, manager_id: U-20, worker_type: employee}
+      - {id: U-21, name: Tara Bhat, email: tara.bhat@meridian.example, employee_id: E-21, status: on_leave, department: Analytics, worker_type: employee}
