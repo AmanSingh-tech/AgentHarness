@@ -6,8 +6,10 @@ import BlocksPage from "./pages/BlocksPage.jsx";
 import BenchmarkPage from "./pages/BenchmarkPage.jsx";
 import DemoPage from "./pages/DemoPage.jsx";
 import PolicyPage from "./pages/PolicyPage.jsx";
+import OpsPage from "./pages/OpsPage.jsx";
 
 const PAGES = [
+  ["ops", "RefundOps", OpsPage],
   ["run", "Live run", RunPage],
   ["approvals", "Approvals", ApprovalsPage],
   ["blocks", "Blocked actions", BlocksPage],
@@ -17,11 +19,11 @@ const PAGES = [
 ];
 
 export default function App() {
-  const [page, setPage] = useState(() => location.hash.slice(1) || "run");
+  const [page, setPage] = useState(() => location.hash.slice(1) || "ops");
   const [pending, setPending] = useState(0);
 
   useEffect(() => {
-    const onHash = () => setPage(location.hash.slice(1) || "run");
+    const onHash = () => setPage(location.hash.slice(1) || "ops");
     window.addEventListener("hashchange", onHash);
     return () => window.removeEventListener("hashchange", onHash);
   }, []);

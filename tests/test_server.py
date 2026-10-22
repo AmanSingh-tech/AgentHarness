@@ -134,3 +134,19 @@ def test_jobs(client, monkeypatch):
     assert j["status"] == "done" and j["steps"][0]["title"] == "t"
     assert client.get("/api/jobs/nope").status_code == 404
     assert client.get("/api/benchmarks").json() == []
+
+
+def test_refund_ops_with_a_human_approval(client):
+    run_id = client.post("/api/ops/refunds", json={"manual_approvals": True}).json()["run_id"]
+    deadline = time.monotonic() + 15
+    while not (pending := client.get("/api/approvals").json()) and time.monotonic() < deadline:
+        time.sleep(0.05)
+    [a] = pending
+    assert a["agent_id"] == "action_agent" and a["args"]["order_id"] == "O-9102"
+    client.post(f"/api/approvals/{a['id']}/approve", json={"by": "human:judge"})
+    run = _wait(client, run_id)
+    assert run["outcome"] == "CORRECT_SUCCESS"
+    report = run["output"]["artifacts"]["report"]
+    assert report["summary"]["refunded_inr_verified"] == 6000
+    c = client.get(f"/api/runs/{run_id}/controls").json()
+    assert c["approvals"][0]["by"] == "human:judge" and c["audit_ok"]

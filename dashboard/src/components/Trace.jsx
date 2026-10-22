@@ -2,6 +2,13 @@ import React, { useState } from "react";
 import { Badge, DECISION_STYLE, Json, RISK_STYLE } from "./ui.jsx";
 import { Chain, Votes } from "./Evidence.jsx";
 
+const AGENT_STYLE = {
+  intake_agent: "bg-sky-100 text-sky-800",
+  decision_agent: "bg-indigo-100 text-indigo-800",
+  action_agent: "bg-amber-100 text-amber-900",
+  reporting_agent: "bg-emerald-100 text-emerald-800",
+};
+
 // Group the flat event stream into one row per tool call: call -> decision -> approval -> fault -> result.
 export function groupTrace(events) {
   const calls = new Map();
@@ -47,6 +54,7 @@ function CallRow({ c }) {
     <li className={`rounded-md border p-2.5 ${border}`}>
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span className="font-mono text-xs text-slate-400">#{c.call.seq}</span>
+        {c.call.agent_id && <Badge className={AGENT_STYLE[c.call.agent_id] || "bg-slate-100 text-slate-600"}>{c.call.agent_id}</Badge>}
         <button onClick={() => setOpen(!open)} className="font-mono font-semibold hover:underline">{c.call.tool}</button>
         <span className="truncate font-mono text-xs text-slate-500" style={{ maxWidth: "28rem" }}>{JSON.stringify(c.call.args)}</span>
         {d && <Badge className={DECISION_STYLE[d.type]}>{d.type}</Badge>}

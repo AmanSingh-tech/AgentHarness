@@ -55,6 +55,11 @@ class PolicyText(BaseModel):
     text: str
 
 
+class OpsRequest(BaseModel):
+    shield: bool = True
+    manual_approvals: bool = True
+
+
 class BenchmarkRequest(BaseModel):
     attempts: int = 1
     agents: list[str] = ["scripted:naive", "scripted:naive_v2"]
@@ -128,6 +133,32 @@ def create_app(store: Store | None = None, reports_dir: Path = Path("reports"),
 
         threading.Thread(target=work, name=f"run-{run.run_id}", daemon=True).start()
         return {"run_id": run.run_id}
+
+    @app.post("/api/ops/refunds", status_code=202)
+    def start_refund_ops(req: OpsRequest) -> dict[str, str]:
+        """Run RefundOps on the support inbox; with manual approvals, held refunds wait for a click."""
+        from agentguard.gym.runner import execute, prepare_run, scenario_run_kwargs, verify_run
+        from agentguard.gym.scenario import find_scenario
+
+        scenario = find_scenario("refund_ops_inbox")
+        agent = make_harness("ops:refunds")
+        auto = None if req.manual_approvals else ApprovalQueue(store, auto=AutoApprover(default="approve"))
+        run = prepare_run(harness="ops:refunds", harness_type=agent.harness_type, capabilities=agent.capabilities,
+                          store=store, bus=bus, approvals=approvals if req.manual_approvals else auto,
+                          **scenario_run_kwargs(scenario, req.shield, "ops"))
+
+        def work() -> None:
+            verify_run(scenario, execute(run, agent), store)
+
+        threading.Thread(target=work, name=f"ops-{run.run_id}", daemon=True).start()
+        return {"run_id": run.run_id}
+
+    @app.get("/api/runs/{run_id}/controls")
+    def run_controls(run_id: str) -> dict[str, Any]:
+        from agentguard.ops.controls import controls_from_trace
+
+        _run(store, run_id)
+        return controls_from_trace(store, run_id)
 
     @app.get("/api/runs")
     def list_runs(limit: int = 50, run_set: str | None = None) -> list[dict[str, Any]]:
