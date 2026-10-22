@@ -10,10 +10,11 @@ import threading
 from datetime import datetime
 from typing import Any
 
-from sqlalchemy import JSON, Column, UniqueConstraint
+from sqlalchemy import JSON, Column, UniqueConstraint, inspect, text
 from sqlalchemy.pool import StaticPool
 from sqlmodel import Field, Session, SQLModel, create_engine, select
 
+from agentguard.core.audit import GENESIS, AuditReport, event_hash
 from agentguard.core.models import (
     AgentOutput,
     Approval,
@@ -41,6 +42,8 @@ class RunRow(SQLModel, table=True):
     output: dict | None = Field(default=None, sa_column=Column(JSON))
     final_snapshot: dict | None = Field(default=None, sa_column=Column(JSON))
     verdict: dict | None = Field(default=None, sa_column=Column(JSON))
+    audit_head: str | None = None  # hash of the last trace event when the run finished
+    audit_count: int | None = None
     created_at: datetime = Field(default_factory=utcnow)
     finished_at: datetime | None = None
 
@@ -56,6 +59,8 @@ class TraceEventRow(SQLModel, table=True):
     ts: datetime
     call_id: str | None = None
     payload: dict = Field(default_factory=dict, sa_column=Column(JSON, nullable=False))
+    prev_hash: str | None = None
+    hash: str | None = None
 
 
 class ApprovalRow(SQLModel, table=True):
@@ -81,9 +86,23 @@ class Store:
                 kwargs["poolclass"] = StaticPool
         self.engine = create_engine(db_url, **kwargs)
         SQLModel.metadata.create_all(self.engine)
+        self._add_missing_columns()
         # SQLite allows one writer at a time and the in-memory DB shares a single
         # connection, so serialise access; parallel runs spend their time in the agent.
         self._lock = threading.RLock()
+        self._heads: dict[str, str] = {}  # run id -> last event hash, for appends
+
+    def _add_missing_columns(self) -> None:
+        """Databases created by earlier versions lack the audit columns: add them (nullable)."""
+        wanted = {"runs": {"audit_head": "VARCHAR", "audit_count": "INTEGER"},
+                  "trace_events": {"prev_hash": "VARCHAR", "hash": "VARCHAR"}}
+        insp = inspect(self.engine)
+        with self.engine.begin() as conn:
+            for table, cols in wanted.items():
+                have = {c["name"] for c in insp.get_columns(table)}
+                for name, type_ in cols.items():
+                    if name not in have:
+                        conn.execute(text(f"ALTER TABLE {table} ADD COLUMN {name} {type_}"))
 
     @classmethod
     def in_memory(cls) -> "Store":
@@ -111,6 +130,8 @@ class Store:
             row.output = output.model_dump(mode="json") if output else None
             row.final_snapshot = final_snapshot
             row.finished_at = utcnow()
+            row.audit_head = self._head(s, run_id)
+            row.audit_count = len(s.exec(select(TraceEventRow.id).where(TraceEventRow.run_id == run_id)).all())
             s.add(row)
             s.commit()
 
@@ -136,7 +157,10 @@ class Store:
     # -- traces -------------------------------------------------------------
 
     def append_event(self, event: TraceEvent) -> None:
+        payload = event.model_dump(mode="json")["payload"]
         with self._lock, Session(self.engine) as s:
+            prev = self._heads.get(event.run_id) or self._head(s, event.run_id) or GENESIS
+            digest = event_hash(prev, event.run_id, event.seq, event.kind.value, event.ts, event.call_id, payload)
             s.add(
                 TraceEventRow(
                     run_id=event.run_id,
@@ -144,10 +168,47 @@ class Store:
                     kind=event.kind.value,
                     ts=event.ts,
                     call_id=event.call_id,
-                    payload=event.model_dump(mode="json")["payload"],
+                    payload=payload,
+                    prev_hash=prev,
+                    hash=digest,
                 )
             )
             s.commit()
+            self._heads[event.run_id] = digest
+
+    def _head(self, s: Session, run_id: str) -> str | None:
+        row = s.exec(select(TraceEventRow).where(TraceEventRow.run_id == run_id)
+                     .order_by(TraceEventRow.seq.desc()).limit(1)).first()
+        return row.hash if row else None
+
+    def verify_audit(self, run_id: str) -> AuditReport:
+        """Recompute the run's hash chain from the stored events and compare it with the
+        head recorded when the run finished."""
+        with self._lock, Session(self.engine) as s:
+            run = s.get(RunRow, run_id)
+            if run is None:
+                raise KeyError(run_id)
+            rows = s.exec(select(TraceEventRow).where(TraceEventRow.run_id == run_id)
+                          .order_by(TraceEventRow.seq)).all()
+        prev = GENESIS
+        for i, r in enumerate(rows, start=1):
+            if r.hash is None:
+                return AuditReport(run_id, False, len(rows), None, "event has no hash (written before auditing existed)", r.seq)
+            if r.seq != i:
+                return AuditReport(run_id, False, len(rows), None, f"sequence gap: expected #{i}, found #{r.seq}", r.seq)
+            if r.prev_hash != prev:
+                return AuditReport(run_id, False, len(rows), None, "chain link does not match the previous event", r.seq)
+            if event_hash(prev, r.run_id, r.seq, r.kind, r.ts, r.call_id, r.payload) != r.hash:
+                return AuditReport(run_id, False, len(rows), None, "event content does not match its hash", r.seq)
+            prev = r.hash
+        head = prev if rows else None
+        if run.audit_head is None:
+            ok = run.finished_at is None  # still running: nothing to compare yet
+            return AuditReport(run_id, ok, len(rows), head, None if ok else "run has no recorded audit head")
+        if run.audit_count != len(rows) or run.audit_head != head:
+            return AuditReport(run_id, False, len(rows), head,
+                               f"chain head does not match the run record ({run.audit_count} events recorded, {len(rows)} found)")
+        return AuditReport(run_id, True, len(rows), head)
 
     def get_trace(self, run_id: str) -> list[TraceEvent]:
         with self._lock, Session(self.engine) as s:

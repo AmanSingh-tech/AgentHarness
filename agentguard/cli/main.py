@@ -19,6 +19,28 @@ world_app = typer.Typer(no_args_is_help=True, help="Inspect simulated worlds.")
 app.add_typer(world_app, name="world")
 policy_app = typer.Typer(no_args_is_help=True, help="Validate and inspect AgentShield policies.")
 app.add_typer(policy_app, name="policy")
+audit_app = typer.Typer(no_args_is_help=True, help="Check the tamper-evident audit log.")
+app.add_typer(audit_app, name="audit")
+
+
+@audit_app.command("verify")
+def audit_verify(
+    run_ids: list[str] = typer.Argument(None, help="Run ids (default: the most recent --limit runs)"),
+    limit: int = typer.Option(100, "--limit"),
+) -> None:
+    """Recompute each run's hash chain and compare it with the head recorded at the end of the run."""
+    store = _store()
+    ids = list(run_ids or []) or [r.id for r in store.list_runs(limit=limit)]
+    bad = 0
+    for rid in ids:
+        rep = store.verify_audit(rid)
+        bad += not rep.ok
+        mark = "ok  " if rep.ok else "FAIL"
+        detail = f"{rep.events} events, head {rep.head[:12] if rep.head else '-'}" if rep.ok else \
+            f"{rep.problem}" + (f" (at event #{rep.first_bad_seq})" if rep.first_bad_seq else "")
+        typer.echo(f"{mark} {rid}  {detail}")
+    typer.echo(f"\n{len(ids) - bad}/{len(ids)} runs verified")
+    raise typer.Exit(1 if bad else 0)
 
 
 @world_app.command("reset")

@@ -215,6 +215,14 @@ injected actions blocked, policy violations attempted, blocks with an
 explanation, and audit completeness. Each combination is stored as a run set,
 so `agentguard compare` can diff any two.
 
+## Audit log
+
+Every trace event is hash-chained to the previous event of its run (SHA-256 over
+the event's run, sequence number, kind, time, call and payload), and the run
+record keeps the head of the chain and the event count. `agentguard audit verify`
+recomputes the chain: an edited, deleted, reordered or appended event, or a
+truncated log, fails verification and names the first bad event.
+
 ## Faults
 
 Scenarios can inject faults inside the gateway, after the decision. Each fault

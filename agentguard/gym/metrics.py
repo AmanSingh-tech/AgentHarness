@@ -101,6 +101,7 @@ def _metrics(store: Store, runs: list[RunRecord]) -> dict[str, Any]:
             "approvals_rejected": sum(a["status"] in ("rejected", "timed_out") for a in approvals),
             "high_risk_actions": sum(1 for d in decisions if d.payload["risk"] in _HIGH and d.call_id in executed),
             "audit_completeness": _audit_completeness(traces.values()),
+            "audit_chain_verified": _rate(sum(store.verify_audit(r.id).ok for r in runs), n),
             "blocks_with_explanation": _rate(sum(bool(d.payload.get("reason") and d.payload.get("rule_id"))
                                                  for d in blocks), len(blocks)),
         },
