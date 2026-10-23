@@ -10,3 +10,4 @@ htmlcov/
 reports/
 build/
 .vercel-out/
+dashboard/.vercel-out/
