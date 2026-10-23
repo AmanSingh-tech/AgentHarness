@@ -49,9 +49,9 @@ function CallRow({ c }) {
   const [open, setOpen] = useState(false);
   const d = c.decision;
   const blocked = c.result && !c.result.ok && ["BLOCKED", "APPROVAL_REJECTED", "APPROVAL_TIMEOUT"].includes(c.result.error?.code);
-  const border = blocked ? "border-rose-300 bg-rose-50/40" : c.fault ? "border-violet-300 bg-violet-50/40" : "border-slate-200 bg-white";
+  const border = blocked ? "border-rose-300 bg-rose-50/40" : c.fault ? "border-violet-300 bg-violet-50/40" : "border-slate-200 bg-surface";
   return (
-    <li className={`rounded-md border p-2.5 ${border}`}>
+    <li className={`enter rounded-xl border p-3 ${border}`}>
       <div className="flex flex-wrap items-center gap-2 text-sm">
         <span className="font-mono text-xs text-slate-400">#{c.call.seq}</span>
         {c.call.agent_id && <Badge className={AGENT_STYLE[c.call.agent_id] || "bg-slate-100 text-slate-600"}>{c.call.agent_id}</Badge>}
@@ -67,7 +67,7 @@ function CallRow({ c }) {
         {c.taint && <Badge className="bg-rose-100 text-rose-800">labelled {c.taint.labels.join(", ")}</Badge>}
         {c.result && (c.result.ok
           ? <Badge className="bg-emerald-50 text-emerald-700">ok</Badge>
-          : <Badge className="bg-slate-800 text-white">{c.result.error?.code}</Badge>)}
+          : <Badge className="bg-slate-600 text-page">{c.result.error?.code}</Badge>)}
       </div>
       {d && d.type !== "ALLOW" && (
         <div className="mt-1.5 text-sm text-slate-700">

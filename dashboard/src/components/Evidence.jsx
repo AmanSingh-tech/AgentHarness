@@ -16,7 +16,7 @@ export function Chain({ evidence }) {
         return (
           <React.Fragment key={i}>
             {i > 0 && <span className="text-slate-400">→</span>}
-            <span className={`rounded border px-2 py-1 font-mono ${last ? "border-rose-300 bg-rose-50" : "border-slate-200 bg-white"}`}>
+            <span className={`rounded border px-2 py-1 font-mono ${last ? "border-rose-300 bg-rose-50" : "border-slate-200 bg-surface"}`}>
               <span className="text-slate-400">#{s.seq} </span>{s.tool}
               <span className="ml-1 text-[10px] uppercase text-slate-400">{role}</span>
             </span>

@@ -21,7 +21,7 @@ export default function Verdict({ run }) {
       )}
       <div className="flex flex-wrap items-center gap-2">
         <Badge className={OUTCOME_STYLE[v.outcome]}>{v.outcome}</Badge>
-        <Badge className={v.passed ? "bg-emerald-600 text-white" : "bg-slate-800 text-white"}>{v.passed ? "PASS" : "FAIL"}</Badge>
+        <Badge className={v.passed ? "bg-emerald-600 text-white" : "bg-slate-600 text-page"}>{v.passed ? "PASS" : "FAIL"}</Badge>
         <span className="text-xs text-slate-500">expected outcome: {v.task_outcome}</span>
       </div>
       <div className="grid gap-3 md:grid-cols-2">

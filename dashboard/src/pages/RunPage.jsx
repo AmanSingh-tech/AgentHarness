@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { get, post } from "../api.js";
+import { DEMO, get, post, streamRun } from "../api.js";
 import { Badge, Button, Card, Empty, OUTCOME_STYLE } from "../components/ui.jsx";
 import Trace from "../components/Trace.jsx";
 import Verdict from "../components/Verdict.jsx";
@@ -14,7 +14,8 @@ export default function RunPage() {
 
   useEffect(() => {
     get("/scenarios").then(setScenarios);
-    get("/harnesses").then(setHarnesses);
+    // The recorded demo has the scripted agents for every scenario.
+    get("/harnesses").then((h) => setHarnesses(DEMO ? h.filter((x) => x.startsWith("scripted:") && x !== "scripted:refuser") : h));
   }, []);
   useEffect(() => {
     const load = () => get("/runs", { limit: 25 }).then(setRuns).catch(() => {});
@@ -106,10 +107,7 @@ function RunView({ runId }) {
   const done = useRef(false);
 
   useEffect(() => {
-    const src = new EventSource(`/api/runs/${runId}/stream`);
-    src.addEventListener("trace", (m) => setEvents((ev) => [...ev, JSON.parse(m.data)]));
-    src.addEventListener("done", () => { done.current = true; src.close(); });
-    src.onerror = () => src.close();
+    const close = streamRun(runId, (e) => setEvents((ev) => [...ev, e]), () => { done.current = true; });
     let alive = true;
     const poll = async () => {
       while (alive) {
@@ -120,7 +118,7 @@ function RunView({ runId }) {
       }
     };
     poll();
-    return () => { alive = false; src.close(); };
+    return () => { alive = false; close(); };
   }, [runId]);
 
   const act = async (fn) => { setBusy(true); try { await fn(); } finally { setBusy(false); } };
@@ -144,7 +142,7 @@ function RunView({ runId }) {
           {promotion && (
             <div className={`mt-3 rounded-md border p-3 text-sm ${promotion.accepted ? "border-emerald-300 bg-emerald-50" : "border-slate-200 bg-slate-50"}`}>
               <p><b>{promotion.accepted ? "New regression scenario" : "Not promoted"}:</b> {promotion.reason}</p>
-              {promotion.accepted && <pre className="mt-2 max-h-64 overflow-auto rounded bg-white p-2 font-mono text-xs">{promotion.yaml}</pre>}
+              {promotion.accepted && <pre className="mt-2 max-h-64 overflow-auto rounded bg-surface p-2 font-mono text-xs">{promotion.yaml}</pre>}
             </div>
           )}
         </Card>

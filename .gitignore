@@ -9,3 +9,4 @@ htmlcov/
 .claude/settings.local.json
 reports/
 build/
+.vercel-out/

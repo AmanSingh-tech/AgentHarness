@@ -41,7 +41,7 @@ export default function DemoPage() {
           {s.notes.map((n, i) => <p key={i} className="mt-1 font-mono text-xs text-slate-500">{n}</p>)}
           {s.table.length > 0 && (
             <table className="mt-2 w-full text-sm">
-              <thead><tr className="text-left text-xs text-slate-500"><th>Outcome (shield on)</th><th>v1</th><th>v2</th></tr></thead>
+              <thead><tr className="label text-left [&>th]:pb-2 [&>th]:pr-3 [&>th]:font-normal"><th>Outcome (shield on)</th><th>v1</th><th>v2</th></tr></thead>
               <tbody>
                 {s.table.map((r) => (
                   <tr key={r.metric} className="border-t border-slate-100">

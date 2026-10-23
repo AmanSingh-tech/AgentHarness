@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { get, post } from "../api.js";
-import { Badge, Button, Card, Empty } from "../components/ui.jsx";
+import { DEMO, get, post } from "../api.js";
+import { Badge, Button, Card, Empty, Markdown, agentLabel } from "../components/ui.jsx";
 
 const AGENTS = [
   ["bench:solution", null, "Reference solution"],
   ["scripted:null", null, "Do-nothing agent"],
   ["mcp_client:claude-code", "haiku", "Claude Code · Haiku"],
   ["mcp_client:claude-code", "sonnet", "Claude Code · Sonnet"],
-  ["mcp_client:claude-code", "opus", "Claude Code · Opus"],
+  // the recorded demo has Haiku (shield on) and Sonnet (shield off and on); Opus runs only live
+  ...(DEMO ? [] : [["mcp_client:claude-code", "opus", "Claude Code · Opus"]]),
 ];
 const KIND_STYLE = { goal: "bg-sky-100 text-sky-800", trap: "bg-violet-100 text-violet-800", harm: "bg-rose-100 text-rose-800" };
 const pct = (x) => `${Math.round((x || 0) * 100)}%`;
@@ -28,7 +29,7 @@ export default function BenchPage() {
 
   return (
     <div className="space-y-4">
-      <Card title="GuardBench" actions={<span className="text-xs text-slate-500">{tasks.length} enterprise tasks · hidden checks · run through AgentShield</span>}>
+      <Card title="How it works" actions={<span className="text-xs text-slate-500">{tasks.length} enterprise tasks · hidden checks · run through AgentShield</span>}>
         <p className="text-sm text-slate-600">
           Each task is a short ticket in a seeded multi-system environment (service desk, identity, workspace, EDR, firewall, payments and more).
           Hidden checks grade the end state: <Badge className={KIND_STYLE.goal}>goal</Badge> the work asked for,{" "}
@@ -47,7 +48,7 @@ export default function BenchPage() {
                 <div className="text-[11px] font-semibold uppercase text-slate-400">{cat}</div>
                 {list.map((t) => (
                   <button key={t.id} onClick={() => setSelected(t.id)}
-                    className={`mt-1 block w-full rounded-md px-2 py-1.5 text-left text-sm ${selected === t.id ? "bg-slate-900 text-white" : "hover:bg-slate-100"}`}>
+                    className={`mt-1 block w-full rounded-md px-2 py-1.5 text-left text-sm ${selected === t.id ? "bg-ink text-page" : "hover:bg-slate-100"}`}>
                     <span className="font-mono text-xs">{t.id}</span> <span className="text-xs opacity-80">{t.title}</span>
                   </button>
                 ))}
@@ -67,13 +68,13 @@ function Leaderboard({ board, onRefresh }) {
     <Card title="Leaderboard" actions={<Button kind="secondary" onClick={onRefresh}>Refresh</Button>}>
       {rows.length === 0 ? <Empty>No bench runs yet. Run a task below, or `agentguard bench sweep -c configs/bench/smoke.yaml`.</Empty> : (
         <table className="w-full text-sm">
-          <thead><tr className="text-left text-xs text-slate-500">
-            <th>Sweep</th><th>Agent</th><th>Model</th><th>Shield</th><th>Runs</th><th>Solved</th><th>pass^k</th><th>Mean score</th><th>Harm</th><th>Unearned success</th><th>Blocks</th><th>Cost</th>
+          <thead><tr className="label text-left [&>th]:pb-2 [&>th]:pr-3 [&>th]:font-normal">
+            <th>Sweep</th><th>Agent</th><th>Shield</th><th>Runs</th><th>Solved</th><th>pass^k</th><th>Mean score</th><th>Harm</th><th>Unearned success</th><th>Blocks</th><th>Cost</th>
           </tr></thead>
           <tbody>
             {rows.map((r, i) => (
               <tr key={i} className="border-t border-slate-100">
-                <td className="py-1.5 font-mono text-xs">{r.sweep}</td><td className="font-mono text-xs">{r.agent}</td><td>{r.model}</td>
+                <td className="py-2 pr-3 font-mono text-xs text-slate-500">{r.sweep}</td><td className="pr-3 font-medium">{agentLabel(r.agent, r.model)}</td>
                 <td>{r.shield ? <Badge className="bg-emerald-100 text-emerald-800">on</Badge> : <Badge>off</Badge>}</td>
                 <td>{r.runs}</td><td className="font-semibold">{pct(r.solve_rate)}</td><td>{pct(r.pass_k_rate)}</td>
                 <td>{r.mean_score.toFixed(2)}</td><td className={r.harm_rate ? "text-rose-700" : ""}>{pct(r.harm_rate)}</td>
@@ -104,19 +105,26 @@ function TaskDetail({ id, onRan }) {
   const [shield, setShield] = useState(true);
   const [run, setRun] = useState(null);
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState(null);
 
-  useEffect(() => { setTask(null); setRun(null); setReveal(false); get(`/bench/tasks/${id}`).then(setTask); }, [id]);
+  useEffect(() => { setTask(null); setRun(null); setError(null); setReveal(false); get(`/bench/tasks/${id}`).then(setTask); }, [id]);
 
   const start = async () => {
     const [harness, model] = AGENTS[agent];
-    setBusy(true); setRun(null);
-    const { run_id } = await post("/bench/runs", { task: id, harness, model, shield });
-    for (;;) {
-      const r = await get(`/runs/${run_id}`).catch(() => null);
-      if (r?.verdict) { setRun(r); break; }
-      await new Promise((res) => setTimeout(res, 1000));
+    setBusy(true); setRun(null); setError(null);
+    try {
+      const { run_id } = await post("/bench/runs", { task: id, harness, model, shield });
+      for (;;) {
+        const r = await get(`/runs/${run_id}`).catch(() => null);
+        if (r?.verdict) { setRun(r); break; }
+        await new Promise((res) => setTimeout(res, 700));
+      }
+      onRan();
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setBusy(false);
     }
-    setBusy(false); onRan();
   };
 
   if (!task) return <Card><Empty>Loading…</Empty></Card>;
@@ -129,7 +137,7 @@ function TaskDetail({ id, onRan }) {
         <span className="text-xs text-slate-500">{task.checks.length} checks ({task.goal} goal / {task.trap} trap / {task.harm} harm)</span>
       </>}>
         <div className="text-xs uppercase text-slate-400">What the agent sees · systems: {task.systems.join(", ")}</div>
-        <pre className="mt-1 whitespace-pre-wrap rounded-md bg-slate-50 p-3 text-sm">{task.instruction}</pre>
+        <div className="mt-2 rounded-xl border border-slate-200 bg-slate-50 p-4"><Markdown text={task.instruction} /></div>
         <div className="mt-3 flex flex-wrap items-center gap-2">
           <select className="rounded border-slate-300 py-1 text-sm" value={agent} onChange={(e) => setAgent(Number(e.target.value))} disabled={busy}>
             {AGENTS.map(([, , label], i) => <option key={i} value={i}>{label}</option>)}
@@ -138,6 +146,7 @@ function TaskDetail({ id, onRan }) {
           <Button onClick={start} disabled={busy}>{busy ? "Running…" : "Run task"}</Button>
           <Button kind="secondary" onClick={() => setReveal(!reveal)}>{reveal ? "Hide" : "Reveal"} design note and hidden checks</Button>
         </div>
+        {error && <p className="mt-2 text-sm text-rose-700">{error}</p>}
       </Card>
 
       {v && (
@@ -164,7 +173,7 @@ function TaskDetail({ id, onRan }) {
 
       {reveal && (
         <Card title="Design note">
-          <pre className="whitespace-pre-wrap text-sm text-slate-700">{task.readme}</pre>
+          <Markdown text={task.readme} />
           <div className="mt-3 space-y-1">
             {task.checks.map((c) => (
               <div key={c.id} className="text-sm"><Badge className={KIND_STYLE[c.kind]}>{c.kind}</Badge> <span className="font-mono text-xs">{c.id}</span> {c.desc}</div>

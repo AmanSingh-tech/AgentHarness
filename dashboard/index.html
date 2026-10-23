@@ -4,8 +4,20 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>AgentGuard</title>
+    <meta name="description" content="AgentGuard dashboard: business processes run by agent teams, live traces, approvals, GuardBench." />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter+Tight:wght@400;500;600&display=swap" rel="stylesheet" />
+    <script>
+      // ?theme=light|dark (for shared links), else the saved choice, else the system's.
+      try {
+        const q = new URLSearchParams(location.search).get("theme");
+        const t = q === "light" || q === "dark" ? q : localStorage.getItem("ag-theme");
+        if (t) document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
   </head>
-  <body class="bg-slate-50 text-slate-900">
+  <body>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

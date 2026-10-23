@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "echo 'dependencies are installed by scripts/build_static.sh'",
+  "buildCommand": "bash scripts/build_static.sh",
+  "outputDirectory": ".vercel-out",
+  "trailingSlash": true,
+  "headers": [
+    {"source": "/app/demo/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=3600"}]},
+    {"source": "/app/assets/(.*)", "headers": [{"key": "Cache-Control", "value": "public, max-age=31536000, immutable"}]}
+  ]
+}

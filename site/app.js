@@ -10,6 +10,11 @@
     markSeen() { try { sessionStorage.setItem("ag-loaded", "1"); } catch (e) { /* fine */ } },
   };
 
+  // The dashboard lives at /app/ on the static deployment, and at / when `agentguard serve` serves this
+  // page from /site/.
+  const dashboard = location.pathname.startsWith("/site") ? "/" : "/app/";
+  document.querySelectorAll("[data-dash]").forEach((a) => { a.href = dashboard + (a.dataset.dash || ""); });
+
   // -- loader: once per session, under a second and a half; never on reduced motion ------------------
   const loader = document.getElementById("loader");
   const count = document.getElementById("loader-count");

@@ -17,6 +17,10 @@ agentguard serve                        # dashboard: Business processes, approva
 agentguard bench list                   # GuardBench: 34 ITSMBench-style enterprise tasks with hidden checks
 ```
 
+**Static deployment (Vercel or any static host):** `bash scripts/build_static.sh` builds the showcase site at `/`
+and the dashboard at `/app/` in *recorded-demo* mode: it replays real recorded runs, so no API server is needed.
+`vercel.json` runs that build. Re-record the demo with `python scripts/export_demo.py --store sqlite:///agentguard.db`.
+
 A harness-agnostic trust and reliability layer for AI agents:
 
 - **AgentGym** runs agents in simulated enterprise worlds, injects faults, and verifies outcomes independently.

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { get, post } from "../api.js";
+import { get, post, streamRun } from "../api.js";
 import { Badge, Button, Card, Empty, OUTCOME_STYLE, RISK_STYLE } from "../components/ui.jsx";
 import Trace from "../components/Trace.jsx";
 
@@ -51,12 +51,19 @@ export default function OpsPage() {
     setRunId(run_id);
   };
 
+  // ?autoplay starts a run on load with approvals granted automatically (a kiosk / unattended display).
+  useEffect(() => {
+    if (new URLSearchParams(location.search).has("autoplay")) {
+      const auto = { ...opts, manual_approvals: false };
+      setOpts(auto);
+      post(`/ops/${process}`, auto).then(({ run_id }) => setRunId(run_id));
+    }
+  }, []);
+
   useEffect(() => {
     if (!runId) return;
-    const es = new EventSource(`/api/runs/${runId}/stream`);
-    src.current = es;
-    es.addEventListener("trace", (m) => setEvents((ev) => [...ev, JSON.parse(m.data)]));
-    es.addEventListener("done", () => es.close());
+    const close = streamRun(runId, (e) => setEvents((ev) => [...ev, e]));
+    src.current = close;
     let alive = true;
     (async () => {
       while (alive) {
@@ -67,7 +74,7 @@ export default function OpsPage() {
         await new Promise((res) => setTimeout(res, 700));
       }
     })();
-    return () => { alive = false; es.close(); };
+    return () => { alive = false; close(); };
   }, [runId]);
 
   const resolve = async (id, action) => {
@@ -156,16 +163,16 @@ export default function OpsPage() {
 export function ItemsTable({ items, access }) {
   return (
     <table className="mt-3 w-full text-sm">
-      <thead><tr className="text-left text-xs text-slate-500">
+      <thead><tr className="label text-left [&>th]:pb-2 [&>th]:pr-3 [&>th]:font-normal">
         {access ? <><th>Request</th><th>Employee</th><th>System · role</th></> : <><th>Ticket</th><th>Order</th><th>Requested</th></>}
         <th>Decision</th><th>Status</th><th>{access ? "Directory" : "Ledger"}</th><th>Why</th></tr></thead>
       <tbody>
         {items.map((i) => (
           <tr key={i.request_id || i.ticket_id} className="border-t border-slate-100 align-top">
             {access ? <>
-              <td className="py-1.5 font-mono">{i.request_id}</td><td className="font-mono">{i.user_id}</td>
-              <td className="font-mono">{i.system_id} · {i.role}</td></> : <>
-              <td className="py-1.5 font-mono">{i.ticket_id}</td><td className="font-mono">{i.order_id}</td>
+              <td className="py-2.5 pr-3 font-mono text-xs">{i.request_id}</td><td className="pr-3 font-mono text-xs">{i.user_id}</td>
+              <td className="pr-3 font-mono text-xs">{i.system_id} · {i.role}</td></> : <>
+              <td className="py-2.5 pr-3 font-mono text-xs">{i.ticket_id}</td><td className="pr-3 font-mono text-xs">{i.order_id}</td>
               <td>{i.requested_inr != null ? `₹${i.requested_inr.toLocaleString("en-IN")}` : ""}</td></>}
             <td><Badge>{i.decision}</Badge></td>
             <td><Badge className={STATUS_STYLE[i.status]}>{i.status.replaceAll("_", " ")}</Badge><div className="text-xs text-slate-500">{i.action}</div></td>

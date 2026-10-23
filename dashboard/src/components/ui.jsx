@@ -26,7 +26,7 @@ export const DECISION_STYLE = {
 
 export function Badge({ children, className = "bg-slate-100 text-slate-700", title }) {
   return (
-    <span title={title} className={`inline-flex items-center rounded px-1.5 py-0.5 text-xs font-medium ${className}`}>
+    <span title={title} className={`inline-flex items-center whitespace-nowrap rounded-full px-2 py-0.5 font-mono text-[11px] font-medium uppercase tracking-wide ${className}`}>
       {children}
     </span>
   );
@@ -34,28 +34,28 @@ export function Badge({ children, className = "bg-slate-100 text-slate-700", tit
 
 export function Card({ title, actions, children, className = "" }) {
   return (
-    <section className={`rounded-lg border border-slate-200 bg-white shadow-sm ${className}`}>
+    <section className={`rounded-2xl border border-slate-200 bg-surface ${className}`}>
       {(title || actions) && (
-        <header className="flex items-center justify-between gap-2 border-b border-slate-100 px-4 py-2.5">
-          <h2 className="text-sm font-semibold text-slate-700">{title}</h2>
-          <div className="flex items-center gap-2">{actions}</div>
+        <header className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-b border-slate-200 px-5 py-3.5">
+          <h2 className="text-[15px] font-medium tracking-tight text-slate-900">{title}</h2>
+          <div className="flex flex-wrap items-center gap-2">{actions}</div>
         </header>
       )}
-      <div className="p-4">{children}</div>
+      <div className="overflow-x-auto p-5">{children}</div>
     </section>
   );
 }
 
 export function Button({ children, onClick, disabled, kind = "primary", type = "button" }) {
   const styles = {
-    primary: "bg-slate-900 text-white hover:bg-slate-700",
-    secondary: "border border-slate-300 bg-white text-slate-800 hover:bg-slate-50",
-    approve: "bg-emerald-600 text-white hover:bg-emerald-700",
-    reject: "bg-rose-600 text-white hover:bg-rose-700",
+    primary: "bg-accent text-white hover:bg-accent-strong",
+    secondary: "border border-slate-300 bg-transparent text-slate-900 hover:border-slate-400 hover:bg-slate-100",
+    approve: "bg-emerald-600 text-white hover:bg-emerald-500",
+    reject: "bg-rose-600 text-white hover:bg-rose-500",
   };
   return (
     <button type={type} onClick={onClick} disabled={disabled}
-      className={`rounded-md px-3 py-1.5 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-40 ${styles[kind]}`}>
+      className={`press inline-flex h-9 items-center justify-center whitespace-nowrap rounded-full px-4 text-sm font-medium disabled:cursor-not-allowed disabled:opacity-40 ${styles[kind]}`}>
       {children}
     </button>
   );
@@ -63,17 +63,62 @@ export function Button({ children, onClick, disabled, kind = "primary", type = "
 
 export function Json({ value }) {
   return (
-    <pre className="max-h-48 overflow-auto rounded bg-slate-50 p-2 font-mono text-xs leading-relaxed text-slate-700">
+    <pre className="max-h-48 overflow-auto rounded-lg bg-slate-50 p-3 font-mono text-xs leading-relaxed text-slate-700">
       {JSON.stringify(value, null, 2)}
     </pre>
   );
 }
 
 export function Empty({ children }) {
-  return <p className="py-6 text-center text-sm text-slate-400">{children}</p>;
+  return <p className="py-8 text-center font-mono text-xs uppercase tracking-wide text-slate-400">{children}</p>;
 }
 
 export function pct(v) {
   if (v === null || v === undefined) return "n/a";
   return typeof v === "number" && v <= 1 && !Number.isInteger(v) ? `${Math.round(v * 100)}%` : String(v);
+}
+
+// A small Markdown renderer for task tickets and design notes: headings, paragraphs, bullet and numbered
+// lists, **bold** and `code`. Text is rendered as React text (no HTML injection).
+function inline(text) {
+  return text.split(/(\*\*[^*]+\*\*|`[^`]+`)/g).filter(Boolean).map((part, i) => {
+    if (part.startsWith("**")) return <strong key={i} className="font-semibold text-slate-900">{part.slice(2, -2)}</strong>;
+    if (part.startsWith("`")) return <code key={i} className="rounded bg-slate-100 px-1 py-0.5 font-mono text-[0.85em]">{part.slice(1, -1)}</code>;
+    return part;
+  });
+}
+
+export function Markdown({ text, className = "" }) {
+  const blocks = [];
+  let list = null;
+  for (const raw of text.split("\n")) {
+    const line = raw.trimEnd();
+    const bullet = line.match(/^\s*(?:[-*]|\d+\.)\s+(.*)$/);
+    if (bullet) {
+      if (!list) { list = { ordered: /^\s*\d/.test(line), items: [] }; blocks.push(list); }
+      list.items.push(bullet[1]);
+      continue;
+    }
+    list = null;
+    if (!line.trim()) continue;
+    const h = line.match(/^(#{1,3})\s+(.*)$/);
+    blocks.push(h ? { heading: h[1].length, text: h[2] } : { text: line });
+  }
+  return (
+    <div className={`space-y-2.5 text-sm leading-relaxed text-slate-700 ${className}`}>
+      {blocks.map((b, i) => b.items ? (
+        b.ordered
+          ? <ol key={i} className="list-decimal space-y-1 pl-5">{b.items.map((t, j) => <li key={j}>{inline(t)}</li>)}</ol>
+          : <ul key={i} className="list-disc space-y-1 pl-5">{b.items.map((t, j) => <li key={j}>{inline(t)}</li>)}</ul>
+      ) : b.heading === 1 ? <h3 key={i} className="text-lg font-medium tracking-tight text-slate-900">{inline(b.text)}</h3>
+        : b.heading ? <h4 key={i} className="label pt-2">{inline(b.text)}</h4>
+        : <p key={i}>{inline(b.text)}</p>)}
+    </div>
+  );
+}
+
+export function agentLabel(agent, model) {
+  const names = { "mcp_client:claude-code": "Claude Code", "bench:solution": "Reference solution", "scripted:null": "Do-nothing agent" };
+  const name = names[agent] || agent;
+  return model && model !== "default" ? `${name} · ${model[0].toUpperCase()}${model.slice(1)}` : name;
 }

@@ -341,6 +341,20 @@ Start both with `agentguard serve`, then open http://127.0.0.1:8000.
 
 ---
 
+### Hosting it as a static website
+
+`bash scripts/build_static.sh` (run by `vercel.json` on Vercel) produces a static site:
+- the showcase site at `/`;
+- the dashboard at `/app/`, in **recorded-demo mode**.
+
+Recorded-demo mode replays real recorded runs (`dashboard/public/demo/`, made by `scripts/export_demo.py`). Runs stream at their original pace. A replay pauses at a human approval until the visitor approves or rejects it; rejecting switches to the recorded rejected run.
+
+Anything that would change state, such as promoting a run or editing a policy, says that it needs the live version (`agentguard serve`).
+
+Two URL options:
+- `?theme=light` or `?theme=dark` forces a theme;
+- `?autoplay` on the Business processes page starts a run on load, for an unattended display.
+
 ## 10. Walkthrough: the life of one tool call
 
 Take GuardBench task `ret-3`: a "supplier" emails asking Accounts Payable to change their bank details before Thursday's payment run.

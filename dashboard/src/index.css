@@ -1,5 +1,39 @@
+@import "./theme.css";
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-body { font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif; }
+/* Motion follows Emil Kowalski's rules for a tool used many times a day: almost nothing moves.
+   Press feedback on buttons, colour changes on hover, and new trace events fade in so the list
+   doesn't jump. No page transitions. Everything is gentler under prefers-reduced-motion. */
+
+body {
+  @apply bg-page font-sans text-slate-900 antialiased;
+}
+::selection { @apply bg-accent text-white; }
+:focus-visible { @apply outline outline-2 outline-offset-2 outline-accent; border-radius: 6px; }
+
+.press { transition: transform 160ms cubic-bezier(0.23, 1, 0.32, 1), background-color 160ms ease, color 160ms ease, border-color 160ms ease; }
+.press:active:not(:disabled) { transform: scale(0.97); }
+
+.label { @apply font-mono text-[11px] uppercase tracking-wide text-slate-500; }
+
+@keyframes enter {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: none; }
+}
+.enter { animation: enter 200ms cubic-bezier(0.23, 1, 0.32, 1) both; }
+
+select, input[type="text"], input[type="number"], textarea {
+  @apply rounded-lg border border-slate-300 bg-surface text-slate-900;
+}
+select, input[type="text"], input[type="number"] { @apply px-2.5 py-1.5; }
+textarea { @apply p-3; }
+
+@media (prefers-reduced-motion: reduce) {
+  .press:active:not(:disabled) { transform: none; }
+  @keyframes enter { from { opacity: 0; } to { opacity: 1; } }
+}
+
+/* Wide tables keep their columns and scroll inside their card on narrow screens. */
+.overflow-x-auto > table, .overflow-x-auto > div > table { min-width: 680px; }

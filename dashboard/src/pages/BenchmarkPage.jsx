@@ -3,12 +3,18 @@ import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAx
 import { followJob, get, post } from "../api.js";
 import { Button, Card, Empty, pct } from "../components/ui.jsx";
 
+const TOOLTIP = { background: "rgb(var(--surface))", border: "1px solid rgb(var(--slate-200))", borderRadius: 10, fontSize: 12 };
+
+// Mid-tone colours that read on both the light and dark theme.
 const SERIES = [
-  ["Task success rate", "#0f766e", true],
-  ["Runs with a duplicate refund", "#e11d48", false],
+  ["Task success rate", "#8b5cf6", true],
+  ["Runs with a duplicate refund", "#f43f5e", false],
   ["Incorrect success claims", "#f59e0b", false],
-  ["Runs with an unsafe side effect", "#7c3aed", false],
+  ["Runs with an unsafe side effect", "#64748b", false],
 ];
+// Headline metrics that are rates (0..1), shown as percentages even when they are exactly 0 or 1.
+const isRate = (m) => /rate|recovery|pass\^k|with an explanation/i.test(m);
+const fmt = (m, v) => (v === null || v === undefined ? "n/a" : isRate(m) ? `${Math.round(v * 100)}%` : String(v));
 
 export default function BenchmarkPage() {
   const [reports, setReports] = useState([]);
@@ -58,7 +64,7 @@ export default function BenchmarkPage() {
         </div>
         {diff && (
           <table className="mt-3 w-full text-sm">
-            <thead><tr className="text-left text-xs text-slate-500"><th>Outcome</th><th>A</th><th>B</th><th>Change</th></tr></thead>
+            <thead><tr className="label text-left [&>th]:pb-2 [&>th]:pr-3 [&>th]:font-normal"><th>Outcome</th><th>A</th><th>B</th><th>Change</th></tr></thead>
             <tbody>
               {diff.map((r) => (
                 <tr key={r.metric} className="border-t border-slate-100">
@@ -87,35 +93,35 @@ function Report({ report }) {
     <div className="space-y-4">
       <p className="text-xs text-slate-500">{report.scenarios.length} scenarios ({report.regression_scenarios} regression) × {report.attempts} attempt(s) · {report.created}</p>
       <div className="grid gap-4 lg:grid-cols-2">
-        <div className="h-64">
+        <div className="h-64 text-slate-500">
           <ResponsiveContainer>
             <BarChart data={chart}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} unit="%" domain={[0, 100]} />
-              <Tooltip /><Legend wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="Task success rate" fill="#0f766e" />
+              <CartesianGrid stroke="currentColor" strokeOpacity={0.15} vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: "currentColor" }} stroke="currentColor" strokeOpacity={0.3} />
+              <YAxis tick={{ fontSize: 11, fill: "currentColor" }} stroke="currentColor" strokeOpacity={0.3} unit="%" domain={[0, 100]} />
+              <Tooltip cursor={{ fill: "currentColor", fillOpacity: 0.06 }} contentStyle={TOOLTIP} /><Legend wrapperStyle={{ fontSize: 11 }} />
+              <Bar dataKey="Task success rate" fill={SERIES[0][1]} radius={[4, 4, 0, 0]} isAnimationActive={false} />
             </BarChart>
           </ResponsiveContainer>
         </div>
-        <div className="h-64">
+        <div className="h-64 text-slate-500">
           <ResponsiveContainer>
             <BarChart data={chart}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} />
-              <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-              <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
-              <Tooltip /><Legend wrapperStyle={{ fontSize: 11 }} />
-              {SERIES.slice(1).map(([m, color]) => <Bar key={m} dataKey={m} fill={color} />)}
+              <CartesianGrid stroke="currentColor" strokeOpacity={0.15} vertical={false} />
+              <XAxis dataKey="name" tick={{ fontSize: 11, fill: "currentColor" }} stroke="currentColor" strokeOpacity={0.3} />
+              <YAxis tick={{ fontSize: 11, fill: "currentColor" }} stroke="currentColor" strokeOpacity={0.3} allowDecimals={false} />
+              <Tooltip cursor={{ fill: "currentColor", fillOpacity: 0.06 }} contentStyle={TOOLTIP} /><Legend wrapperStyle={{ fontSize: 11 }} />
+              {SERIES.slice(1).map(([m, color]) => <Bar key={m} dataKey={m} fill={color} radius={[4, 4, 0, 0]} isAnimationActive={false} />)}
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
       <table className="w-full text-sm">
-        <thead><tr className="text-left text-xs text-slate-500"><th>Outcome</th>{sets.map((s) => <th key={label(s)}>{label(s)}</th>)}</tr></thead>
+        <thead><tr className="label text-left [&>th]:pb-2 [&>th]:pr-3 [&>th]:font-normal"><th>Outcome</th>{sets.map((s) => <th key={label(s)}>{label(s)}</th>)}</tr></thead>
         <tbody>
           {metrics.map((m) => (
             <tr key={m} className="border-t border-slate-100">
-              <td className="py-1">{m}</td>{sets.map((s) => <td key={label(s)}>{pct(s.headline[m])}</td>)}
+              <td className="py-1.5 pr-3">{m}</td>{sets.map((s) => <td key={label(s)} className="tabular-nums">{fmt(m, s.headline[m])}</td>)}
             </tr>
           ))}
         </tbody>
