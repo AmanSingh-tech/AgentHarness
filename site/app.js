@@ -12,7 +12,7 @@
 
   // The dashboard lives at /app/ on the static deployment, and at / when `agentguard serve` serves this
   // page from /site/.
-  const dashboard = location.pathname.startsWith("/site") ? "/" : "/app/";
+  const dashboard = window.AG_DASHBOARD_URL || (location.pathname.startsWith("/site") ? "/" : "/app/");
   document.querySelectorAll("[data-dash]").forEach((a) => { a.href = dashboard + (a.dataset.dash || ""); });
 
   // -- loader: once per session, under a second and a half; never on reduced motion ------------------

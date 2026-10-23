@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "echo 'no dependencies'",
+  "buildCommand": "node -e \"require('fs').writeFileSync('config.js', 'window.AG_DASHBOARD_URL = ' + JSON.stringify(process.env.DASHBOARD_URL || '') + ';\\n')\"",
+  "outputDirectory": "."
+}

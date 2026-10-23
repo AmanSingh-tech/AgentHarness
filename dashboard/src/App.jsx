@@ -20,6 +20,10 @@ const PAGES = [
   ["policy", "Policy", PolicyPage],
 ];
 
+// The showcase site: next door on the combined static build, a separate URL when the dashboard is
+// deployed on its own (VITE_SITE_URL), /site/ when served by `agentguard serve`.
+const SITE_URL = DEMO ? import.meta.env.VITE_SITE_URL || "../" : "/site/";
+
 function ThemeToggle() {
   const flip = () => {
     const root = document.documentElement;
@@ -62,7 +66,7 @@ export default function App() {
     <div className="min-h-screen">
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-page/85 backdrop-blur-md">
         <div className="mx-auto flex max-w-7xl items-center gap-4 px-4 py-3 sm:px-6">
-          <a href={DEMO ? "../" : "/site/"} className="shrink-0 text-[17px] font-semibold tracking-tight text-slate-900">
+          <a href={SITE_URL} className="shrink-0 text-[17px] font-semibold tracking-tight text-slate-900">
             AgentGuard<sup className="ml-0.5 font-mono text-[9px] text-slate-400">®</sup>
           </a>
           {DEMO && (
@@ -72,7 +76,7 @@ export default function App() {
             </span>
           )}
           <div className="ml-auto flex items-center gap-2">
-            <a href={DEMO ? "../" : "/site/"} className="press hidden h-9 items-center rounded-full border border-slate-300 px-4 text-sm text-slate-900 hover:border-slate-400 sm:inline-flex">
+            <a href={SITE_URL} className="press hidden h-9 items-center rounded-full border border-slate-300 px-4 text-sm text-slate-900 hover:border-slate-400 sm:inline-flex">
               Overview ↗
             </a>
             <ThemeToggle />
