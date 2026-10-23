@@ -22,7 +22,7 @@ A harness-agnostic trust and reliability layer for AI agents:
 - **AgentGym** runs agents in simulated enterprise worlds, injects faults, and verifies outcomes independently.
 - **AgentShield** is the single gateway that every tool call passes through. It handles policy, risk, taint tracking, injection defense and approvals.
 
-**Docs:** [GuardBench](docs/bench.md) · [How it works](docs/how-it-works.md) (sequence detection, policy enforcement,
+**Docs:** [Complete guide](docs/guide.md) · [GuardBench](docs/bench.md) · [How it works](docs/how-it-works.md) (sequence detection, policy enforcement,
 regression generation, measured MVP outcomes) · [What is new](docs/novelty.md)
 (comparison with τ-bench, AgentDojo, InjecAgent, Inspect, Invariant, NeMo
 Guardrails, Guardrails AI, Prompt Guard / Llama Guard, Lakera, LangSmith).
