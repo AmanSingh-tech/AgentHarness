@@ -145,6 +145,16 @@ def lint(task: BenchTask) -> list[str]:
 
     seed = load_seed(task.seed_path)
     tables = {f"{s}.{c}" for s in seed["systems"] for c in _collections(s)}
+    from agentguard.world.enterprise.catalog import catalog
+
+    for system, colls in seed["data"].items():
+        spec = catalog()[system]
+        for coll, rows in (colls or {}).items():
+            for field, target in spec.collections[coll].refs.items():
+                known = {str(r["id"]) for r in (colls.get(target) or [])}
+                for r in rows or []:
+                    if r.get(field) not in (None, "") and str(r[field]) not in known:
+                        problems.append(f"seed {system}.{coll} {r['id']}: {field}={r[field]!r} is not a {target} id")
     for c in task.checks:
         if c.table is not None and c.table not in tables:
             problems.append(f"check {c.id} names table '{c.table}', which this task's systems don't have")

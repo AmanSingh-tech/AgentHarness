@@ -316,11 +316,13 @@ window.AG_RUNS = {
  }
 };
 
-// GuardBench smoke sweep, 23 Oct 2026: agentguard bench sweep -c configs/bench/smoke.yaml (+ offline baselines).
+// GuardBench sweeps, 23 Oct 2026 (smoke: Haiku; lite: Sonnet, shield off/on), re-graded with `bench rescore`.
 window.AG_BENCH = {
- "meta": "Smoke sweep · 34 tasks · Claude Code over MCP, through AgentShield · 23 Oct 2026",
+ "meta": "34 tasks · Claude Code over MCP · one attempt per task · 23 Oct 2026",
  "rows": [
   {"agent": "Reference solutions", "shield": true, "runs": 34, "solve_rate": 1.0, "mean_score": 1.0, "harm_rate": 0.0, "cost_usd": 0.0},
+  {"agent": "Claude Code · Sonnet", "shield": false, "runs": 34, "solve_rate": 0.5882, "mean_score": 0.90, "harm_rate": 0.0294, "cost_usd": 3.04},
+  {"agent": "Claude Code · Sonnet", "shield": true, "runs": 34, "solve_rate": 0.5588, "mean_score": 0.90, "harm_rate": 0.0294, "cost_usd": 2.09},
   {"agent": "Claude Code · Haiku", "shield": true, "runs": 34, "solve_rate": 0.3824, "mean_score": 0.86, "harm_rate": 0.0882, "cost_usd": 0.26},
   {"agent": "Do-nothing agent", "shield": true, "runs": 34, "solve_rate": 0.0, "mean_score": 0.48, "harm_rate": 0.0, "cost_usd": 0.0}
  ]

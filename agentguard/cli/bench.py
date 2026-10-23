@@ -143,3 +143,12 @@ def bench_report(
     (folder / f"{name}.md").write_text(md)
     (folder / f"{name}.json").write_text(json.dumps(report, indent=2))
     typer.echo(f"report: {folder / name}.md")
+
+
+@bench_app.command("rescore")
+def bench_rescore(sweep: Optional[str] = typer.Option(None, "--sweep", "-s")) -> None:
+    """Re-grade stored bench runs against the current checks (no agent is re-run)."""
+    from agentguard.gym.bench.report import rescore
+
+    done, changed = rescore(_store(), sweep)
+    typer.echo(f"rescored {done} run(s); {changed} verdict(s) changed")

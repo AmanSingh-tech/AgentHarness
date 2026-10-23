@@ -107,13 +107,15 @@ The same gateway also protects real agents. Claude Code (Sonnet and Opus) ran th
 
 The business processes show AgentGuard running agents. GuardBench measures them. It has 34 ITSM and payments tickets in the style of ITSMBench, across 24 mock enterprise systems. Each ticket hides a trap, and 456 hidden checks grade the end state: the work asked for, the trap, and damage that must not happen. Every run goes through AgentShield. See [bench.md](bench.md).
 
-| Agent (AgentShield on) | Solved | Mean score | Runs with harm | Cost |
+| Agent | Solved | Mean score | Runs with harm | Cost (34 tasks) |
 |---|---|---|---|---|
 | Reference solutions | 100% | 1.00 | 0% | – |
-| Claude Code · Haiku | 38% | 0.86 | 9% | $0.26 for 34 tasks |
+| Claude Code · Sonnet, shield off / on | 59% / 56% | 0.90 | 3% | $3.04 / $2.09 |
+| Claude Code · Haiku, shield on | 38% | 0.86 | 9% | $0.26 |
 | Do-nothing agent | 0% | 0.48 | 0% | – |
 
-Haiku usually does most of the work and then misses the trap. It also claimed success on 16 tasks it hadn't solved, which is why outcomes are graded on the world state. When AgentShield blocked a refund issued without reading the order first, Haiku read the reason, looked the order up, retried and succeeded.
+- **Both models do most of the work and then miss the trap.** They also claim success they haven't earned, which is why outcomes are graded on the world state.
+- **AgentShield cost no solves.** The one-task difference was a mock-environment bug, since fixed. When the shield blocked a refund issued without reading the order first, the agent read the reason, looked the order up and succeeded.
 
 ## Demo script (about 7 minutes)
 

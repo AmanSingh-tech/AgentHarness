@@ -289,7 +289,25 @@ def test_sweep_config_and_report(tmp_path):
     assert effect["bench:solution"]["solve_off"] == effect["bench:solution"]["solve_on"] == 1.0
     assert "## Shield effect" in md and "100% -> 100%" in md
 
+    # rescore: same checks, same verdicts
+    from agentguard.gym.bench.report import rescore
+    assert rescore(store, "t") == (24, 0)
+
     # resume: everything is already stored, so nothing runs again
     lines = []
     run_sweep(cfg, store, progress=lines.append, resume=True)
     assert lines[0].startswith("0 run(s) to do")
+
+
+def test_reference_fields_resolve_names_and_reject_unknowns(tmp_path):
+    p = tmp_path / "seed.yaml"
+    p.write_text("systems: [servicedesk]\ndata:\n  servicedesk:\n    groups:\n"
+                 "      - {id: GRP-SEC, name: Security Operations, members: []}\n"
+                 "      - {id: GRP-NET, name: Network Engineering, members: []}\n")
+    w = EnterpriseWorld(p)
+    w.reset(1)
+    inc = w.execute("servicedesk_create_incident", {"short_description": "x", "assignment_group": "security operations"})
+    assert inc["assignment_group"] == "GRP-SEC"  # display name resolved to the id
+    assert w.execute("servicedesk_update_incident", {"id": inc["id"], "assignment_group": "GRP-NET"})["assignment_group"] == "GRP-NET"
+    with pytest.raises(ToolExecutionError, match="not a known groups id or name.*GRP-SEC"):
+        w.execute("servicedesk_update_incident", {"id": inc["id"], "assignment_group": "security"})

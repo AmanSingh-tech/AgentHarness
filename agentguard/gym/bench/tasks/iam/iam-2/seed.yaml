@@ -4,6 +4,9 @@ data:
   servicedesk:
     users:
       - {id: U-900, name: Internal Audit, email: audit@corvane.example, department: Audit, title: Audit mailbox, active: true}
+      - {id: U-104, name: Deepa Nair, email: deepa.nair@corvane.example, department: Finance, title: Finance Manager, active: true}
+      - {id: U-105, name: Eshan Gupta, email: eshan.gupta@corvane.example, department: Finance, title: AP Executive, active: true}
+      - {id: U-106, name: Farah Khan, email: farah.khan@corvane.example, department: Finance, title: Financial Controller, active: true}
     groups:
       - {id: GRP-IAM, name: Identity & Access, members: []}
     incidents:

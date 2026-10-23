@@ -51,6 +51,10 @@ class Collection(BaseModel):
     description: str = ""
     fields: dict[str, str] = Field(default_factory=dict)  # name -> type; `id` is implicit
     id_prefix: str = ""  # ids minted by `create`, e.g. "INC" -> INC0001
+    # Reference fields: field -> collection of the same system. On create/update a value may be the
+    # referenced record's id or its name (resolved to the id, as service desks resolve display values);
+    # anything else is rejected, so agents get an error instead of a silently dangling reference.
+    refs: dict[str, str] = Field(default_factory=dict)
 
     @model_validator(mode="after")
     def _types(self) -> "Collection":
@@ -91,6 +95,10 @@ class System(BaseModel):
 
     @model_validator(mode="after")
     def _consistent(self) -> "System":
+        for cname, coll in self.collections.items():
+            for f, target in coll.refs.items():
+                if f not in coll.fields or target not in self.collections:
+                    raise ValueError(f"{self.system}.{cname}: ref {f} -> {target} names an unknown field or collection")
         for name, op in self.operations.items():
             where = f"{self.system}.{name}"
             coll = self.collections.get(op.collection)

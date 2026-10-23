@@ -187,6 +187,7 @@ class EnterpriseWorld(World):
                 raise ToolExecutionError("CONFLICT", f"{op.collection} {dup['id']} already exists for "
                                                      f"{dict(zip(op.unique, key))}")
         coll = system.collections[op.collection]
+        args = self._resolve_refs(system, op.collection, args)
         row = {**copy.deepcopy(op.defaults), **args, "id": self._mint(system.system, op.collection, coll.id_prefix, table)}
         self._stamp(coll.fields, row, "created_at", "updated_at")
         table[row["id"]] = row
@@ -196,7 +197,7 @@ class EnterpriseWorld(World):
         row = self._row(system, op, table, args.pop("id"))
         if not args:
             raise ToolExecutionError("INVALID_ARGUMENT", f"give at least one of {op.fields} to update")
-        row.update(copy.deepcopy(args))
+        row.update(copy.deepcopy(self._resolve_refs(system, op.collection, args)))
         self._stamp(system.collections[op.collection].fields, row, "updated_at")
         return copy.deepcopy(row)
 
@@ -247,6 +248,25 @@ class EnterpriseWorld(World):
         return copy.deepcopy(row)
 
     # -- helpers ------------------------------------------------------------------------------------
+
+    def _resolve_refs(self, system: System, collection: str, args: dict[str, Any]) -> dict[str, Any]:
+        refs = system.collections[collection].refs
+        out = dict(args)
+        for field, target in refs.items():
+            value = out.get(field)
+            if value in (None, ""):
+                continue
+            rows = self._tables[f"{system.system}.{target}"]
+            if str(value) in rows:
+                continue
+            by_name = [rid for rid, r in rows.items() if str(r.get("name", "")).lower() == str(value).lower()]
+            if len(by_name) == 1:
+                out[field] = by_name[0]
+                continue
+            choices = ", ".join(f"{rid} ({r.get('name', '')})" for rid, r in sorted(rows.items())[:20])
+            raise ToolExecutionError("INVALID_ARGUMENT", f"{field} '{value}' is not a known {target} id or name. "
+                                                         f"Known: {choices}")
+        return out
 
     def _row(self, system: System, op: Operation, table: dict, rid: Any) -> dict[str, Any]:
         row = table.get(str(rid))

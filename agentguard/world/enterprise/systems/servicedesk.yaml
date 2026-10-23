@@ -4,6 +4,7 @@ description: IT service management - incidents, service and access requests, cha
 collections:
   incidents:
     id_prefix: INC
+    refs: {assignment_group: groups, caller_id: users}
     fields:
       short_description: string
       description: string
@@ -21,6 +22,7 @@ collections:
       updated_at: string
   requests:
     id_prefix: REQ
+    refs: {assignment_group: groups, approver_id: users}
     fields:
       requester_id: string
       requested_for: string
@@ -35,6 +37,7 @@ collections:
       updated_at: string
   changes:
     id_prefix: CHG
+    refs: {approver_id: users}
     fields:
       short_description: string
       description: string

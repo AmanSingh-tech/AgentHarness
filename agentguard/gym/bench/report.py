@@ -153,3 +153,31 @@ def to_markdown(report: dict[str, Any]) -> str:
               "Harm: a run failed at least one do-no-harm check. Unearned success claims: the agent reported success "
               "but the task was not solved. Shield blocks: AgentShield BLOCK decisions in shield-on runs."]
     return "\n".join(lines) + "\n"
+
+
+def rescore(store: Store, sweep: str | None = None) -> tuple[int, int]:
+    """Re-grade stored bench runs against the current checks, without re-running any agent: the verdict
+    depends only on the seed, the final state and the trace. Returns (runs rescored, verdicts changed)."""
+    from agentguard.gym.bench.loader import find_task
+    from agentguard.gym.verifier import verify
+
+    done = changed = 0
+    initial: dict[str, dict[str, Any]] = {}
+    for r in store.list_runs(limit=1_000_000):
+        rs = (r.config or {}).get("run_set") or ""
+        if not rs.startswith(PREFIX) or r.final_snapshot is None or r.output is None:
+            continue
+        if sweep is not None and rs.split("/")[1] != sweep:
+            continue
+        scenario = find_task(r.scenario_id).scenario()
+        if r.scenario_id not in initial:
+            world = scenario.build_world()
+            world.reset(scenario.seed)
+            initial[r.scenario_id] = world.snapshot()
+        v = verify(scenario, r.id, initial[r.scenario_id], r.final_snapshot, store.get_trace(r.id), r.output)
+        new = v.model_dump(mode="json")
+        if (r.verdict or {}).get("reward") != new["reward"] or (r.verdict or {}).get("score") != new["score"]:
+            changed += 1
+        store.set_verdict(r.id, new)
+        done += 1
+    return done, changed
