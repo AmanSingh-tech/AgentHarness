@@ -2,7 +2,7 @@
 
 This guide is for the person presenting. It covers what to set up, what to click, what to say, and what to do if something breaks.
 
-The background for judges and answers to likely questions are in [hackathon.md](hackathon.md).
+The background for judges and answers to likely questions are in [hackathon.md](hackathon.md). The evidence for each judging criterion is in [judging.md](judging.md).
 
 **The one-line pitch:** *Four AI agents run a refund inbox and an IT access queue end to end. Claude makes the decisions, a policy check has to agree, humans approve what matters, and every outcome is checked against the system of record.*
 
@@ -10,14 +10,21 @@ The background for judges and answers to likely questions are in [hackathon.md](
 
 ## How the demo maps to the judging criteria
 
-| What the judges look for | Where they see it | Minute |
+| Criterion | What proves it in the demo | Minute |
 |---|---|---|
-| A real domain (Retail and Supply, IT Infrastructure) | RefundOps and AccessOps on the **Business processes** page | 0:00, 3:30 |
-| Ingestion → decision → action → outcome reporting | Four agent cards filling with tool calls, then the outcome report | 0:00 |
-| Intelligent decision-making | **Decisions: Claude + policy check**: Claude's reasoning on every row | 2:00 |
-| Business value | Seven of ten tickets handled with no person; ₹6,000 confirmed in the ledger | 1:30 |
-| Responsible-AI controls | The controls panel; the blocked exfiltration; the caught false "success" | 1:30, 4:30, 5:30 |
-| Human approval and oversight | The ₹4,500 refund and the payments admin grant wait for your click; a rejection is reported honestly | 0:45, 3:00 |
+| **ROI / business value** | Seven of ten tickets handled with no person; ₹6,000 confirmed in the ledger; about $0.02 per batch with Claude; the site's ROI calculator | 1:30, 2:00, 6:45 |
+| **Governance and responsibility** | The held ₹4,500 refund, the honest rejection, Claude checked by rules, the blocked exfiltration, the caught false "success", the **evidence report** download | 0:45, 1:45, 2:00, 3:00, 4:30, 5:30 |
+| **Reusability** | The same gateway in a second domain (AccessOps); the site's **Integrate** section; `examples/protect_your_tools.py` | 3:30, 6:45 |
+| **MVP readiness** | Everything runs live from one command; the public link replays real runs; 293 tests | throughout, 6:45 |
+| **Originality** | Claim-versus-outcome grading, faults after the side effect, data followed through encodings, incidents turned into validated tests | 5:30, 6:30 |
+
+## The 60-second public-link tour (for judges who only open the URL)
+
+1. **Site, top to bottom (20 s):** the replayed run, then **Use cases**, **ROI** (change the inputs), **Trust** (hash chain, approvals, framework table) and **Integrate**.
+2. **Open the dashboard → Business processes (30 s):** press **Work today's inbox**, then **Approve** the ₹4,500 refund. The outcome report and controls appear. Press **Download evidence report**.
+3. **GuardBench (10 s):** the leaderboard, then any task's trap and hidden checks.
+
+The dashboard on the public link replays recorded real runs, so it needs no server and no API key.
 
 ---
 
@@ -96,8 +103,11 @@ Before you start:
 - T-108 escalated to security as an injection.
 - The verdict badge reads `CORRECT_SUCCESS`.
 - The controls panel shows one approval, one injection detected, two verifications passed, and the audit chain verified.
+- Press **Download evidence report** and open it: every agent, the approval with who and when, the injection, both ledger checks, the claim against the verdict, and the hash-chain result.
 
-**Say:** "Seven of ten tickets were handled with no person. People see only the exceptions, and each comes with its reason."
+**Say:**
+- "Seven of ten tickets were handled with no person. People see only the exceptions, and each comes with its reason."
+- "And this is what we'd hand an auditor: one file per run, built from the hash-chained log." *(Governance)*
 
 ### 2:00 Claude decides (1 minute)
 
@@ -163,7 +173,13 @@ Before you start:
 
 **If you have an extra minute:** open **GuardBench**, pick `ret-3`, reveal the design note, and run Claude Code · Haiku on it live. It takes about 20 seconds and a fraction of a cent.
 
-**Say:** "We also measure agents. GuardBench has 34 enterprise tickets, each with a trap. Sonnet solves 59% and Haiku 38%, and AgentShield costs nothing in solve rate."
+**Say:** "We also measure agents. GuardBench has 34 enterprise tickets, each with a trap. Sonnet solves 59% and Haiku 38%. With AgentShield on, Sonnet loses one task and costs 31% less."
+
+### 6:45 Value and reuse (15 seconds), Showcase tab
+
+**Show:** the **ROI** section with the default numbers, then **Integrate**.
+
+**Say:** "At 200 cases a day that's about 400 analyst hours a month. And it isn't tied to refunds: any agent, any tools, one YAML policy." *(ROI, reusability)*
 
 **Close:** "Real processes, AI that decides, controls outside the model, and evidence for every claim. Thank you."
 

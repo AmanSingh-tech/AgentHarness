@@ -6,7 +6,7 @@ data ingestion to decision, action and a verified outcome report. Every action g
 through **AgentShield**: least privilege per agent, business rules, injection and
 exfiltration defence, human approval, post-action verification and a hash-chained
 audit log. **AgentGym** tests the same agents with injected faults and grades them on
-what really happened. For the judges: [docs/hackathon.md](docs/hackathon.md) · presenting:
+what really happened. **Judges, start here: [docs/judging.md](docs/judging.md)** (evidence per criterion) · brief: [docs/hackathon.md](docs/hackathon.md) · presenting:
 [docs/demo-guide.md](docs/demo-guide.md) · showcase site: [site/](site/) (served at `/site` by `agentguard serve`).
 
 ```bash
@@ -14,6 +14,8 @@ agentguard ops run                      # RefundOps on the support inbox, with t
 agentguard ops run --process access     # AccessOps on the IT access-request queue
 agentguard ops run --decider claude      # Claude decides, a policy check confirms (uses your Claude Code login)
 agentguard serve                        # dashboard: Business processes, approvals, live traces, benchmark
+agentguard audit report <run_id>        # evidence report for auditors (Markdown, or --format json)
+python examples/protect_your_tools.py   # protect your own Python tools with a 10-line policy
 agentguard bench list                   # GuardBench: 34 ITSMBench-style enterprise tasks with hidden checks
 ```
 

@@ -142,7 +142,7 @@
         <li class="reveal"><span class="big">96%</span><span class="mono">task success, v2 agent + shield, 25 scenarios × 3</span></li>
         <li class="reveal"><span class="big">100%</span><span class="mono">recovery from injected faults, v2 agent</span></li>
         <li class="reveal"><span class="big">18/18</span><span class="mono">Claude decisions confirmed by the policy check</span></li>
-        <li class="reveal"><span class="big">287</span><span class="mono">automated tests · 28 validated scenarios</span></li>
+        <li class="reveal"><span class="big">293</span><span class="mono">automated tests · 28 validated scenarios</span></li>
       </ul>
     </section>
 
@@ -438,7 +438,7 @@ agentguard ops run --process access --decider claude --model sonnet</code></pre>
 
       <div class="steps" data-panel="verify" hidden>
         <div class="step"><span class="mono num">01</span><div><h3>Check every claim on this page</h3>
-          <div class="code"><pre><code>pytest -q                              # 287 tests
+          <div class="code"><pre><code>pytest -q                              # 293 tests
 agentguard validate-scenarios          # every scenario: the null agent fails, the oracle passes
 agentguard demo                        # the six demo steps, in the terminal
 agentguard benchmark --attempts 3      # v1/v2 × shield off/on, 25 scenarios
@@ -461,7 +461,7 @@ agentguard audit verify                # recompute every run's hash chain</code>
         <li class="reveal"><span class="mono t">5:30</span><div><h3>Catch a lie</h3><p>refund_false_success with the naive agent: shield off, the agent lies; shield on, post-action verification stops it.</p></div></li>
         <li class="reveal"><span class="mono t">6:30</span><div><h3>Benchmark, then a regression test</h3><p>The v1/v2 × shield charts. Promote a blocked run to a regression scenario.</p></div></li>
       </ol>
-      <p class="muted mono docs-links">Full guide: <a href="https://github.com/AmanSingh-tech/AgentHarness/blob/main/docs/demo-guide.md">docs/demo-guide.md</a> · Brief for judges: <a href="https://github.com/AmanSingh-tech/AgentHarness/blob/main/docs/hackathon.md">docs/hackathon.md</a></p>
+      <p class="muted mono docs-links">Evidence per judging criterion: <a href="https://github.com/AmanSingh-tech/AgentHarness/blob/main/docs/judging.md">docs/judging.md</a> · Full guide: <a href="https://github.com/AmanSingh-tech/AgentHarness/blob/main/docs/demo-guide.md">docs/demo-guide.md</a> · Brief: <a href="https://github.com/AmanSingh-tech/AgentHarness/blob/main/docs/hackathon.md">docs/hackathon.md</a></p>
     </section>
 
     <!-- Closing -->
@@ -471,6 +471,7 @@ agentguard audit verify                # recompute every run's hash chain</code>
       <div class="hero-cta">
         <a class="btn btn-primary" href="/app/" data-dash><span>Open the dashboard</span></a>
         <a class="btn btn-ghost" href="#run"><span>Run it yourself</span></a>
+        <a class="btn btn-ghost" href="https://github.com/AmanSingh-tech/AgentHarness/blob/main/docs/judging.md"><span>Judges: the evidence ↗</span></a>
         <a class="btn btn-ghost" href="https://github.com/AmanSingh-tech/AgentHarness"><span>Star on GitHub ↗</span></a>
       </div>
     </section>
