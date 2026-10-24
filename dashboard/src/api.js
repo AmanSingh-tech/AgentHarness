@@ -45,6 +45,21 @@ export function streamRun(runId, onEvent, onDone) {
   return () => es.close();
 }
 
+// A run's evidence for auditors: "md" (the report), "json" (the same as data) or "trace" (every event).
+export async function evidence(runId, format) {
+  if (DEMO) {
+    const rep = replays.get(runId);
+    const rec = await loadRun(rep ? rep.source : runId);
+    const out = { md: rec.evidence_md, json: rec.evidence, trace: rec.trace }[format];
+    if (out === undefined) throw unavailable("This run's evidence report");
+    return out;
+  }
+  if (format === "trace") return get(`/runs/${runId}/trace`);
+  const r = await fetch(`/api/runs/${runId}/evidence?format=${format}`);
+  if (!r.ok) throw new Error(`${r.status} ${await r.text()}`);
+  return format === "md" ? r.text() : r.json();
+}
+
 // -- recorded demo ------------------------------------------------------------------------------------
 
 let manifestPromise = null;

@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { evidence } from "../api.js";
 
 export const OUTCOME_STYLE = {
   CORRECT_SUCCESS: "bg-emerald-100 text-emerald-800",
@@ -121,4 +122,32 @@ export function agentLabel(agent, model) {
   const names = { "mcp_client:claude-code": "Claude Code", "bench:solution": "Reference solution", "scripted:null": "Do-nothing agent" };
   const name = names[agent] || agent;
   return model && model !== "default" ? `${name} · ${model[0].toUpperCase()}${model.slice(1)}` : name;
+}
+
+// Download a run's evidence: the Markdown report for auditors, the same as JSON, and the raw trace.
+export function EvidenceDownloads({ runId }) {
+  const [error, setError] = useState(null);
+  const save = async (format) => {
+    setError(null);
+    try {
+      const data = await evidence(runId, format);
+      const md = format === "md";
+      const blob = new Blob([md ? data : JSON.stringify(data, null, 2)], { type: md ? "text/markdown" : "application/json" });
+      const a = document.createElement("a");
+      a.href = URL.createObjectURL(blob);
+      a.download = `${format === "trace" ? "trace" : "evidence"}-${runId}.${md ? "md" : "json"}`;
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    } catch (e) {
+      setError(e.message);
+    }
+  };
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <Button onClick={() => save("md")}>Download evidence report</Button>
+      <Button kind="secondary" onClick={() => save("json")}>Evidence (JSON)</Button>
+      <Button kind="secondary" onClick={() => save("trace")}>Full trace (JSON)</Button>
+      {error && <span className="text-xs text-rose-700">{error}</span>}
+    </div>
+  );
 }

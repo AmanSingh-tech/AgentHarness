@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { DEMO, get, post, streamRun } from "../api.js";
-import { Badge, Button, Card, Empty, OUTCOME_STYLE } from "../components/ui.jsx";
+import { Badge, Button, Card, Empty, EvidenceDownloads, OUTCOME_STYLE } from "../components/ui.jsx";
 import Trace from "../components/Trace.jsx";
 import Verdict from "../components/Verdict.jsx";
 
@@ -133,6 +133,7 @@ function RunView({ runId }) {
           <Button kind="secondary" disabled={busy} onClick={() => act(async () => setPromotion(await post(`/runs/${runId}/promote`)))}>Promote to regression</Button>
         </>}>
           <Verdict run={run} />
+          <div className="mt-4 border-t border-slate-200 pt-4"><EvidenceDownloads runId={runId} /></div>
           {diagnosis && (
             <div className="mt-3 rounded-md border border-slate-200 bg-slate-50 p-3 text-sm">
               <div className="text-xs font-semibold uppercase text-slate-500">Diagnosis (vs the reference agent)</div>

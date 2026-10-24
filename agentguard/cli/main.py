@@ -129,6 +129,30 @@ def audit_verify(
     raise typer.Exit(1 if bad else 0)
 
 
+@audit_app.command("report")
+def audit_report(
+    run_id: str = typer.Argument(..., help="The run to report on"),
+    fmt: str = typer.Option("md", "--format", help="md | json"),
+    out: Optional[Path] = typer.Option(None, "--out", help="Write to this file instead of printing"),
+) -> None:
+    """Evidence report for one run: agents, approvals, blocks, injections, verifications, claim vs outcome, audit chain."""
+    from agentguard.governance.evidence import build_evidence, evidence_markdown
+
+    if fmt not in ("md", "json"):
+        raise typer.BadParameter("--format must be md or json")
+    try:
+        ev = build_evidence(_store(), run_id)
+    except KeyError:
+        typer.echo(f"No run {run_id}")
+        raise typer.Exit(1) from None
+    text = evidence_markdown(ev) if fmt == "md" else json.dumps(ev, indent=2, ensure_ascii=False)
+    if out is None:
+        typer.echo(text)
+    else:
+        out.write_text(text)
+        typer.echo(f"Evidence report for {run_id}: {out}")
+
+
 @world_app.command("reset")
 def world_reset(name: str = typer.Argument("support"), seed: int = typer.Option(42, "--seed")) -> None:
     """Reset a world and print its state summary (row counts per table)."""

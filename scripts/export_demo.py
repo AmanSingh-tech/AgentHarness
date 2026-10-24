@@ -65,6 +65,12 @@ class Recorder:
         c = client.get(f"/api/runs/{run_id}/controls")
         if c.status_code == 200:
             record["controls"] = c.json()
+        e = client.get(f"/api/runs/{run_id}/evidence", params={"format": "md"})
+        if e.status_code == 200:
+            record["evidence_md"] = e.text
+            ev = client.get(f"/api/runs/{run_id}/evidence").json()
+            ev["tool_calls"] = [{**c, "args": slim(c["args"], items=4, chars=200)} for c in ev["tool_calls"]]
+            record["evidence"] = ev
         d = client.get(f"/api/runs/{run_id}/diagnosis")
         if d.status_code == 200:
             record["diagnosis"] = d.json()

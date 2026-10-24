@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { get, post, streamRun } from "../api.js";
-import { Badge, Button, Card, Empty, OUTCOME_STYLE, RISK_STYLE } from "../components/ui.jsx";
+import { Badge, Button, Card, Empty, EvidenceDownloads, OUTCOME_STYLE, RISK_STYLE } from "../components/ui.jsx";
 import Trace from "../components/Trace.jsx";
 
 const PROCESSES = {
@@ -151,7 +151,7 @@ export default function OpsPage() {
 
       {report?.decision_making && report.decision_making.decider !== "rules" && <DecisionMaking d={report.decision_making} />}
 
-      {controls && <Controls c={controls} />}
+      {controls && <Controls c={controls} runId={run?.verdict ? runId : null} />}
 
       <Card title={runId ? `Live activity · run ${runId}` : "Live activity"}>
         {events.length === 0 ? <Empty>Press "Work today's inbox".</Empty> : <Trace events={events} />}
@@ -209,7 +209,7 @@ export function Summary({ s }) {
   );
 }
 
-export function Controls({ c }) {
+export function Controls({ c, runId }) {
   const rows = [
     ["Agents (own identity, least privilege)", c.agents.join(", ")],
     ["Human approvals", `${c.approvals_granted} granted, ${c.approvals_rejected} rejected` +
@@ -224,6 +224,12 @@ export function Controls({ c }) {
       <dl className="grid gap-x-6 gap-y-1 text-sm md:grid-cols-2">
         {rows.map(([k, v]) => (<React.Fragment key={k}><dt className="text-slate-500">{k}</dt><dd>{v}</dd></React.Fragment>))}
       </dl>
+      {runId && (
+        <div className="mt-4 border-t border-slate-200 pt-4">
+          <p className="mb-2 text-xs text-slate-500">For auditors: every agent, approval, block, injection and verification in this run, the claim against the verdict, and the hash-chain result.</p>
+          <EvidenceDownloads runId={runId} />
+        </div>
+      )}
     </Card>
   );
 }

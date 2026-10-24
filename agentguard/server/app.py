@@ -18,7 +18,7 @@ from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from sse_starlette.sse import EventSourceResponse
@@ -178,6 +178,16 @@ def create_app(store: Store | None = None, reports_dir: Path = Path("reports"),
 
         _run(store, run_id)
         return controls_from_trace(store, run_id)
+
+    @app.get("/api/runs/{run_id}/evidence")
+    def run_evidence(run_id: str, format: str = "json") -> Any:
+        from agentguard.governance.evidence import build_evidence, evidence_markdown
+
+        _run(store, run_id)
+        ev = build_evidence(store, run_id)
+        if format == "md":
+            return PlainTextResponse(evidence_markdown(ev), media_type="text/markdown; charset=utf-8")
+        return ev
 
     @app.get("/api/runs")
     def list_runs(limit: int = 50, run_set: str | None = None) -> list[dict[str, Any]]:
