@@ -2,7 +2,7 @@
 
 One page per criterion: what we claim, where to check it (a page, a command or a file, with the number), what it doesn't do yet, and what comes next. Every number below comes from a command in this repo.
 
-**Two-minute version:** open the public link, press **Open the dashboard**, and on **Business processes** press **Work today's inbox**. Approve the ₹4,500 refund, then press **Download evidence report**.
+**Two-minute version:** open [https://agent-harness-163s.vercel.app](https://agent-harness-163s.vercel.app), press **Open the dashboard**, and on **Business processes** press **Work today's inbox**. Approve the ₹4,500 refund, then press **Download evidence report**.
 
 ---
 

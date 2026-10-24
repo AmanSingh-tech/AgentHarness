@@ -20,6 +20,8 @@ The background for judges and answers to likely questions are in [hackathon.md](
 
 ## The 60-second public-link tour (for judges who only open the URL)
 
+The link: [https://agent-harness-163s.vercel.app](https://agent-harness-163s.vercel.app) (dashboard at [https://agent-harness-163s.vercel.app/app/](https://agent-harness-163s.vercel.app/app/)).
+
 1. **Site, top to bottom (20 s):** the replayed run, then **Use cases**, **ROI** (change the inputs), **Trust** (hash chain, approvals, framework table) and **Integrate**.
 2. **Open the dashboard → Business processes (30 s):** press **Work today's inbox**, then **Approve** the ₹4,500 refund. The outcome report and controls appear. Press **Download evidence report**.
 3. **GuardBench (10 s):** the leaderboard, then any task's trap and hidden checks.

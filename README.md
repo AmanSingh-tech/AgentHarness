@@ -1,6 +1,8 @@
 # AgentGuard
 
 **Multi-agent systems that run real business processes, safe by construction.**
+
+**Live:** [https://agent-harness-163s.vercel.app](https://agent-harness-163s.vercel.app) (site) · [https://agent-harness-163s.vercel.app/app/](https://agent-harness-163s.vercel.app/app/) (dashboard, replaying recorded real runs)
 RefundOps (Retail and Supply) and AccessOps (IT Infrastructure) take a queue from
 data ingestion to decision, action and a verified outcome report. Every action goes
 through **AgentShield**: least privilege per agent, business rules, injection and

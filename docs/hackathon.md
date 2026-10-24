@@ -1,5 +1,7 @@
 # AgentGuard at AgentOps 2026
 
+**Live:** [https://agent-harness-163s.vercel.app](https://agent-harness-163s.vercel.app) · dashboard [https://agent-harness-163s.vercel.app/app/](https://agent-harness-163s.vercel.app/app/)
+
 **Scoring against the criteria:** [judging.md](judging.md) lists the evidence for each one. ROI model: [roi.md](roi.md).
 
 **Multi-agent systems that run real business processes, safe by construction, with the evidence to prove it.**
