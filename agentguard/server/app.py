@@ -70,6 +70,21 @@ class OpsRequest(BaseModel):
     model: str | None = None
 
 
+class PlaygroundStart(BaseModel):
+    shield: bool = True
+    model: str | None = "haiku"
+    agent: str = "claude"
+
+
+class PlaygroundMessage(BaseModel):
+    text: str
+
+
+class PlaygroundPlant(BaseModel):
+    ticket_id: str = "T-78"
+    text: str
+
+
 class BenchmarkRequest(BaseModel):
     attempts: int = 1
     agents: list[str] = ["scripted:naive", "scripted:naive_v2"]
@@ -171,6 +186,54 @@ def create_app(store: Store | None = None, reports_dir: Path = Path("reports"),
 
         threading.Thread(target=work, name=f"ops-{run.run_id}", daemon=True).start()
         return {"run_id": run.run_id}
+
+    # -- attack playground: chat with a real agent (Claude Code, started by this server) ----------------
+
+    sessions: dict[str, Any] = {}
+    app.state.playground = sessions
+
+    def _session(session_id: str) -> Any:
+        if session_id not in sessions:
+            raise HTTPException(404, f"no playground session {session_id}")
+        return sessions[session_id]
+
+    @app.get("/api/playground/presets")
+    def playground_presets() -> dict[str, Any]:
+        from agentguard.playground import AGENTS, MODELS, PRESETS
+
+        return {"presets": PRESETS, "models": list(MODELS), "agents": AGENTS}
+
+    @app.post("/api/playground/sessions", status_code=201)
+    def playground_start(req: PlaygroundStart) -> dict[str, Any]:
+        from agentguard.playground import AGENTS, MODELS, PlaygroundSession
+
+        if req.model is not None and req.model not in MODELS:
+            raise HTTPException(400, f"model must be one of {list(MODELS)}")
+        if req.agent not in AGENTS:
+            raise HTTPException(400, f"agent must be one of {list(AGENTS)}")
+        s = PlaygroundSession(store, bus, approvals, shield=req.shield, model=req.model,
+                              agent=req.agent)
+        sessions[s.id] = s
+        return s.state()
+
+    @app.get("/api/playground/sessions/{session_id}")
+    def playground_state(session_id: str) -> dict[str, Any]:
+        return _session(session_id).state()
+
+    @app.post("/api/playground/sessions/{session_id}/messages", status_code=202)
+    def playground_send(session_id: str, req: PlaygroundMessage) -> dict[str, Any]:
+        if not req.text.strip():
+            raise HTTPException(400, "empty message")
+        try:
+            return _session(session_id).send(req.text.strip())
+        except RuntimeError as e:
+            raise HTTPException(409, str(e)) from None
+
+    @app.post("/api/playground/sessions/{session_id}/plant")
+    def playground_plant(session_id: str, req: PlaygroundPlant) -> dict[str, Any]:
+        if not req.text.strip() or not req.ticket_id.strip():
+            raise HTTPException(400, "ticket id and text are required")
+        return _session(session_id).plant(req.ticket_id.strip(), req.text.strip())
 
     @app.get("/api/runs/{run_id}/controls")
     def run_controls(run_id: str) -> dict[str, Any]:

@@ -147,6 +147,31 @@ Before you start:
 
 **Say:** "This is the same gateway in a second domain, IT infrastructure, with the controls an auditor asks for."
 
+### Attack playground (2 minutes), Dashboard → Attack playground
+
+This is the part where nothing is pre-run: you, or a judge, type the attack.
+
+**Do:**
+1. Choose **Obedient test agent** and untick **AgentShield**. Click **Leak a secret, disguised**.
+   The result is red: **Harm happened**, the API key was emailed out.
+2. Tick **AgentShield** (a fresh conversation starts) and click the same attack.
+   The result is yellow: **Attempted, stopped by AgentShield**, with the chain read_secret → encode → send_email.
+3. Choose **Claude (real, through Claude Code)** and let a judge type any attack, or click **Instruction hidden in a ticket**.
+   Each message takes 10 to 20 seconds and a fraction of a cent.
+
+**Say:**
+- "The obedient agent stands in for a weaker, misconfigured or jailbroken model: it does what it's told."
+- "Without the shield, the key leaves the company. With it, we follow the data through the encoding and stop the send."
+- "Real Claude refuses most of these on its own, which is good. AgentShield is the guarantee for the day a model is fooled."
+
+**Reading the result:**
+- 🟥 **Harm happened:** money above the limit or paid twice, a secret or data sent out.
+- 🟨 **Stopped by AgentShield:** the rule and reason are shown.
+- 🟩 **The agent didn't do it:** it declined on its own.
+- ⬜ **Normal work.**
+
+**What changed** lists refunds, emails, queries and secrets read. **Download evidence report** works for every message.
+
 ### 4:30 Stopping exfiltration (1 minute), Dashboard → Live run
 
 **Do:** choose scenario `secret_exfiltration`, agent `scripted:adversarial`, shield on, and press **Run**. Then open **Blocked actions**.

@@ -8,9 +8,11 @@ import DemoPage from "./pages/DemoPage.jsx";
 import PolicyPage from "./pages/PolicyPage.jsx";
 import OpsPage from "./pages/OpsPage.jsx";
 import BenchPage from "./pages/BenchPage.jsx";
+import PlaygroundPage from "./pages/PlaygroundPage.jsx";
 
 const PAGES = [
   ["ops", "Business processes", OpsPage],
+  ["playground", "Attack playground", PlaygroundPage],
   ["run", "Live run", RunPage],
   ["approvals", "Approvals", ApprovalsPage],
   ["blocks", "Blocked actions", BlocksPage],

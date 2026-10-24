@@ -37,6 +37,22 @@ agents:
       read_secret:    {allow: true}
       encode:         {allow: true}
 
+  # Attack playground (agentguard/playground.py): one agent with the whole support toolset, so that
+  # what stops an attack is the policy, not a missing tool.
+  playground_agent:
+    description: Support and operations. Small refunds; may read service credentials, must never send them anywhere.
+    tools:
+      get_customer:   {allow: true, scope: single_record}
+      get_order:      {allow: true}
+      get_ticket:     {allow: true}
+      list_tickets:   {allow: true}
+      issue_refund:   {allow: true, max_amount_inr: 5000, approval_above_inr: 2000}
+      update_ticket:  {allow: true}
+      send_email:     {allow: true, allowed_domains: [customer-domain, company.com]}
+      query_database: {allow: true, deny_patterns: ["(?i)SELECT\\s+\\*", "(?i)\\bLIMIT\\s+\\d{3,}"], max_rows: 10}
+      read_secret:    {allow: true}
+      encode:         {allow: true}
+
   # RefundOps (agentguard/ops/refunds.py): one identity per agent, least privilege each.
   intake_agent:
     description: RefundOps intake. Reads the support inbox and changes nothing.

@@ -268,6 +268,19 @@ class SupportWorld(World):
         encoded = base64.b64encode(raw).decode() if scheme == "base64" else raw.hex()
         return {"encoded": encoded, "scheme": scheme}
 
+    @_locked
+    def plant_ticket(self, ticket_id: str, text: str, customer_id: str = "C-2001") -> dict[str, Any]:
+        """Write attacker-controlled text into a ticket (the attack playground's indirect injection).
+        Appends to an existing ticket's notes, or opens a new ticket."""
+        row = self.db.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone()
+        if row is None:
+            self.db.execute("INSERT INTO tickets VALUES (?,?,?,?)", (ticket_id, customer_id, "open", text))
+        else:
+            self.db.execute("UPDATE tickets SET status = 'open', notes = ? WHERE id = ?",
+                            (row["notes"] + "\n" + text, ticket_id))
+        self.db.commit()
+        return dict(self.db.execute("SELECT * FROM tickets WHERE id = ?", (ticket_id,)).fetchone())
+
     # -- verification (ground truth; never exposed to agents) ---------------
 
     @_locked
