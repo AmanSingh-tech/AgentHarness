@@ -231,6 +231,31 @@
     table.innerHTML = "<tbody><tr><td>No recorded results yet.</td></tr></tbody>";
   }
 
+  // -- ROI calculator: measured rates from the process runs, everything else is the visitor's -------------
+  const roiForm = document.getElementById("roi-form");
+  if (roiForm) {
+    const AUTOMATED = 0.7;           // 7 of 10 cases with no person, RefundOps and AccessOps
+    const MODEL_COST_PER_CASE = 0.17; // $0.02 per batch of 10 at ₹84/$
+    const inr = (v) => "₹" + Math.round(v).toLocaleString("en-IN");
+    const roi = () => {
+      const f = Object.fromEntries([...new FormData(roiForm)].map(([k, v]) => [k, Math.max(0, Number(v) || 0)]));
+      const automated = f.cases * AUTOMATED;
+      const hours = automated * f.minutes / 60;
+      const manualPerCase = f.minutes / 60 * f.rate;
+      const agentPerCase = (1 - AUTOMATED) * manualPerCase + MODEL_COST_PER_CASE;
+      const avoided = automated * f.errors / 100 * f.loss;
+      const net = hours * f.rate + avoided - f.cases * MODEL_COST_PER_CASE;
+      document.getElementById("roi-hours").textContent = Math.round(hours).toLocaleString("en-IN");
+      document.getElementById("roi-manual").textContent = inr(manualPerCase);
+      document.getElementById("roi-agent").textContent = inr(agentPerCase);
+      document.getElementById("roi-avoided").textContent = inr(avoided);
+      document.getElementById("roi-net").textContent = inr(net);
+    };
+    roiForm.addEventListener("input", roi);
+    roiForm.addEventListener("submit", (e) => e.preventDefault());
+    roi();
+  }
+
   // play once when the demo first scrolls into view; show the finished state before that
   render(false);
   const demoIO = new IntersectionObserver((entries) => {

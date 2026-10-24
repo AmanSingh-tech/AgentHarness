@@ -25,10 +25,13 @@
     <a class="brand" href="#top">AgentGuard<sup class="mono">®</sup></a>
     <nav class="nav-links mono" aria-label="Sections">
       <a href="#process"><span>01</span> Process</a>
-      <a href="#demo"><span>02</span> Demo</a>
-      <a href="#bench"><span>03</span> GuardBench</a>
-      <a href="#run"><span>04</span> Run it</a>
-      <a href="/app/" data-dash><span>05</span> Dashboard ↗</a>
+      <a href="#usecases"><span>02</span> Use cases</a>
+      <a href="#roi"><span>03</span> ROI</a>
+      <a href="#bench"><span>04</span> GuardBench</a>
+      <a href="#trust"><span>05</span> Trust</a>
+      <a href="#integrate"><span>06</span> Integrate</a>
+      <a href="#run"><span>07</span> Run it</a>
+      <a href="/app/" data-dash><span>08</span> Dashboard ↗</a>
     </nav>
     <div class="nav-actions">
       <button class="icon-btn" id="theme" type="button" aria-label="Switch light or dark theme">
@@ -139,8 +142,102 @@
         <li class="reveal"><span class="big">96%</span><span class="mono">task success, v2 agent + shield, 25 scenarios × 3</span></li>
         <li class="reveal"><span class="big">100%</span><span class="mono">recovery from injected faults, v2 agent</span></li>
         <li class="reveal"><span class="big">18/18</span><span class="mono">Claude decisions confirmed by the policy check</span></li>
-        <li class="reveal"><span class="big">230</span><span class="mono">automated tests · 28 validated scenarios</span></li>
+        <li class="reveal"><span class="big">287</span><span class="mono">automated tests · 28 validated scenarios</span></li>
       </ul>
+    </section>
+
+
+    <!-- Use cases -->
+    <section class="section" id="usecases">
+      <div class="section-head">
+        <p class="label mono">Use cases</p>
+        <h2 class="h1 reveal">Five processes <span class="glyph">↪</span>where one mistake is expensive</h2>
+        <p class="lede narrow">Two run end to end as multi-agent processes. Three are GuardBench tasks graded by hidden checks. Every action goes through AgentShield in all five.</p>
+      </div>
+      <ul class="cases">
+        <li class="case reveal">
+          <p class="mono label">Retail · process</p>
+          <h3>RefundOps</h3>
+          <dl>
+            <dt class="mono">Pain</dt><dd>Analysts check ownership, refundable balance and duplicates for every ticket, and a retry after a timeout pays twice.</dd>
+            <dt class="mono">Flow</dt><dd>Intake → decision (rules, or Claude checked by rules) → refund through AgentShield → report.</dd>
+            <dt class="mono">Measured</dt><dd>7 of 10 tickets resolved with no person. ₹6,000 confirmed in the ledger. 0 duplicate refunds with the shield on, 3 with it off.</dd>
+            <dt class="mono">Prevents</dt><dd>Duplicate and over-limit refunds, refunds to the wrong customer, injected instructions, a false "done".</dd>
+          </dl>
+        </li>
+        <li class="case reveal">
+          <p class="mono label">IT · process</p>
+          <h3>AccessOps</h3>
+          <dl>
+            <dt class="mono">Pain</dt><dd>Access requests wait days for a person, or are granted without segregation-of-duties checks.</dd>
+            <dt class="mono">Flow</dt><dd>Intake → decision → grant with an expiry → verified in the directory → report.</dd>
+            <dt class="mono">Measured</dt><dd>7 of 10 requests resolved with no person. Payments admin held for approval. Every grant re-checked in the directory.</dd>
+            <dt class="mono">Prevents</dt><dd>Segregation-of-duties conflicts, access for terminated staff, unapproved admin rights.</dd>
+          </dl>
+        </li>
+        <li class="case reveal">
+          <p class="mono label">Security · GuardBench sec-1…6</p>
+          <h3>Incident response</h3>
+          <dl>
+            <dt class="mono">Pain</dt><dd>A mailbox takeover or a leaked API key at 2 a.m., with an analyst under pressure to act fast.</dd>
+            <dt class="mono">Flow</dt><dd>Agent reads alerts, sign-ins and the CMDB, then contains through EDR, identity and secrets APIs.</dd>
+            <dt class="mono">Graded</dt><dd>Six tasks: the attacker evicted everywhere, the user kept working, the right server isolated, an authorised red team left alone.</dd>
+            <dt class="mono">Prevents</dt><dd>Isolating the wrong host, destroying evidence, rotating a key without revoking the old one.</dd>
+          </dl>
+        </li>
+        <li class="case reveal">
+          <p class="mono label">HR + IT · GuardBench off-1…5</p>
+          <h3>Offboarding</h3>
+          <dl>
+            <dt class="mono">Pain</dt><dd>Leaver lists are stale. A rehire, a namesake or a mover looks like a leaver, and contractors never fully leave.</dd>
+            <dt class="mono">Flow</dt><dd>Agent reconciles HR, identity, SaaS and device records, then disables, transfers and revokes.</dd>
+            <dt class="mono">Graded</dt><dd>Five tasks with hidden checks: the real leavers fully removed, everyone else untouched, handovers done.</dd>
+            <dt class="mono">Prevents</dt><dd>Locking out the wrong person, orphaned privileged access, deleting data under legal hold.</dd>
+          </dl>
+        </li>
+        <li class="case reveal">
+          <p class="mono label">Finance · GuardBench ret-3</p>
+          <h3>Supplier payment fraud</h3>
+          <dl>
+            <dt class="mono">Pain</dt><dd>An "urgent" bank-detail change from a lookalike domain, a day before a ₹8,45,000 payment run.</dd>
+            <dt class="mono">Flow</dt><dd>Agent checks the email, calls the number already on file, holds the payout and opens a security incident.</dd>
+            <dt class="mono">Enforced</dt><dd>Policy rule <code>bank_change_without_callback</code>: AgentShield blocks any payee change not preceded by a call-back to that payee.</dd>
+            <dt class="mono">Prevents</dt><dd>Paying the fraudster, calling the attacker's number, undoing a legitimate change.</dd>
+          </dl>
+        </li>
+      </ul>
+    </section>
+
+    <!-- ROI -->
+    <section class="section" id="roi">
+      <div class="section-head">
+        <p class="label mono">Business value</p>
+        <h2 class="h1 reveal">What it's worth <span class="glyph">↪</span>with your numbers</h2>
+        <p class="lede narrow">Change the inputs to match your team. The figures marked <b>measured</b> come from the runs on this page. The rest are your assumptions. The formula is in <a class="link" href="https://github.com/AmanSingh-tech/AgentHarness/blob/main/docs/roi.md">docs/roi.md</a>.</p>
+      </div>
+      <div class="demo roi">
+        <form class="roi-inputs" id="roi-form" autocomplete="off">
+          <label><span class="mono label">Cases per month</span><input type="number" name="cases" value="4400" min="0" step="100" inputmode="numeric"></label>
+          <label><span class="mono label">Minutes per case, by hand</span><input type="number" name="minutes" value="8" min="0" step="1" inputmode="decimal"></label>
+          <label><span class="mono label">Loaded cost per hour (₹)</span><input type="number" name="rate" value="500" min="0" step="50" inputmode="numeric"></label>
+          <label><span class="mono label">Costly mistakes per 100 cases</span><input type="number" name="errors" value="1" min="0" step="0.1" inputmode="decimal"></label>
+          <label><span class="mono label">Cost of one mistake (₹)</span><input type="number" name="loss" value="3000" min="0" step="500" inputmode="numeric"></label>
+          <div class="roi-fixed">
+            <p class="mono label">Measured</p>
+            <p><b>70%</b> of cases resolved with no person (RefundOps and AccessOps)</p>
+            <p><b>₹0.17</b> model cost per case ($0.02 per batch of 10, Claude Sonnet)</p>
+            <p><b>0</b> duplicate refunds or false success claims with the shield on, against 3 and 3 with it off (75 runs)</p>
+          </div>
+        </form>
+        <div class="roi-out" aria-live="polite">
+          <div class="tile"><span class="mono">Hours saved / month</span><b id="roi-hours">–</b></div>
+          <div class="tile"><span class="mono">Cost per case, by hand</span><b id="roi-manual">–</b></div>
+          <div class="tile"><span class="mono">Cost per case, with agents</span><b id="roi-agent">–</b></div>
+          <div class="tile"><span class="mono">Losses avoided / month</span><b id="roi-avoided">–</b></div>
+          <div class="tile tile-accent"><span class="mono">Net value / month</span><b id="roi-net">–</b></div>
+          <p class="mono muted roi-note">Losses avoided assumes the mistakes in the automated 70% are the kinds AgentShield stopped in testing (duplicates, over-limit actions, false claims). The remaining 30% still go to people.</p>
+        </div>
+      </div>
     </section>
 
     <!-- GuardBench -->
@@ -168,7 +265,7 @@
     <!-- Controls -->
     <section class="section" id="controls">
       <div class="section-head">
-        <p class="label mono">03 · Responsible AI</p>
+        <p class="label mono">Responsible AI</p>
         <h2 class="h1 reveal">Controls that sit <span class="glyph">↪</span>outside the model</h2>
       </div>
       <ol class="services">
@@ -185,10 +282,114 @@
       </ol>
     </section>
 
+
+    <!-- Trust and compliance -->
+    <section class="section" id="trust">
+      <div class="section-head">
+        <p class="label mono">Governance</p>
+        <h2 class="h1 reveal">Evidence <span class="glyph">↪</span>an auditor can check</h2>
+        <p class="lede narrow">Every tool call, decision, approval and block is written to an append-only log in which each event carries the hash of the one before. Change, delete or truncate any event and verification fails at that point.</p>
+      </div>
+      <div class="trust-grid">
+        <div class="demo">
+          <h3 class="h3">Hash-chained audit</h3>
+          <ol class="chain mono" aria-label="Three linked audit events">
+            <li><span class="label">event 41</span><span>tool_call · get_order</span><span class="muted">prev a3f9…</span><span class="hash">hash 7c21…</span></li>
+            <li><span class="label">event 42</span><span>approval · granted by a person</span><span class="muted">prev 7c21…</span><span class="hash">hash e04b…</span></li>
+            <li><span class="label">event 43</span><span>verify · ledger has the refund</span><span class="muted">prev e04b…</span><span class="hash">hash 19d6…</span></li>
+          </ol>
+          <div class="code"><pre><code>agentguard audit verify    # recompute every chain</code></pre><button class="copy mono" type="button">Copy</button></div>
+        </div>
+        <div class="demo">
+          <h3 class="h3">Human oversight</h3>
+          <ol class="oversight mono">
+            <li><span class="pill">Agent</span> asks to refund ₹4,500</li>
+            <li><span class="pill pill-warn">AgentShield</span> above ₹2,000: hold for approval</li>
+            <li><span class="pill pill-accent">Person</span> approves or rejects in the dashboard; no answer in time means reject</li>
+            <li><span class="pill pill-ok">Verified</span> the refund is re-checked in the ledger after it runs</li>
+          </ol>
+          <p class="muted trust-note">If a person rejects, the batch reports itself unfinished and the independent verdict records an honest failure, not a success.</p>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table class="board frameworks">
+          <thead><tr><th>Control in AgentGuard</th><th>Supports</th></tr></thead>
+          <tbody>
+            <tr><td>Hash-chained audit log of every call, decision and approval, with a per-run evidence report</td><td class="mono">EU AI Act Art. 12 (record-keeping) · SOC 2 CC7 (system operations) · NIST AI RMF Manage</td></tr>
+            <tr><td>Human approval above thresholds, override in the dashboard, timeouts reject</td><td class="mono">EU AI Act Art. 14 (human oversight) · NIST AI RMF Govern</td></tr>
+            <tr><td>A separate identity and least privilege per agent, deny by default</td><td class="mono">SOC 2 CC6 (logical access) · ISO/IEC 42001 operational controls</td></tr>
+            <tr><td>Injection defence, data-flow tracking, post-action verification</td><td class="mono">EU AI Act Art. 15 (accuracy, robustness, cybersecurity) · NIST AI RMF Measure</td></tr>
+            <tr><td>Verified-outcome benchmarks, injected faults, pass^k reliability</td><td class="mono">NIST AI RMF Map and Measure · EU AI Act Art. 15</td></tr>
+            <tr><td>Policy as versioned YAML; blocked runs promoted to validated regression tests</td><td class="mono">SOC 2 CC8 (change management) · ISO/IEC 42001 continual improvement · NIST AI RMF Manage</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="mono muted bench-note">"Supports" means the control produces what these frameworks ask for. AgentGuard is not a certification, and using it does not by itself make a system compliant.</p>
+    </section>
+
+    <!-- Integrations -->
+    <section class="section" id="integrate">
+      <div class="section-head">
+        <p class="label mono">Reusable</p>
+        <h2 class="h1 reveal">Bring your agent, <span class="glyph">↪</span>keep your tools</h2>
+        <p class="lede narrow">AgentShield sits between any agent and any tools. The policy is YAML, so a new process needs a policy and a tool adapter, not a rewrite.</p>
+      </div>
+      <ul class="int-grid">
+        <li class="int reveal"><h3>Claude Code over MCP</h3><p class="muted">No API key: your Claude Code login runs the agent against a scenario.</p>
+          <div class="code"><pre><code>agentguard run --scenario normal_refund \
+  --harness mcp_client:claude-code --model sonnet</code></pre><button class="copy mono" type="button">Copy</button></div></li>
+        <li class="int reveal"><h3>Any MCP client</h3><p class="muted">Add AgentGuard as an MCP server; the run is verified when the client disconnects.</p>
+          <div class="code"><pre><code>claude mcp add agentguard -- \
+  agentguard mcp-serve --scenario normal_refund</code></pre><button class="copy mono" type="button">Copy</button></div></li>
+        <li class="int reveal"><h3>Your REST backend, in production</h3><p class="muted">Map routes in YAML and serve them over MCP with AgentShield in front. Approvals wait in the dashboard.</p>
+          <div class="code"><pre><code>claude mcp add guarded -- agentguard protect \
+  --backend examples/payments_backend.yaml \
+  --agent-id support_agent</code></pre><button class="copy mono" type="button">Copy</button></div></li>
+        <li class="int reveal"><h3>Your Python tools</h3><p class="muted">Wrap functions in a <code>ToolBackend</code>; one session adds policy, approvals and audit. See <code>examples/protect_your_tools.py</code>.</p>
+          <div class="code"><pre><code>session = RuntimeSession(InvoiceTools(), store,
+    agent_id="finance_assistant", policy="policy.yaml",
+    approvals=ApprovalQueue(store))
+session.endpoint.call("pay_invoice", {"invoice_id": "INV-8", "amount_inr": 25000})</code></pre><button class="copy mono" type="button">Copy</button></div></li>
+        <li class="int reveal"><h3>Anthropic, OpenAI, LangGraph</h3><p class="muted">Built-in agent loops; these need the provider's API key.</p>
+          <div class="code"><pre><code>agentguard run --scenario normal_refund \
+  --harness native:anthropic --harness native:openai \
+  --harness langgraph:anthropic</code></pre><button class="copy mono" type="button">Copy</button></div></li>
+        <li class="int reveal"><h3>A remote agent over HTTP</h3><p class="muted">Your agent service gets a task and a gateway token, then calls <code>GET /tools</code>, <code>POST /call</code> and <code>POST /submit</code>.</p>
+          <div class="code"><pre><code>uvicorn examples.remote_agent:app --port 9200
+agentguard run --scenario normal_refund \
+  --harness remote_http:http://127.0.0.1:9200/run</code></pre><button class="copy mono" type="button">Copy</button></div></li>
+        <li class="int reveal"><h3>A policy for a new process</h3><p class="muted">Per-agent permissions, limits, approvals and ordered-call rules.</p>
+          <div class="code"><pre><code>agents:
+  finance_assistant:
+    tools:
+      pay_invoice:   {allow: true, max_amount_inr: 50000,
+                      approval_above_inr: 10000}
+      delete_vendor: {allow: false}</code></pre><button class="copy mono" type="button">Copy</button></div></li>
+        <li class="int reveal"><h3>Docker</h3><p class="muted">The dashboard, API and this page in one container, with data kept in a volume.</p>
+          <div class="code"><pre><code>docker compose up --build    # http://localhost:8000</code></pre><button class="copy mono" type="button">Copy</button></div></li>
+      </ul>
+    </section>
+
+    <!-- What's new -->
+    <section class="section" id="new">
+      <div class="section-head">
+        <p class="label mono">Originality</p>
+        <h2 class="h1 reveal">What no other tool <span class="glyph">↪</span>we reviewed combines</h2>
+      </div>
+      <ol class="services">
+        <li class="reveal"><span class="mono num">001</span><span class="name">Honesty is measured</span><span class="mono desc">the verdict compares what the agent claimed with what changed in the world. τ-bench and AgentDojo grade the state, not the claim</span></li>
+        <li class="reveal"><span class="mono num">002</span><span class="name">Faults after the side effect</span><span class="mono desc">a timeout after the refund committed, a tool that reports false success. Benchmarks inject hostile content, not lying tools</span></li>
+        <li class="reveal"><span class="mono num">003</span><span class="name">Data followed through encoding</span><span class="mono desc">a secret is caught after base64, hex or a split across calls. Invariant matches call order, not transformed data</span></li>
+        <li class="reveal"><span class="mono num">004</span><span class="name">One gateway, test and production</span><span class="mono desc">the policy that passes the benchmark is the policy that ships, with human approval in both</span></li>
+        <li class="reveal"><span class="mono num">005</span><span class="name">Incidents become validated tests</span><span class="mono desc">a blocked run becomes a replayable scenario, kept only if a do-nothing agent fails it and the reference passes. LangSmith adds traces to datasets, unvalidated</span></li>
+      </ol>
+      <p class="muted mono docs-links">Comparison with sources, and where AgentGuard is behind: <a href="https://github.com/AmanSingh-tech/AgentHarness/blob/main/docs/novelty.md">docs/novelty.md</a></p>
+    </section>
+
     <!-- Run it -->
     <section class="section" id="run">
       <div class="section-head">
-        <p class="label mono">04 · Run it yourself</p>
+        <p class="label mono">Run it yourself</p>
         <h2 class="h1 reveal">Five minutes <span class="glyph">↪</span>to the same results</h2>
         <p class="lede narrow">Needs Python 3.11+ and, for the dashboard, Node 18+. Claude as the decision agent uses your Claude Code login, so no API key is needed. Everything else runs fully offline.</p>
       </div>
@@ -237,7 +438,7 @@ agentguard ops run --process access --decider claude --model sonnet</code></pre>
 
       <div class="steps" data-panel="verify" hidden>
         <div class="step"><span class="mono num">01</span><div><h3>Check every claim on this page</h3>
-          <div class="code"><pre><code>pytest -q                              # 230 tests
+          <div class="code"><pre><code>pytest -q                              # 287 tests
 agentguard validate-scenarios          # every scenario: the null agent fails, the oracle passes
 agentguard demo                        # the six demo steps, in the terminal
 agentguard benchmark --attempts 3      # v1/v2 × shield off/on, 25 scenarios

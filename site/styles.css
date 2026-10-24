@@ -331,6 +331,67 @@ html:not(.js) .loader { display: none; }
 .docs-links { margin-top: 24px; }
 .docs-links a { color: var(--accent); }
 
+/* -- use cases ------------------------------------------------------------------------------------------ */
+.cases { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: 12px; }
+.case {
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 22px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 10px;
+}
+.case h3 { font-size: 28px; letter-spacing: -0.03em; }
+.case dl { margin: 6px 0 0; display: grid; gap: 10px; }
+.case dt { color: var(--accent); text-transform: uppercase; font-size: 11px; }
+.case dd { margin: 2px 0 0; font-size: 15px; color: var(--muted); }
+.link { color: var(--accent); }
+
+/* -- ROI calculator --------------------------------------------------------------------------------------- */
+.roi { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: clamp(18px, 3vw, 36px); }
+.roi-inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; align-content: start; }
+.roi-inputs label { display: flex; flex-direction: column; gap: 6px; }
+.roi-inputs .label { font-size: 11px; }
+.roi-inputs input {
+  height: 48px; padding: 0 14px; border-radius: 12px; border: 1px solid var(--line);
+  background: var(--bg); color: var(--fg); font: 500 20px/1 var(--font); letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums; width: 100%; min-width: 0;
+  transition: border-color 160ms ease;
+}
+.roi-inputs input:focus { outline: none; border-color: var(--accent); }
+.roi-fixed { grid-column: 1 / -1; background: var(--accent-soft); border-radius: 12px; padding: 14px 16px; display: grid; gap: 6px; font-size: 14px; }
+.roi-fixed .label { color: var(--accent); font-size: 11px; }
+.roi-out { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; align-content: start; }
+.roi-out .tile b { font-size: clamp(24px, 2.6vw, 34px); font-variant-numeric: tabular-nums; }
+.tile-accent { grid-column: 1 / -1; background: var(--fg); color: var(--bg); }
+.tile-accent .mono { color: color-mix(in srgb, var(--bg) 70%, transparent); }
+.tile-accent b { font-size: clamp(36px, 4.4vw, 60px) !important; letter-spacing: -0.04em; }
+.roi-note { grid-column: 1 / -1; margin-top: 6px; line-height: 1.6; }
+
+/* -- trust ------------------------------------------------------------------------------------------------- */
+.trust-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px; }
+.trust-grid .h3 { margin-bottom: 18px; }
+.chain { display: grid; gap: 0; margin-bottom: 16px; }
+.chain li {
+  position: relative; display: grid; grid-template-columns: 80px minmax(0, 1fr); gap: 2px 12px;
+  padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg);
+}
+.chain li + li { margin-top: 18px; }
+.chain li + li::before { content: ""; position: absolute; left: 50%; top: -19px; height: 18px; border-left: 1px dashed var(--accent); }
+.chain li > :not(.label) { grid-column: 2; }
+.chain .label { grid-row: span 3; color: var(--accent); }
+.chain .hash { color: var(--accent); }
+.oversight { display: grid; gap: 10px; }
+.oversight li { display: grid; grid-template-columns: 112px minmax(0, 1fr); align-items: center; gap: 10px; padding: 10px 12px; border-radius: 12px; background: var(--bg); border: 1px solid var(--line); line-height: 1.5; }
+.trust-note { margin-top: 16px; font-size: 15px; }
+.frameworks { font-family: var(--font); font-size: 15px; }
+.frameworks td:first-child { width: 52%; }
+.frameworks td.mono { color: var(--muted); font-size: 12px; }
+
+/* -- integrations ------------------------------------------------------------------------------------------- */
+.int-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.int { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 22px; display: flex; flex-direction: column; gap: 10px; }
+.int h3 { font-size: 22px; letter-spacing: -0.02em; }
+.int p.muted { font-size: 15px; }
+.int .code { margin-top: auto; }
+.int pre { font-size: 12.5px; }
+
 /* -- closing / footer ---------------------------------------------------------------------------------- */
 .closing { padding: clamp(96px, 14vw, 200px) var(--gutter); }
 .closing .display { margin: 22px 0 40px; max-width: 13ch; }
@@ -362,7 +423,16 @@ html:not(.js) .loader { display: none; }
 .js .reveal-words[data-visible] .w { opacity: 1; transform: none; }
 
 /* -- responsive ---------------------------------------------------------------------------------------- */
+@media (max-width: 1240px) {
+  .nav-links { gap: 16px; }
+  .nav-links a span { display: none; }
+}
+@media (max-width: 1080px) {
+  .nav-links { display: none; }
+  .nav-actions { margin-left: auto; }
+}
 @media (max-width: 1000px) {
+  .roi, .trust-grid { grid-template-columns: minmax(0, 1fr); }
   .pipeline { grid-template-columns: repeat(2, 1fr); }
   .tiles { grid-template-columns: repeat(3, 1fr); }
   .row-btn { grid-template-columns: 64px minmax(0, 1fr) 100px 120px 22px; }
@@ -384,7 +454,10 @@ html:not(.js) .loader { display: none; }
   .row-btn .row-status { grid-column: 2 / 4; }
   .row-detail { grid-template-columns: 1fr; }
   .tiles { grid-template-columns: repeat(2, 1fr); }
-  .step, .timeline li { grid-template-columns: 1fr; gap: 8px; }
+  .int-grid { grid-template-columns: minmax(0, 1fr); }
+  .roi-inputs { grid-template-columns: minmax(0, 1fr); }
+  .frameworks td:first-child { width: auto; }
+  .step, .timeline li { grid-template-columns: minmax(0, 1fr); gap: 8px; }
   .verdict { justify-content: flex-start; }
 }
 @media (max-width: 420px) {
