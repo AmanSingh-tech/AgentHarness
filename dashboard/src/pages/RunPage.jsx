@@ -124,7 +124,7 @@ function RunView({ runId }) {
   const act = async (fn) => { setBusy(true); try { await fn(); } finally { setBusy(false); } };
   return (
     <div className="space-y-4">
-      <Card title={`Run ${runId}`} actions={run && <span className="text-xs text-slate-500">{run.scenario} · {run.harness} · shield {run.shield ? "on" : "off"}</span>}>
+      <Card title={`Run ${runId}`} actions={run && <span className="text-xs text-slate-500">{run.scenario?.id ?? run.scenario} · {run.harness} · shield {run.shield ? "on" : "off"}</span>}>
         {events.length === 0 ? <Empty>Waiting for the first event…</Empty> : <Trace events={events} />}
       </Card>
       {run?.verdict && (
